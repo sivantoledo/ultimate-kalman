@@ -16,7 +16,7 @@ import org.apache.commons.math3.linear.RealVector;
  * Kalman filtering and smoothing using the Paige-Saunders algorithm.
  */
 
-public class PaigeSaundersKalman {
+public class PaigeSaundersKalman implements UltimateKalman {
   
   public static class Step {
     public int        evolutionCount;    // number of evolution equations predicting this state
@@ -54,7 +54,8 @@ public class PaigeSaundersKalman {
   private LinkedList<Step> steps = new LinkedList<>();
   private Step current = null; 
   
-  public PaigeSaundersKalman copy() {
+  @Override
+  public UltimateKalman copy() {
     //System.out.printf("PSK copy %d %s %s\n", steps.size(),current,steps);
     PaigeSaundersKalman copy = new PaigeSaundersKalman();
     copy.current = current.copy();
@@ -71,6 +72,7 @@ public class PaigeSaundersKalman {
    * If there are unconstrained elements in the state vector (no evolution
    * from previous state) then they must appear last in the vector.
    */
+  @Override
   public void advance(int dimension) {
     current = new Step();
     current.stateDimension = dimension;
@@ -83,6 +85,7 @@ public class PaigeSaundersKalman {
    * If it is less, then some current variables cannot be predicted from
    * the previous state. We assume that they are always the last ones.
    */
+  @Override
   public void evolve(RealMatrix F, RealVector b, CovarianceMatrix C) {
     int evolutionCount = F.getRowDimension();
     RealMatrix H;
@@ -96,6 +99,7 @@ public class PaigeSaundersKalman {
     evolve(H,F,b,C);
   }
   
+  @Override
   public void evolve(RealMatrix H, RealMatrix F, RealVector b, CovarianceMatrix C) {
     current.evolutionCount = F.getRowDimension();
     
@@ -176,6 +180,7 @@ public class PaigeSaundersKalman {
    * are no actual observations.
    */
 
+  @Override
   public void observe() {
     current.observationCount = 0; // no observations in this step
     QRDecomposition qr = new QRDecomposition(current.Rdiag);
@@ -191,6 +196,7 @@ public class PaigeSaundersKalman {
     steps.addLast(current);
   }
 
+  @Override
   public void observe(RealMatrix G, RealVector b, CovarianceMatrix C) {
     current.observationCount = b.getDimension();
     
@@ -232,6 +238,7 @@ public class PaigeSaundersKalman {
   }
 
   
+  @Override
   public void smooth() {
     Iterator<Step> i = steps.descendingIterator();
     
@@ -252,6 +259,7 @@ public class PaigeSaundersKalman {
     //return null;
   }
   
+  @Override
   public CovarianceMatrix covariance() {
     if (steps.size()>1) {
       System.err.printf("covariances for Kalman smoothing not implemented yet (%d steps retained)\n",steps.size());
@@ -260,10 +268,12 @@ public class PaigeSaundersKalman {
     return steps.getLast().estimatedCovariance;
   }
   
+  @Override
   public void drop() {
     while (steps.size()>1) steps.removeFirst();
   }
   
+  @Override
   public void filter() throws DimensionMismatchException {
     
     //System.out.printf("PSK QTb %d Rdiag %d %d\n", steps.getLast().QTb.getDimension(), steps.getLast().Rdiag.getRowDimension(), steps.getLast().Rdiag.getColumnDimension());
@@ -284,6 +294,7 @@ public class PaigeSaundersKalman {
     //return solution;
   }
   
+  @Override
   public RealVector state() {
     return steps.getLast().estimatedState;
   }
