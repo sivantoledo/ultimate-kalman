@@ -50,6 +50,7 @@ public class DiagonalCovarianceMatrix implements CovarianceMatrix {
       break;      
     }
     W = new DiagonalMatrix(weights.toArray());
+    System.out.printf("weight=%.3e\n",weights.getEntry(0));
   }
 
   @Override

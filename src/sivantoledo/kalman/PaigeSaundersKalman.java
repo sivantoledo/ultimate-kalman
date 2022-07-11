@@ -78,6 +78,12 @@ public class PaigeSaundersKalman implements UltimateKalman {
   private LinkedList<Step> steps   = new LinkedList<>();
   private Step             current = null; 
   
+  private Step step(long i) {
+    long indexInSteps = i - firstIndex();
+    if (indexInSteps < 0 || indexInSteps >= steps.size()) throw new IllegalArgumentException("step "+i+" is not in memory");
+    return steps.get((int) indexInSteps);
+  }
+  
   @Override
   public long currentIndex() {
     if (!started) return -1;
@@ -86,14 +92,13 @@ public class PaigeSaundersKalman implements UltimateKalman {
 
   @Override
   public long firstIndex() {
-    return steps.getLast().index;
+    if (started==false || steps==null || steps.size()<1) throw new IllegalArgumentException("no steps have been created yet");
+    return steps.getFirst().index;
   }
 
   @Override
   public double timestamp(long i) {
-    long indexInSteps = i - firstIndex();
-    if (indexInSteps < 0 || indexInSteps >= steps.size()) return Double.NaN;
-    return steps.get((int) indexInSteps).timestamp;
+    return step(i).timestamp;
   }
 
   
@@ -242,6 +247,9 @@ public class PaigeSaundersKalman implements UltimateKalman {
 
   @Override
   public void observe() {
+    
+    if (current.stepState != StepState.EVOLVED) throw new IllegalStateException("observe(...) must be called after evolve(...)");
+
     current.observationCount = 0; // no observations in this step
     QRDecomposition qr = new QRDecomposition(current.Rdiag);
     //RealMatrix Q  = qr.getQ().getSubMatrix(0, current.observationCount-1, 0, current.stateDimension-1); // thin Q factor
@@ -261,33 +269,53 @@ public class PaigeSaundersKalman implements UltimateKalman {
 
   @Override
   public void observe(RealMatrix G, RealVector b, CovarianceMatrix C) {
+    
+    //System.out.printf("obs %d %s\n", current.index, current.stepState);
+
+    if (current.stepState != StepState.EVOLVED) throw new IllegalStateException("observe(...) must be called after evolve(...)");
+
     current.observationCount = b.getDimension();
     
     RealMatrix WG  = C.weigh(G);
     RealVector Wbo = C.weigh(b);
+    //RealMatrix WG  = G.scalarMultiply(0.00000001);
+    //RealVector Wbo = b.mapMultiply(0.00000001);
     
     if (steps.size()==0 || current.Rdiag==null) {               // normally the first step
       //if (current.observationCount <= current.stateDimension) { // not enough observations to warrant a QR facotrization
       //  current.Rdiag = WG;
       //  current.QTb   = Wbo;
       //} else {
-        QRDecomposition qr = new QRDecomposition(WG);
-        //RealMatrix Q  = qr.getQ().getSubMatrix(0, current.observationCount-1, 0, current.stateDimension-1); // thin Q factor
-        current.Rdiag = qr.getR().getSubMatrix(0, current.stateDimension-1,   0, current.stateDimension-1);
-        current.QTb   = qr.getQ().transpose().operate(Wbo); 
+      //Matrix.print(WG, "WG");
+
+      QRDecomposition qr = new QRDecomposition(WG);
+      //RealMatrix Q  = qr.getQ().getSubMatrix(0, current.observationCount-1, 0, current.stateDimension-1); // thin Q factor
+      current.Rdiag = qr.getR().getSubMatrix(0, current.stateDimension-1,   0, current.stateDimension-1);
+      current.QTb   = qr.getQ().transpose().operate(Wbo); 
       //}
+      //Matrix.print(current.Rdiag, "newRdiag");
+      //Matrix.print(Wbo.toArray(), "Wbo");
+      //Matrix.print(current.QTb.toArray(), "QTb");
     } else {
       // stack Rdiag (from previous evolve) and WG, QTb (from previous evolve) and Wbo
       RealMatrix K = MatrixUtils.createRealMatrix(current.Rdiag.getRowDimension()+WG.getRowDimension(), current.stateDimension);
       K.setSubMatrix(current.Rdiag.getData(), 0,                               0);
       K.setSubMatrix(WG.getData()           , current.Rdiag.getRowDimension(), 0);
       
+      //Matrix.print(current.Rdiag, "Rdiag");
+      //Matrix.print(WG, "WG");
+      //Matrix.print(K, "K");
+      
       QRDecomposition qr = new QRDecomposition(K);
-      //RealMatrix Q  = qr.getQ().getSubMatrix(0,current.Rdiag.getRowDimension()+WG.getRowDimension()-1,0,current.stateDimension-1); // thin Q factor
+      RealMatrix Q  = qr.getQ().getSubMatrix(0,current.Rdiag.getRowDimension()+WG.getRowDimension()-1,0,current.stateDimension-1); // thin Q factor
       current.Rdiag = qr.getR().getSubMatrix(0,current.stateDimension-1,0,current.stateDimension-1);
 
+      //Matrix.print(current.Rdiag, "newRdiag");
+      
       RealVector k = current.QTb.append(Wbo); // current RHS  
       current.QTb   = qr.getQ().getSubMatrix(0, K.getRowDimension()-1, 0, K.getColumnDimension()-1).transpose().operate(k);       // transform; equivalent to Q.transpose().operate(k);
+      //Matrix.print(Wbo.toArray(), "Wbo");
+      //Matrix.print(current.QTb.toArray(), "QTb");
     }
     
     //System.out.printf("PSK o current qtb %d\n",current.QTb.getDimension());
@@ -308,6 +336,8 @@ public class PaigeSaundersKalman implements UltimateKalman {
   public void smooth() {
     Iterator<Step> i = steps.descendingIterator();
     
+    // compute the estimates first
+    
     RealVector v = null;
     while (i.hasNext()) {
       Step s = i.next();
@@ -325,14 +355,56 @@ public class PaigeSaundersKalman implements UltimateKalman {
       //Matrix.print(v.toArray(), "state");      
     }
     //return null;
+    
+    // now compute the diagonal blocks of the covariance matrices
+    
+    RealMatrix R = null;
+    
+    i = steps.descendingIterator();
+    
+    /*
+     *  the last block row already has its covariance matrix computed, the
+     *  covariance of the filtered estimate. We keep it and move on to the previous
+     *  row. 
+     */
+    
+    if (i.hasNext()) {
+      Step s = i.next();
+      
+      R = s.Rdiag;
+    }
+    
+    /*
+     * Now process the other block rows.
+     */
+    
+    while (i.hasNext()) {
+      Step s = i.next();
+      
+      int n = R.getRowDimension();
+      int m = s.Rdiag.getRowDimension();
+      
+      // build the nonzero part of the previous block column and factor
+      RealMatrix P = MatrixUtils.createRealMatrix(n+m, n);
+      P.setSubMatrix(s.Rsupdiag.getData(), 0, 0);
+      P.setSubMatrix(R.getData()         , m, 0);
+      QRDecomposition qr = new QRDecomposition(P);
+      
+      // build the corresponding block rows of the current block column and transform
+      // the bottom n rows remain zero
+      RealMatrix C = MatrixUtils.createRealMatrix(n+m, m);
+      C.setSubMatrix(s.Rdiag.getData(),    0, 0); 
+      RealMatrix QTC = qr.getQ().transpose().multiply(C);
+     
+      R = QTC.getSubMatrix(n, n+m-1, 0, m-1); // start row, end row, start column, end column
+            
+      s.estimatedCovariance = new RealCovarianceMatrix(R,RealCovarianceMatrix.Representation.INVERSE_FACTOR);; 
+    }
+
   }
   
   @Override
   public CovarianceMatrix covariance() {
-    if (steps.size()>1) {
-      System.err.printf("covariances for Kalman smoothing not implemented yet (%d steps retained)\n",steps.size());
-      System.exit(1);
-    }
     return steps.getLast().estimatedCovariance;
   }
   
@@ -342,33 +414,35 @@ public class PaigeSaundersKalman implements UltimateKalman {
   }
   
   @Override
-  public RealVector filtered() throws DimensionMismatchException {
+  public RealVector filtered() {
     
-    if (steps.getLast().stepState != StepState.OBSERVED) throw new IllegalStateException("filtered() must be called after evolve(...) and observe(...)");
+    Step step = steps.getLast();
+    
+    if (step.stepState != StepState.OBSERVED) throw new IllegalStateException("filtered() must be called after evolve(...) and observe(...)");
     
     //System.out.printf("PSK QTb %d Rdiag %d %d\n", steps.getLast().QTb.getDimension(), steps.getLast().Rdiag.getRowDimension(), steps.getLast().Rdiag.getColumnDimension());
-    if (steps.getLast().Rdiag.getRowDimension() < steps.getLast().Rdiag.getColumnDimension()) throw new DimensionMismatchException(steps.getLast().Rdiag.getRowDimension(),steps.getLast().Rdiag.getColumnDimension());
+    if (step.Rdiag.getRowDimension() < steps.getLast().Rdiag.getColumnDimension()) throw new DimensionMismatchException(steps.getLast().Rdiag.getRowDimension(),steps.getLast().Rdiag.getColumnDimension());
     
     //Matrix.print(steps.getLast().Rdiag, "Rdiag");
     
-    RealVector solution = steps.getLast().QTb.copy(); 
+    RealVector solution = step.QTb.copy(); 
     try {
-      MatrixUtils.solveUpperTriangularSystem(steps.getLast().Rdiag, solution);
+      MatrixUtils.solveUpperTriangularSystem(step.Rdiag, solution);
     } catch (MathArithmeticException mae) {
       System.out.printf("MathArithmeticException: %s\n", mae.getMessage());
-      Matrix.print(steps.getLast().Rdiag,"Rdiag (exception)");
+      Matrix.print(step.Rdiag,"Rdiag (exception)");
       throw mae;
     }
 
-    steps.getLast().estimatedState = solution; // keep the filter's estimate, not sure if useful
+    step.estimatedState = solution; // keep the filter's estimate, not sure if useful
     
     return solution;
   }
   
   @Override
-  public RealVector predicted() throws DimensionMismatchException {
+  public RealVector predicted() {
     
-    if (current.stepState != StepState.EVOLVED) throw new IllegalStateException("filtered() must be called after evolve(...) and before observe(...)");
+    if (current.stepState != StepState.EVOLVED) throw new IllegalStateException("predicted() must be called after evolve(...) and before observe(...)");
     
     //System.out.printf("PSK QTb %d Rdiag %d %d\n", steps.getLast().QTb.getDimension(), steps.getLast().Rdiag.getRowDimension(), steps.getLast().Rdiag.getColumnDimension());
     if (current.Rdiag.getRowDimension() < current.Rdiag.getColumnDimension()) throw new DimensionMismatchException(current.Rdiag.getRowDimension(),current.Rdiag.getColumnDimension());
@@ -386,11 +460,29 @@ public class PaigeSaundersKalman implements UltimateKalman {
 
     return solution;
   }
+  
+  @Override
+  public RealVector smoothed(long i) {
+    Step step_i = step(i);
+    
+    if (step_i.stepState != StepState.SMOOTHED) throw new IllegalStateException("step "+i+" has not been smoothed yet, call smooth()");
+    
+    return step_i.estimatedState;
+  }
+
+  @Override
+  public CovarianceMatrix covariance(long i) {
+    Step step_i = step(i);
+    
+    if (step_i.stepState != StepState.SMOOTHED) throw new IllegalStateException("step "+i+" has not been smoothed yet, call smooth()");
+    
+    return step_i.estimatedCovariance;
+  }
 
   
   //@Override
   //public RealVector state() {
   //  return steps.getLast().estimatedState;
   //}
-    
+
 }

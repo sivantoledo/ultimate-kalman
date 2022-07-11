@@ -97,53 +97,93 @@ public interface UltimateKalman {
    */
   void observe();
   
+  /**
+   * The index of the current step. 
+   * Indexing starts from zero. The method returns -1 if advance()
+   * has never been called (so even step 0 is not in progress yet).
+   * 
+   * @return index of the current step
+   */
+  
   long currentIndex();
+  
+  /**
+   * Index of the first (oldest) step that is still retained (has not been dropped).
+   * 
+   * @return index of the first (oldest) step that has not been dropped
+   */
   long firstIndex();
+  
+  /**
+   * The time stamp associated with a particular step.
+   * If step i has been dropped or has not been reached,  
+   * the method returns Double.NaN.
+   * 
+   * @param i index of the step
+   * @return the time stamp associated with step i
+   */
   double timestamp(long i);
   
   /**
-   * Computes the state vectors of all the active steps.
+   * Computes the predicted state vector of the current step.
+   * Must be called after evolve() but before observe();
+   * 
+   * @return the predicted estimate of the state of the current step
+   */
+
+  RealVector predicted();
+
+  /**
+   * Computes the filtered state vector of the current state.
+   * Must be called after evolve() and after observe();
+   * 
+   * @return the filtered estimate of the state of the current step
+   */
+
+  RealVector filtered();
+    
+  /**
+   * The covariance matrix of either the current predicted or
+   * the current filtered state estimate, depending on whether
+   * observed has been called or not.  
+   *
+   * @return covariance matrix of the current estimate of the state vector
+   */
+  
+  CovarianceMatrix covariance();
+  
+  /**
+   * Computes the state vectors of all the steps that have not been dropped.
    */
 
   void smooth();
 
   /**
-   * Deletes all but the last step.
+   * Drops from memory all but the current step.
    */
   
   void drop();
-
-  /**
-   * Computes the predicted state vector of the current step.
-   * Must be called after evolve() but before observe();
-   * 
-   * @throws DimensionMismatchException
-   */
-
-  RealVector predicted() throws DimensionMismatchException;
+  
+  
   /**
    * Computes the filtered state vector of the current state.
    * Must be called after evolve() and after observe();
    * 
-   * @throws DimensionMismatchException
+   * @param i index of the step
+   * @return the smoothed estimate of the state of step i
    */
 
-  RealVector filtered() throws DimensionMismatchException;
-  
-
+  RealVector smoothed(long i);
+    
   /**
-   * 
-   * @return state vector of the last step.
-   */
-  
-  //RealVector state();
-  
-  /**
+   * The covariance matrix of the smoothed state estimate of step i.  
    *
-   * @return Covariance matrix of the state vector of the last step.
+   * @param i index of the step
+   * @return the covariance matrix of the smoothed estimate of state i
    */
   
-  CovarianceMatrix covariance();
+  CovarianceMatrix covariance(long i);
+
 
   /**
    * 
