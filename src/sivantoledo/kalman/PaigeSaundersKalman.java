@@ -6,7 +6,7 @@ import java.util.LinkedList;
 
 import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.exception.MathArithmeticException;
-import org.apache.commons.math3.linear.CholeskyDecomposition;
+//import org.apache.commons.math3.linear.CholeskyDecomposition;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.QRDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -18,7 +18,18 @@ import org.apache.commons.math3.linear.RealVector;
 
 public class PaigeSaundersKalman implements UltimateKalman {
   
+  public static enum StepState {
+    ADVANCED,
+    EVOLVED,
+    OBSERVED,
+    SMOOTHED
+  }
+  
   public static class Step {
+    public final int        index;
+    public final double     timestamp;         // just a label
+    public StepState  stepState;
+    
     public int        evolutionCount;    // number of evolution equations predicting this state
     public int        observationCount;  // number of observation equations constraining this state
     public int        stateDimension;    // number of state variables
@@ -28,19 +39,29 @@ public class PaigeSaundersKalman implements UltimateKalman {
     //public RealMatrix WI;
     //public RealVector Wbe;
     //public RealMatrix Rtilde;
-    public RealMatrix Rdiag;
-    public RealMatrix Rsupdiag;
-    public RealVector QTb;
+    public RealMatrix Rdiag;    // diagonal block of the R factor of WA
+    public RealMatrix Rsupdiag; // the next block in the same block row of WA as Rdiag
+    public RealVector QTb;      // the transformed right-hand side for the same blcok row
     
     public RealVector       estimatedState;
     public CovarianceMatrix estimatedCovariance;
-    //public RealMatrix estimatedCovariance;
+    
+    public Step(int index, double timestamp, int dimension) {
+      this.index          = index;
+      this.timestamp      = timestamp;
+      this.stateDimension = dimension;
+      /*
+       * evolve() cannot be called at index==0, so we consider step 0 as evolved already.
+       */
+      if (index == 0) this.stepState      = StepState.EVOLVED;
+      else            this.stepState      = StepState.ADVANCED;
+    }
     
     public Step copy() {
-      Step copy = new Step();
-      copy.evolutionCount = this.evolutionCount;
+      Step copy = new Step(this.index, this.timestamp, this.stateDimension);
+      //copy.stateDimension   = this.stateDimension;
+      copy.evolutionCount   = this.evolutionCount;
       copy.observationCount = this.observationCount;
-      copy.stateDimension   = this.stateDimension;
       copy.Rdiag            = this.Rdiag.copy();
       copy.Rsupdiag         = Rsupdiag==null ? null : this.Rsupdiag.copy();
       copy.QTb              = this.QTb.copy();
@@ -50,10 +71,34 @@ public class PaigeSaundersKalman implements UltimateKalman {
     }
   }
   
-  //private int k = 0;
-  private LinkedList<Step> steps = new LinkedList<>();
-  private Step current = null; 
   
+  
+  //private int k = 0;
+  private boolean          started = false;
+  private LinkedList<Step> steps   = new LinkedList<>();
+  private Step             current = null; 
+  
+  @Override
+  public long currentIndex() {
+    if (!started) return -1;
+    return current.index;
+  }
+
+  @Override
+  public long firstIndex() {
+    return steps.getLast().index;
+  }
+
+  @Override
+  public double timestamp(long i) {
+    long indexInSteps = i - firstIndex();
+    if (indexInSteps < 0 || indexInSteps >= steps.size()) return Double.NaN;
+    return steps.get((int) indexInSteps).timestamp;
+  }
+
+  
+  
+  // looks like it must be ccalled on an object that has already started.
   @Override
   public UltimateKalman copy() {
     //System.out.printf("PSK copy %d %s %s\n", steps.size(),current,steps);
@@ -73,9 +118,16 @@ public class PaigeSaundersKalman implements UltimateKalman {
    * from previous state) then they must appear last in the vector.
    */
   @Override
-  public void advance(int dimension) {
-    current = new Step();
-    current.stateDimension = dimension;
+  public void advance(int dimension, double timestamp) {
+    int index;
+    if (started) {
+      index = steps.getLast().index + 1;
+    } else {
+      index = 0;
+      started = true;
+    }
+    current = new Step(index, timestamp, dimension);
+    //current.stateDimension = dimension;
   }
   
   /*
@@ -87,6 +139,9 @@ public class PaigeSaundersKalman implements UltimateKalman {
    */
   @Override
   public void evolve(RealMatrix F, RealVector b, CovarianceMatrix C) {
+    
+    if (current.stepState != StepState.ADVANCED) throw new IllegalStateException("evolve(...) must be called after advance(...)");
+    
     int evolutionCount = F.getRowDimension();
     RealMatrix H;
     if (evolutionCount == current.stateDimension) {
@@ -101,6 +156,9 @@ public class PaigeSaundersKalman implements UltimateKalman {
   
   @Override
   public void evolve(RealMatrix H, RealMatrix F, RealVector b, CovarianceMatrix C) {
+    
+    if (current.stepState != StepState.ADVANCED) throw new IllegalStateException("evolve(...) must be called after advance(...)");
+
     current.evolutionCount = F.getRowDimension();
     
     RealMatrix WF  = C.weigh(F).scalarMultiply(-1.0);
@@ -137,7 +195,7 @@ public class PaigeSaundersKalman implements UltimateKalman {
      * Construct block column
      */
     RealMatrix K = MatrixUtils.createRealMatrix(last.Rdiag.getRowDimension()+WF.getRowDimension(), last.Rdiag.getColumnDimension());
-    K.setSubMatrix(last.Rdiag.getData(), 0,                               0);
+    K.setSubMatrix(last.Rdiag.getData(), 0,                            0);
     K.setSubMatrix(WF.getData()        , last.Rdiag.getRowDimension(), 0);
     
     int lastRdiagRowDim = last.Rdiag.getRowDimension();
@@ -162,7 +220,7 @@ public class PaigeSaundersKalman implements UltimateKalman {
     current.Rdiag = Y.getSubMatrix(last.stateDimension, Y.getRowDimension()-1, 0, current.stateDimension-1);
     
     RealVector rhs = last.QTb.append(Wbe);
-    rhs.append(Wbe);
+    rhs.append(Wbe);                        // XXX not sure why we append again; seems like a bug...
     RealVector v   = qr.getQ().transpose().operate(rhs);
     //System.out.printf("rhs length %d %d %d %d\n", rhs.getDimension(),v.getDimension(),Wbe.getDimension(),last.QTb.getDimension());
     last.QTb       = v.getSubVector(0,                   last.stateDimension); // start and length
@@ -172,6 +230,8 @@ public class PaigeSaundersKalman implements UltimateKalman {
     //System.out.printf("PSK e rhs %d last qtb %d current qtb %d\n",v.getDimension(),last.QTb.getDimension(),current.QTb.getDimension());
 
     //Matrix.print(current.Rdiag, "R3");
+    
+    current.stepState = StepState.EVOLVED;
   }
 
 
@@ -193,6 +253,9 @@ public class PaigeSaundersKalman implements UltimateKalman {
     current.estimatedCovariance = new RealCovarianceMatrix(current.Rdiag,RealCovarianceMatrix.Representation.INVERSE_FACTOR);
 
     //Matrix.print(current.Rdiag, "R1");
+    
+    current.stepState = StepState.OBSERVED;
+
     steps.addLast(current);
   }
 
@@ -234,6 +297,9 @@ public class PaigeSaundersKalman implements UltimateKalman {
     current.estimatedCovariance = new RealCovarianceMatrix(current.Rdiag,RealCovarianceMatrix.Representation.INVERSE_FACTOR);
     
     //Matrix.print(current.Rdiag, "R2");
+    
+    current.stepState = StepState.OBSERVED;
+
     steps.addLast(current);
   }
 
@@ -253,6 +319,8 @@ public class PaigeSaundersKalman implements UltimateKalman {
       MatrixUtils.solveUpperTriangularSystem(s.Rdiag, v);
       
       s.estimatedState = v;
+ 
+      s.stepState = StepState.SMOOTHED;
       
       //Matrix.print(v.toArray(), "state");      
     }
@@ -274,7 +342,9 @@ public class PaigeSaundersKalman implements UltimateKalman {
   }
   
   @Override
-  public void filter() throws DimensionMismatchException {
+  public RealVector filtered() throws DimensionMismatchException {
+    
+    if (steps.getLast().stepState != StepState.OBSERVED) throw new IllegalStateException("filtered() must be called after evolve(...) and observe(...)");
     
     //System.out.printf("PSK QTb %d Rdiag %d %d\n", steps.getLast().QTb.getDimension(), steps.getLast().Rdiag.getRowDimension(), steps.getLast().Rdiag.getColumnDimension());
     if (steps.getLast().Rdiag.getRowDimension() < steps.getLast().Rdiag.getColumnDimension()) throw new DimensionMismatchException(steps.getLast().Rdiag.getRowDimension(),steps.getLast().Rdiag.getColumnDimension());
@@ -291,82 +361,36 @@ public class PaigeSaundersKalman implements UltimateKalman {
     }
 
     steps.getLast().estimatedState = solution; // keep the filter's estimate, not sure if useful
-    //return solution;
+    
+    return solution;
   }
   
   @Override
-  public RealVector state() {
-    return steps.getLast().estimatedState;
-  }
+  public RealVector predicted() throws DimensionMismatchException {
     
-  public static void main(String[] args) {
+    if (current.stepState != StepState.EVOLVED) throw new IllegalStateException("filtered() must be called after evolve(...) and before observe(...)");
     
-    double dt = 0.1;
-    double g = 9.80665;
-    double verticalAccel = -g;
-
-    int d = 4;
-
-    RealMatrix initialObservationMatrix = MatrixUtils.createRealIdentityMatrix(d);
-    RealVector initialStateExpectation  = MatrixUtils.createRealVector(new double[] {0, 0, 20, 20 });
-    RealVector initialObsStdDevs        = MatrixUtils.createRealVector(new double[] { 1e-6, 1e-6, 1e-6, 1e-6 });
-    CovarianceMatrix initialObsVariances      = new DiagonalCovarianceMatrix( initialObsStdDevs.map( (s) -> (s*s) ) );
-        
-    RealMatrix constantAccelertion = MatrixUtils.createRealMatrix(new double[][] {
-        { 1, 0, dt,  0 }, 
-        { 0, 1,  0, dt },
-        { 0, 0,  1,  0 },
-        { 0, 0,  0,  1 } });
+    //System.out.printf("PSK QTb %d Rdiag %d %d\n", steps.getLast().QTb.getDimension(), steps.getLast().Rdiag.getRowDimension(), steps.getLast().Rdiag.getColumnDimension());
+    if (current.Rdiag.getRowDimension() < current.Rdiag.getColumnDimension()) throw new DimensionMismatchException(current.Rdiag.getRowDimension(),current.Rdiag.getColumnDimension());
     
-    RealVector transitionStdDevs  =  MatrixUtils.createRealVector(new double[] { 1e-6, 1e-6,  0.1,  0.1 } );
-    CovarianceMatrix transitionVariances      = new DiagonalCovarianceMatrix( transitionStdDevs.map( (s) -> (s*s) ) );
-
-    RealVector transformedControl =  MatrixUtils.createRealVector(new double[] { 0, 0, 0, dt*verticalAccel });
-
-    //transformedControl = zeros(6,1);
-      
-    RealMatrix positionObservation = MatrixUtils.createRealMatrix(new double[][] {
-        { 1, 0, 0, 0 },
-        { 0, 1, 0, 0 } });
-    RealVector positionObsStdDevs  = MatrixUtils.createRealVector(new double[] { 0.1, 0.1 });
-    CovarianceMatrix positionObsVariances = new DiagonalCovarianceMatrix( positionObsStdDevs.map( (s) -> (s*s) ) );
+    //Matrix.print(steps.getLast().Rdiag, "Rdiag");
     
-    PaigeSaundersKalman kalman = new PaigeSaundersKalman();
-
-    kalman.advance(d);
-    kalman.observe(initialObservationMatrix,initialStateExpectation,initialObsVariances);
-    
-    //kalman.drop();
-    kalman.filter();
-    kalman.drop();
-    //System.out.println( Arrays.toString( kalman.filter().toArray() ));
-    
-    for (int i=0; i<50; i++) {
-      //System.out.println(i);
-
-      kalman.advance(d);      
-      kalman.evolve(constantAccelertion, transformedControl, transitionVariances);
-      kalman.observe();
-
-      kalman.drop();
-      kalman.filter();
-      //kalman.covariance();
-
-      System.out.println( Arrays.toString( kalman.state().toArray() ));
-      //kalman.drop();
-      
-      //Matrix.print(kalman.state().toArray(), "rt_state");
-      //Matrix.print(kalman.covariance(), "rt_cov");
-     
+    RealVector solution = current.QTb.copy(); 
+    try {
+      MatrixUtils.solveUpperTriangularSystem(current.Rdiag, solution);
+    } catch (MathArithmeticException mae) {
+      System.out.printf("MathArithmeticException: %s\n", mae.getMessage());
+      Matrix.print(current.Rdiag,"Rdiag (exception)");
+      throw mae;
     }
-    
-    kalman.smooth();
-    
-    for (Step s: kalman.steps) Matrix.print(s.estimatedState.toArray(), "state");
 
-    //for (Step s: kalman.steps) Matrix.print(s.estimatedCovariance, "cov");
-
-    
+    return solution;
   }
 
+  
+  //@Override
+  //public RealVector state() {
+  //  return steps.getLast().estimatedState;
+  //}
+    
 }

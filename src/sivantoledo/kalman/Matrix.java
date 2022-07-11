@@ -3,13 +3,13 @@ package sivantoledo.kalman;
 import org.apache.commons.math3.linear.EigenDecomposition;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+//import org.apache.logging.log4j.Level;
+//import org.apache.logging.log4j.LogManager;
+//import org.apache.logging.log4j.Logger;
 
 public class Matrix {
   
-  private final static Logger log = LogManager.getLogger();
+  //private final static Logger log = LogManager.getLogger();
 
   public static double[] confidenceEllipse(double[][] cov, double fraction) {
     double[][] V = new double[2][2];
