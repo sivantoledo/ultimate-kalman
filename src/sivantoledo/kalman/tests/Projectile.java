@@ -22,7 +22,7 @@ import sivantoledo.kalman.UltimateKalman;
  *
  */
 
-public class FreshLook {
+public class Projectile {
   
   public static void matlabPrintMatrix(RealVector[] rows, String label) {
     System.out.printf("%s = [",label);
@@ -79,6 +79,8 @@ public class FreshLook {
     
     /*
      * Part three, estimate trajectory from observations.
+     * The initial state expectation is defined as Humpherys et al defined: position 
+     * from the first observation, and velocity from the first 10 seconds of measurement.
      */
 
     
@@ -105,7 +107,7 @@ public class FreshLook {
     three.advance(4);
     three.observe(initialObservationMatrix, initialStateExpectation, initialObsVariances);
     
-    RealVector[] filtered = new RealVector[1201];
+    RealVector[] filtered = new RealVector[1300]; // stay on the safe side, we predict to hitting ground....
     
     filtered[400] = three.filtered();
     
@@ -116,6 +118,24 @@ public class FreshLook {
       filtered[i] = three.filtered();
     }
     
+    /*
+     * Part four: continue to predict until the altitude drops below zero (the 
+     * projectile hits ground).
+     */
+ 
+    for (int i=601; true ; i++) {
+      three.advance(4);
+      three.evolve(evolutionMatrix, transformedControl, evolutionVariances);
+      three.observe();      
+      filtered[i] = three.filtered();
+      if (filtered[i].getEntry(1) <= 0) break;
+    }
+    
+    /*
+     * Part five: predict the point of departure. We simply smooth the entire
+     * filter (we dropped nothing yet). We do not reverse the dynamical system.
+     */
+    
     three.smooth();
     
     RealVector[] smoothed = new RealVector[1201];
@@ -124,25 +144,54 @@ public class FreshLook {
       smoothed[i+400] = three.smoothed(i);
     }
     
+    /*
+     * A more direct solution for parts 4 and 5.
+     */
+    
+    UltimateKalman four = new PaigeSaundersKalman();
+        
+    for (int i=0; i<=1200; i++) {
+      four.advance(4);
+      if (i>0) four.evolve(evolutionMatrix, transformedControl, evolutionVariances);
+      if (i>=400 && i<=600) four.observe(observationMatrix, observations[i], observationVariances); 
+      else                  four.observe();
+    }
+    
+    four.smooth();
+
+    RealVector[] full = new RealVector[1201];
+
+    for (int i=0; i<=1200; i++) {
+      full[i] = four.smoothed(i);
+    }
+    
     System.out.printf("clear all; close all\n");
 
     matlabPrintMatrix(trajectory,"trajectory");
     matlabPrintMatrix(observations,"observations");
     matlabPrintMatrix(filtered,"filtered");
     matlabPrintMatrix(smoothed,"smoothed");
+    matlabPrintMatrix(full,"full");
     
-    System.out.printf("subplot(2,2,1)\n");
+    //System.out.printf("subplot(2,2,1)\n");
+    System.out.printf("figure\n");
     System.out.printf("plot(trajectory(:,1),trajectory(:,2),'k-');\n");
     System.out.printf("hold on;\n");
+    System.out.printf("plot(filtered(:,1),filtered(:,2),'c+');\n");
     System.out.printf("plot(observations(:,1),observations(:,2),'r.');\n");
+    System.out.printf("plot(filtered(:,1),filtered(:,2),'c-');\n");
+    System.out.printf("plot(smoothed(:,1),smoothed(:,2),'g-');\n");
+    System.out.printf("plot(full(:,1),full(:,2),'m-');\n");
     System.out.printf("hold off;\n");
     
-    System.out.printf("subplot(2,2,2)\n");
+    //System.out.printf("subplot(2,2,2)\n");
+    System.out.printf("figure\n");
     System.out.printf("plot(trajectory(:,1),trajectory(:,2),'k-');\n");
     System.out.printf("hold on;\n");
     System.out.printf("plot(observations(:,1),observations(:,2),'r.');\n");
-    System.out.printf("plot(filtered(:,1),filtered(:,2),'b-');\n");
+    System.out.printf("plot(filtered(:,1),filtered(:,2),'c+');\n");
     System.out.printf("plot(smoothed(:,1),smoothed(:,2),'g-');\n");
+    System.out.printf("plot(full(:,1),full(:,2),'m-');\n");
     System.out.printf("xlim([ min(observations(:,1)) max(observations(:,1)) ]);\n");    
     System.out.printf("ylim([ min(observations(:,2)) max(observations(:,2)) ]);\n");    
     System.out.printf("hold off;\n");
