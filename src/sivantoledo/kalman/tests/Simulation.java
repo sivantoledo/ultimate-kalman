@@ -69,15 +69,18 @@ public class Simulation {
     assert(lastStep == -1);
     states[0] = initialState.copy();
     observations[0] = G.operate(states[0]).add( noise(G.getRowDimension(), observationStdDev) );
+    //System.out.printf("sim 0\n");
     lastStep++;
     simulate(k-1);
   }
   
   public void simulate(int k) {
     for (int i=lastStep+1; i<=lastStep+k; i++) {
+      //System.out.printf("sim %d\n",i);
       states[i] = F.operate(states[i-1]).add(be).add( noise(F.getRowDimension(), evolutionStdDev) );
       observations[i] = G.operate(states[i]).add( noise(G.getRowDimension(), observationStdDev) );
     }
+    lastStep += k;
   }
 
   

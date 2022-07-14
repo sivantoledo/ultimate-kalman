@@ -25,6 +25,7 @@ import sivantoledo.kalman.UltimateKalman;
 
 public class Projectile {
   
+  /*
   public static void matlabPrintMatrix(RealVector[] rows, String label) {
     System.out.printf("%s = [",label);
     for (RealVector row: rows)
@@ -32,6 +33,7 @@ public class Projectile {
     System.out.printf("]\n");
    
   }
+  */
   
   public static void main(String[] args) {
     
@@ -43,27 +45,27 @@ public class Projectile {
 
     int d = 4;
 
-    RealMatrix evolutionMatrix = MatrixUtils.createRealMatrix(new double[][] {
+    RealMatrix F = MatrixUtils.createRealMatrix(new double[][] {
       { 1, 0,   dt,    0 }, 
       { 0, 1,    0,   dt },
       { 0, 0,  1-b,    0 },
       { 0, 0,    0,  1-b } });
 
-    RealVector transformedControl =  MatrixUtils.createRealVector(new double[] { 0, 0, 0, -g*dt });
+    RealVector be =  MatrixUtils.createRealVector(new double[] { 0, 0, 0, -g*dt });
 
     /*
      * Part one, evolve the system for 1200 time steps.
      */
     
-    Random r = new Random(69978);
+    Random random = new Random(69978);
     
     RealVector[] trajectory = new RealVector[1201];
     trajectory[0] = MatrixUtils.createRealVector(new double[] {0, 0, 300, 600 });
     
     for (int i=1; i<=1200; i++) {
-      RealVector noise = MatrixUtils.createRealVector(new double[] { r.nextGaussian(), r.nextGaussian(), r.nextGaussian(), r.nextGaussian() })
+      RealVector noise = MatrixUtils.createRealVector(new double[] { random.nextGaussian(), random.nextGaussian(), random.nextGaussian(), random.nextGaussian() })
                          .mapMultiply(Math.sqrt(0.1)); // variances of 0.1
-      trajectory[i] = evolutionMatrix.operate(trajectory[i-1]).add(transformedControl).add(noise);
+      trajectory[i] = F.operate(trajectory[i-1]).add(be).add(noise);
     }
             
     /*
@@ -73,7 +75,7 @@ public class Projectile {
     RealVector[] observations = new RealVector[1201];
     
     for (int i=400; i<=600; i++) {
-      RealVector noise = MatrixUtils.createRealVector(new double[] { r.nextGaussian(), r.nextGaussian() })
+      RealVector noise = MatrixUtils.createRealVector(new double[] { random.nextGaussian(), random.nextGaussian() })
                          .mapMultiply(Math.sqrt(5000)); // variances of 0.1
       observations[i] = trajectory[i].getSubVector(0, 2).add(noise);
     }
@@ -114,7 +116,7 @@ public class Projectile {
     
     for (int i=401; i<=600; i++) {
       three.advance(4);
-      three.evolve(evolutionMatrix, transformedControl, evolutionVariances);
+      three.evolve(F, be, evolutionVariances);
       three.observe(observationMatrix, observations[i], observationVariances);      
       filtered[i] = three.filtered();
     }
@@ -126,7 +128,7 @@ public class Projectile {
  
     for (int i=601; true ; i++) {
       three.advance(4);
-      three.evolve(evolutionMatrix, transformedControl, evolutionVariances);
+      three.evolve(F, be, evolutionVariances);
       three.observe();      
       filtered[i] = three.filtered();
       if (filtered[i].getEntry(1) <= 0) break;
@@ -153,7 +155,7 @@ public class Projectile {
         
     for (int i=0; i<=1200; i++) {
       kalmanFull.advance(4);
-      if (i>0) kalmanFull.evolve(evolutionMatrix, transformedControl, evolutionVariances);
+      if (i>0) kalmanFull.evolve(F, be, evolutionVariances);
       if (i>=400 && i<=600) kalmanFull.observe(observationMatrix, observations[i], observationVariances); 
       else                  kalmanFull.observe();
     }
