@@ -1,51 +1,37 @@
 classdef UltimateKalman < handle
+    % UltimateKalman   An implementation of the Paige-Saunders Kalman
+    % filter and smoother by Sivan Toledo, Tel Aviv University.
+    %
+    % UltimateKalman Methods:
+    %    advance  - Create a new time step with a given state dimension
+    %    evolve   - Evolve the state using a linear matrix equation
+    %    observe  - Provide observations of the current state
+    %    filtered - Obtain an estimate of the current state
+    %    drop     - Drop old states to save memory
+    %    smooth   - Compute smooth estimates of all the stored states
+    %    smoothed - Obtain the smoothed estimates of historical states
 
-    properties
-        steps;
-        first; % global index of the first element in steps
-        current;
+
+    properties (Access = private)
+        steps;   % old states
+        current; % the current state; moved to steps at the end of observe
 
         k;     % old, now sure what this was
     end
 
-    methods (Access=public)
-        function i = getFirst(kalman)
-            if length( kalman.steps ) >= 1
-                i = kalman.steps{1};
-            else
-                i = -1;
-            end
-        end
-        function local = getLast(kalman)
-            if length( kalman.steps ) >= 1
-                local = kalman.steps{ length(kalman.steps) };
-            else
-                local = -1;
-            end
-        end
-
-        function local = step(kalman,i)
-            % returns the local index of global index i
-            local = i - getFirst(kalman);
-        end
-
-    end
-
-    methods
+    methods (Access = public)
         function kalman = UltimateKalman()
             kalman = kalman@handle();
             kalman.steps = {};
-            % create the first entry in steps, which represents the initial
-            % state
-            %kalman.k = 1;
-            %kalman.steps{1}.WF = [];
-            %kalman.steps{1}.WI = [];
-            %kalman.steps{1}.Rdiag = [];
-            %kalman.steps{1}.QTb = [];
         end
 
         function advance(kalman,dim,timestamp)
-            %'advance'
+            %ADVANCE   Create a new time step with a given state dimension.
+            %   kalman.ADVANCE(dimension,timestamp) creates a new time step with
+            %   a given dimension. The timestamp can be retrieved by the
+            %   user later but is not used by the algorithm. 
+            % 
+            %   This method must be called before evolve and observe.
             kalman.current = []; % clear
             if length(kalman.steps) == 0 % starting the first step
                 kalman.current.step = 0;
@@ -64,7 +50,24 @@ classdef UltimateKalman < handle
         end
 
         function evolve(kalman,H,F,be,C)
-            %'evolve'
+            %EVOLVE   Evolve the state using the given linear recurrence.
+            %   kalman.EVOLVE(H,F,be,C) evolves the state using the recurrence
+            %                H * u_i = F * u_{i-1} + be + e
+            %   where C is the covariance matrix of the error term e.
+            %   The covariance matrix C must be an instance of
+            %   CovarianceMatrix. The matrices H and F are standard Matlab
+            %   matrices, and be is a standard column vector.
+            % 
+            %   In the first step, this method does nothing; the first state is
+            %   not an evolution of an earlier state. You can omit
+            %   arguments or provide empty arguments in the first step.
+            %
+            %   The argument H can be empty, []. If it is, H is taken to be
+            %   an identity matrix (possibly rectangular, if the dimension of
+            %   this state is larger than the dimension of the previous state).
+            % 
+            %   This method must be called after advance and before observe.
+            if kalman.current.step==0; return; end;
             d = kalman.current.dimension;
             evolutionCount = size(F,1); % row dimension
             if size(H,1) ~= evolutionCount % this allows the user to pass [] for H
@@ -116,9 +119,21 @@ classdef UltimateKalman < handle
         end
 
         function observe(kalman,G,bo,C)
-            %'observe'
+            %OBSERVE   Provide observations of the current state.
+            %   kalman.OBSERVE(G,bo,C) provide observations that satisfy
+            %   the linear equation
+            %                bo = G * u_i + e
+            %   where C is the covariance matrix of the error term e.
+            %   The covariance matrix C must be an instance of
+            %   CovarianceMatrix. The matrix G is a standard Matlab
+            %   matrix, and bo is a standard column vector. 
+            % 
+            %   kalman.OBSERVE() tells the algorithm that no
+            %   observations are availble of the state of this step.
+            % 
+            %   This method must be called after advance and evolve.
             d = kalman.current.dimension;
-            if length(bo) == 0 % no observations, pass []
+            if nargin<4 || length(bo) == 0 % no observations, pass []
                 kalman.current.observationCount = 0;
 
                 if isfield(kalman.current,'Rdiag') && ~isempty(kalman.current.Rdiag)
@@ -150,13 +165,32 @@ classdef UltimateKalman < handle
         end
 
         function [estimate,cov] = filtered(kalman)
+            %FILTERED   Obtain an estimate of the current state and the 
+            %           covariance of the estimate.
+            %
+            %   kalman.FILTERED() returns the estimate of the state of the
+            %   last step that was observed (including with an empty observation).
+            %   The method also returns the covariance of the estimate. The
+            %   covariance is an instance of CovarianceMatrix.
+            % 
+            %   This method can be called after observe.
+
             l = length(kalman.steps);
-            %step = kalman.steps{ kalman.current.local };
             estimate = kalman.steps{l}.Rdiag \ kalman.steps{l}.QTb;
             cov = kalman.steps{l}.estimatedCovariance;
         end
 
         function [estimate,cov] = smoothed(kalman,i)
+            %SMOOTHED  Obtain an estimate of the smooth estimate of a historical
+            %          state and the covariance of the estimate.
+            %
+            %   kalman.SMOOTHED(i) returns the estimate of state i, which must still be
+            %   in memory. It also returns the covariance of the estimate. 
+            %   The estimate is only available if the smooth method was called
+            %   when step i was in memory.
+            % 
+            %   This method can be called after smooth.
+
             first = kalman.steps{1}.step;
             index = i - first + 1;
             estimate = kalman.steps{index}.estimatedState;
@@ -164,11 +198,20 @@ classdef UltimateKalman < handle
         end
 
         function drop(kalman)
+            %DROP  Drop all but the last step from meory.
+            %
+            %   kalman.DROP() drops all but the last step from memory.
+            
             l = length(kalman.steps);
             kalman.steps = { kalman.steps{l} }; % leave a single step
         end
 
         function smooth(kalman)
+            %SMOOTH  Compute smooth estimates of all the stored states.
+            %
+            %   kalman.SMOOTH() computes the smoothed estimated state of all
+            %   the steps that are still in memory.
+
             l = length(kalman.steps);
 
             v = [];

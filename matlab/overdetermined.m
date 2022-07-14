@@ -40,9 +40,7 @@ kalman = UltimateKalman();
 filtered = NaN * zeros(2,k);
 for i=1:k
     kalman.advance(2,NaN);
-    if (i>1); 
-        kalman.evolve([],F,zeros(2,1),Ce);
-    end
+    kalman.evolve([],F,zeros(2,1),Ce);
     kalman.observe(G,obs(:,i),Co);
 
     filtered(:,i) = kalman.filtered();
