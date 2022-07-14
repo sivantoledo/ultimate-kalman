@@ -224,7 +224,8 @@ public class PaigeSaundersKalman implements UltimateKalman {
      * The Q factor is applied to to the next block column and to the RHS.
      */
     QRDecomposition qr = new QRDecomposition(K);
-    last.Rdiag    = qr.getR().getSubMatrix(0, last.stateDimension-1,                        0, last.stateDimension-1);
+    //last.Rdiag    = qr.getR().getSubMatrix(0, last.stateDimension-1,                        0, last.stateDimension-1);
+    last.Rdiag    = qr.getR().getSubMatrix(0, Integer.min(K.getRowDimension(),last.stateDimension)-1,                        0, last.stateDimension-1);
     //RealMatrix Q  = qr.getQ().getSubMatrix(0, last.stateDimension+current.evolutionCount-1, 0, last.stateDimension-1); // thin Q factor
 
     //System.out.printf(".Q. %d %d\n", qr.getQ().getRowDimension(), qr.getQ().getColumnDimension());
@@ -238,7 +239,7 @@ public class PaigeSaundersKalman implements UltimateKalman {
     RealMatrix Y  = qr.getQ().transpose().multiply(Z);
     //System.out.printf(".Y. %d %d\n", Y.getRowDimension(), Y.getColumnDimension());
 
-    last.Rsupdiag = Y.getSubMatrix(0,                   last.stateDimension-1,                        0, current.stateDimension-1);
+    last.Rsupdiag = Y.getSubMatrix(0, Integer.min(Y.getRowDimension(),last.stateDimension)-1,                        0, current.stateDimension-1);
     //System.out.printf("Y is %d by %d Z %d %d\n", Y.getRowDimension(), Y.getColumnDimension(), Z.getRowDimension(), Z.getColumnDimension());
     if (Y.getRowDimension() > last.stateDimension) { // otherwise no rows in Rdiag
       current.Rdiag = Y.getSubMatrix(last.stateDimension, Y.getRowDimension()-1, 0, current.stateDimension-1);
@@ -259,9 +260,12 @@ public class PaigeSaundersKalman implements UltimateKalman {
     //rhs.append(Wbe);                        // XXX not sure why we append again; seems like a bug...
     RealVector v   = qr.getQ().transpose().operate(rhs);
     //System.out.printf("rhs length %d %d %d %d\n", rhs.getDimension(),v.getDimension(),Wbe.getDimension(),last.QTb.getDimension());
-    last.QTb       = v.getSubVector(0,                   last.stateDimension); // start and length
+    last.QTb       = v.getSubVector(0, Integer.min(v.getDimension(),last.stateDimension)); // start and length
     //System.out.printf(">> %d %d\n", last.stateDimension, v.getDimension()-1 );
-    current.QTb    = v.getSubVector(last.stateDimension, v.getDimension() - last.stateDimension); // start and length
+    if (v.getDimension() > last.stateDimension)
+      current.QTb    = v.getSubVector(last.stateDimension, v.getDimension() - last.stateDimension); // start and length
+    else 
+      current.QTb    = null;
     
     //System.out.printf("last.QTb. %d\n",last.QTb==null ? -1 : last.QTb.getDimension());
     //System.out.printf("current.QTb. %d\n",last.QTb==null ? -1 : current.QTb.getDimension());
@@ -288,9 +292,12 @@ public class PaigeSaundersKalman implements UltimateKalman {
     //System.out.printf("step %d obs() %b %b \n", current.index, current.Rdiag!=null, current.QTb!=null);
     
     if (current.Rdiag != null) { 
+      Matrix.print(current.Rdiag,"current.Rdiag in observe()");
+
       QRDecomposition qr = new QRDecomposition(current.Rdiag);
       //RealMatrix Q  = qr.getQ().getSubMatrix(0, current.observationCount-1, 0, current.stateDimension-1); // thin Q factor
-      current.Rdiag = qr.getR().getSubMatrix(0, current.stateDimension-1,   0, current.stateDimension-1);
+      //current.Rdiag = qr.getR().getSubMatrix(0, current.stateDimension-1,   0, current.stateDimension-1); // fixed July 13
+      current.Rdiag = qr.getR().getSubMatrix(0, Integer.min(current.stateDimension-1,current.Rdiag.getRowDimension()-1),   0, current.stateDimension-1);
       current.QTb   = qr.getQ().transpose().operate(current.QTb); 
     
       //RealMatrix RdiagInverse = MatrixUtils.inverse(current.Rdiag);
@@ -308,6 +315,8 @@ public class PaigeSaundersKalman implements UltimateKalman {
   public void observe(RealMatrix G, RealVector b, CovarianceMatrix C) {
     
     //System.out.printf("step %d obs %s\n", current.index, current.stepState);
+    
+    //Matrix.print(G, "G");
 
     if (current.stepState != StepState.EVOLVED) throw new IllegalStateException("observe(...) must be called after evolve(...)");
 
@@ -326,7 +335,7 @@ public class PaigeSaundersKalman implements UltimateKalman {
       QRDecomposition qr = new QRDecomposition(WG);
       //RealMatrix Q  = qr.getQ().getSubMatrix(0, current.observationCount-1, 0, current.stateDimension-1); // thin Q factor
       current.Rdiag = qr.getR().getSubMatrix(0, RdiagRowDim-1,   0, current.stateDimension-1);
-      current.QTb   = qr.getQ().transpose().operate(Wbo); 
+      current.QTb   = qr.getQ().transpose().operate(Wbo).getSubVector(0, RdiagRowDim);  // start and length; subvector for the overdetermined case
 
       
       //System.out.printf("current.Rdiag %d %d\n",current.Rdiag.getRowDimension(), current.Rdiag.getColumnDimension());
@@ -345,15 +354,24 @@ public class PaigeSaundersKalman implements UltimateKalman {
       //Matrix.print(K, "K");
       
       //System.out.printf("obs.K %d %d\n", K.getRowDimension(),K.getColumnDimension());
+      //System.out.printf("||| %d\n", Integer.min(current.Rdiag.getRowDimension()+WG.getRowDimension(),K.getRowDimension()));
       
       QRDecomposition qr = new QRDecomposition(K);
-      RealMatrix Q  = qr.getQ().getSubMatrix(0,current.Rdiag.getRowDimension()+WG.getRowDimension()-1,0,current.stateDimension-1); // thin Q factor
-      current.Rdiag = qr.getR().getSubMatrix(0,current.stateDimension-1,0,current.stateDimension-1);
+      RealMatrix Q  = qr.getQ().getSubMatrix(0,
+                                             K.getRowDimension()-1,
+                                             0,
+                                             Integer.min(K.getRowDimension(),current.stateDimension)-1); // thin Q factor
+      current.Rdiag = qr.getR().getSubMatrix(0,
+                                             Integer.min(K.getRowDimension(),current.stateDimension)-1,
+                                             0,
+                                             current.stateDimension-1);
 
       //Matrix.print(current.Rdiag, "newRdiag");
       
       RealVector k = current.QTb.append(Wbo); // current RHS  
-      current.QTb   = qr.getQ().getSubMatrix(0, K.getRowDimension()-1, 0, K.getColumnDimension()-1).transpose().operate(k);       // transform; equivalent to Q.transpose().operate(k);
+      //current.QTb   = qr.getQ().getSubMatrix(0, K.getRowDimension()-1, 0, K.getColumnDimension()-1).transpose().operate(k);       // transform; equivalent to Q.transpose().operate(k);
+      current.QTb   = Q.transpose().operate(k);
+      
       //Matrix.print(Wbo.toArray(), "Wbo");
       //Matrix.print(current.QTb.toArray(), "QTb");
     }
@@ -467,7 +485,7 @@ public class PaigeSaundersKalman implements UltimateKalman {
     
     //Matrix.print(steps.getLast().Rdiag, "Rdiag");
     
-    if (step.Rdiag == null) throw new InsufficientDataException();
+    if (step.Rdiag == null || step.Rdiag.getRowDimension() < step.Rdiag.getColumnDimension()) throw new InsufficientDataException();
     
     RealVector solution = step.QTb.copy(); 
     try {
@@ -475,7 +493,7 @@ public class PaigeSaundersKalman implements UltimateKalman {
     } catch (MathArithmeticException mae) {
       System.out.printf("MathArithmeticException: %s\n", mae.getMessage());
       Matrix.print(step.Rdiag,"Rdiag (exception)");
-      throw mae;
+      throw new InsufficientDataException();
     }
 
     step.estimatedState = solution; // keep the filter's estimate, not sure if useful

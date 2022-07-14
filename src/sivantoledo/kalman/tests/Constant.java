@@ -131,9 +131,9 @@ public class Constant {
       script.printIndexedMatrix(smthstd,"smthstd");
 
       script.figure();
-      script.printf("plot(trajectory(:,1),trajectory(:,2),'k-');\n");
+      script.printf("plot(trajectory(:,1),trajectory(:,2),'k-','LineWidth',1);\n");
       script.printf("plot(observations(:,1),observations(:,2),'r.');\n");
-      script.printf("plot(filtered(:,1),filtered(:,2),'b-');\n");
+      script.printf("plot(filtered(:,1),filtered(:,2),'b-','LineWidth',1);\n");
 
       //script.printf("plot(filtered(:,1),filtered(:,2)+3*filtstd(:,2),'m-');\n");
       //script.printf("plot(filtered(:,1),filtered(:,2)-3*filtstd(:,2),'m-');\n");
@@ -149,9 +149,9 @@ public class Constant {
       script.save(fname+"Filtered");
 
       script.figure();
-      script.printf("plot(trajectory(:,1),trajectory(:,2),'k-');\n");
+      script.printf("plot(trajectory(:,1),trajectory(:,2),'k-','LineWidth',1);\n");
       script.printf("plot(observations(:,1),observations(:,2),'r.');\n");
-      script.printf("plot(smoothed(:,1),smoothed(:,2),'b-');\n");
+      script.printf("plot(smoothed(:,1),smoothed(:,2),'m-','LineWidth',1);\n");
 
       //script.printf("plot(filtered(:,1),filtered(:,2)+3*std(:,2),'m-');\n");
       //script.printf("plot(filtered(:,1),filtered(:,2)-3*std(:,2),'m-');\n");

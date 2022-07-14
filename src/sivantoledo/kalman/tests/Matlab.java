@@ -55,6 +55,27 @@ public class Matlab {
     ps.printf("];\n");
   
   }
+  
+  public void printMatrix(RealVector[] a, String label) {
+    ps.printf("%s = [",label);
+    for (RealVector row: a) {
+      if (row==null) continue;
+      ps.printf("\n");
+      for (int i=0; i<row.getDimension(); i++) {
+        ps.printf(" %.17e",row.getEntry(i));
+      }
+    }
+    ps.printf("];\n");
+  }
+
+  public void printVector(RealVector row, String label) {
+    ps.printf("%s = [",label);
+    for (int i=0; i<row.getDimension(); i++) {
+        ps.printf(" %.17e",row.getEntry(i));
+    }
+    ps.printf("];\n");
+  }
+
 
   public void printVector(double[] a, String label) {
     ps.printf("%s = [",label);
@@ -64,11 +85,18 @@ public class Matlab {
   }
 
   public void printMatrix(double[][] a, String label) {
+    int n = 0;
+    for (double[] row: a) if (row!=null) n = row.length;
+    
     ps.printf("%s = [",label);
     for (double[] row: a) {
       ps.printf("\n");
-      for (double d: row) {
-        ps.printf(" %.17e",d);
+      if (row==null) {
+        for (int j=0; j<n; j++) ps.printf(" NaN");
+      } else {
+        for (double d: row) {
+          ps.printf(" %.17e",d);
+        }
       }
     }
     ps.printf("];\n");

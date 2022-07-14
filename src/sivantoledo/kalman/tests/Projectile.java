@@ -1,5 +1,6 @@
 package sivantoledo.kalman.tests;
 
+import java.io.FileNotFoundException;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -148,53 +149,72 @@ public class Projectile {
      * A more direct solution for parts 4 and 5.
      */
     
-    UltimateKalman four = new PaigeSaundersKalman();
+    UltimateKalman kalmanFull = new PaigeSaundersKalman();
         
     for (int i=0; i<=1200; i++) {
-      four.advance(4);
-      if (i>0) four.evolve(evolutionMatrix, transformedControl, evolutionVariances);
-      if (i>=400 && i<=600) four.observe(observationMatrix, observations[i], observationVariances); 
-      else                  four.observe();
+      kalmanFull.advance(4);
+      if (i>0) kalmanFull.evolve(evolutionMatrix, transformedControl, evolutionVariances);
+      if (i>=400 && i<=600) kalmanFull.observe(observationMatrix, observations[i], observationVariances); 
+      else                  kalmanFull.observe();
     }
     
-    four.smooth();
+    kalmanFull.smooth();
 
-    RealVector[] full = new RealVector[1201];
+    RealVector[] full     = new RealVector[1201];
+    RealVector[] smthstd  = new RealVector[1201];
 
     for (int i=0; i<=1200; i++) {
-      full[i] = four.smoothed(i);
+      full[i] = kalmanFull.smoothed(i);
+      double cov = kalmanFull.covariance().get().getEntry(0, 0); // variance of the horizontal displacement estimate
+      smthstd[i] = MatrixUtils.createRealVector(new double[] { Math.sqrt(cov) });
     }
     
-    System.out.printf("clear all; close all\n");
+    /*
+     * Display the results
+     */
+    
+    try {
+      Matlab script = new Matlab("matlab/Projectile.m");
+      
+      script.printMatrix(trajectory,"trajectory");
+      script.printMatrix(observations,"observations");
+      script.printMatrix(filtered,"filtered");
+      script.printMatrix(smoothed,"smoothed");
+      script.printMatrix(full,"full");
+      script.printMatrix(smthstd,"smthstd");
 
-    matlabPrintMatrix(trajectory,"trajectory");
-    matlabPrintMatrix(observations,"observations");
-    matlabPrintMatrix(filtered,"filtered");
-    matlabPrintMatrix(smoothed,"smoothed");
-    matlabPrintMatrix(full,"full");
-    
-    //System.out.printf("subplot(2,2,1)\n");
-    System.out.printf("figure\n");
-    System.out.printf("plot(trajectory(:,1),trajectory(:,2),'k-');\n");
-    System.out.printf("hold on;\n");
-    System.out.printf("plot(filtered(:,1),filtered(:,2),'c+');\n");
-    System.out.printf("plot(observations(:,1),observations(:,2),'r.');\n");
-    System.out.printf("plot(filtered(:,1),filtered(:,2),'c-');\n");
-    System.out.printf("plot(smoothed(:,1),smoothed(:,2),'g-');\n");
-    System.out.printf("plot(full(:,1),full(:,2),'m-');\n");
-    System.out.printf("hold off;\n");
-    
-    //System.out.printf("subplot(2,2,2)\n");
-    System.out.printf("figure\n");
-    System.out.printf("plot(trajectory(:,1),trajectory(:,2),'k-');\n");
-    System.out.printf("hold on;\n");
-    System.out.printf("plot(observations(:,1),observations(:,2),'r.');\n");
-    System.out.printf("plot(filtered(:,1),filtered(:,2),'c+');\n");
-    System.out.printf("plot(smoothed(:,1),smoothed(:,2),'g-');\n");
-    System.out.printf("plot(full(:,1),full(:,2),'m-');\n");
-    System.out.printf("xlim([ min(observations(:,1)) max(observations(:,1)) ]);\n");    
-    System.out.printf("ylim([ min(observations(:,2)) max(observations(:,2)) ]);\n");    
-    System.out.printf("hold off;\n");
-    
-   }
+      script.figure();
+      
+      //script.printf("xs = [full(:,1)'-3*smthstd(:,1)', fliplr(full(:,1)'+3*smthstd(:,1)')];\n");
+      //script.printf("ys = [full(:,2)', fliplr(full(:,2)')];\n");
+      //script.printf("fill(xs, ys,'k','FaceAlpha',0.2,'LineStyle','none');\n");
+
+      script.printf("plot(trajectory(:,1),trajectory(:,2),'k-','LineWidth',1);\n");
+      script.printf("hold on;\n");
+      script.printf("plot(observations(:,1),observations(:,2),'r.');\n");
+      //script.printf("plot(filtered(:,1),filtered(:,2),'b-');\n");
+      //script.printf("plot(smoothed(:,1),smoothed(:,2,'LineWidth',1),'m-');\n");
+      script.printf("plot(full(:,1),full(:,2),'m-','LineWidth',1);\n");
+
+      
+      
+      script.save("Projectile");
+      
+      script.figure();
+      script.printf("plot(trajectory(:,1),trajectory(:,2),'k-','LineWidth',1);\n");
+      script.printf("hold on;\n");
+      script.printf("plot(observations(:,1),observations(:,2),'r.');\n");
+      script.printf("plot(filtered(:,1),filtered(:,2),'b-','LineWidth',1);\n");
+      //script.printf("plot(smoothed(:,1),smoothed(:,2),'g-');\n");
+      script.printf("plot(full(:,1),full(:,2),'m-','LineWidth',1);\n");
+      script.printf("xlim([ min(observations(:,1)) max(observations(:,1)) ]);\n");    
+      script.printf("ylim([ min(observations(:,2)) max(observations(:,2)) ]);\n");    
+
+      script.save("ProjectileZoom");
+      
+    } catch (FileNotFoundException e) {
+      System.err.println("File not found, exiting\n");
+      System.exit(1);
+    }  
+  }
 }

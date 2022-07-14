@@ -36,6 +36,16 @@ public class DiagonalCovarianceMatrix implements CovarianceMatrix {
   public DiagonalCovarianceMatrix(double[] v, DiagonalCovarianceMatrix.Representation rep) {
     this(MatrixUtils.createRealVector(v),rep);
   }
+  
+  private static double[] constant(int n, double v) {
+    double[] temp = new double[ n ];
+    for (int i=0; i<temp.length; i++) temp[i] = v; 
+    return temp;
+  }
+  
+  public DiagonalCovarianceMatrix(int dim, double v, DiagonalCovarianceMatrix.Representation rep) {
+    this(constant(dim,v),rep);
+  }
 
   public DiagonalCovarianceMatrix(RealVector v, DiagonalCovarianceMatrix.Representation rep) {
     switch (rep) {
