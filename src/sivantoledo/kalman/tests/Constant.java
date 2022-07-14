@@ -121,7 +121,7 @@ public class Constant {
 
     
     try {
-      Matlab script = new Matlab("matlab/"+fname+".m");
+      Matlab script = new Matlab("outputs/"+fname+".m");
       
       script.printIndexedMatrix(trajectory,"trajectory");
       script.printIndexedMatrix(observations,"observations");

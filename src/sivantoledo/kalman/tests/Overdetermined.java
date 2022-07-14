@@ -77,17 +77,22 @@ public class Overdetermined {
     script.printMatrix(filtered, "filtered");
     script.printMatrix(smoothed, "smoothed");
     script.figure();
-    script.printf("plot(states(:,1),states(:,2),'k-');\n");
+    script.printf("plot(states(:,1),states(:,2),'k-','LineWidth',1);\n");
     script.printf("if size(obs,2)==2; plot(obs(:,1),obs(:,2),'r-'); end;\n");
-    script.printf("plot(filtered(:,1),filtered(:,2),'b-');\n");
-    script.printf("plot(smoothed(:,1),smoothed(:,2),'m-');\n");
+    script.printf("plot(filtered(:,1),filtered(:,2),'b-','LineWidth',1);\n");
+    script.printf("plot(smoothed(:,1),smoothed(:,2),'m-','LineWidth',1);\n");
+    script.printf("xlim([-1.1 1.1]);\n");
+    script.printf("ylim([-1.1 1.1]);\n");
+    //script.printf("daspect([1 1 1]);\n");
+    if (GRowDim < 2) script.save("Underdetermined");
+    if (GRowDim > 2) script.save("Overdetermined");
 
   }
   
   public static void main(String[] args) {
     //dynamic();
     //simple(1);
-    varyingVariance();
+    overOrUnderDetermined(1);
   }
 
 }

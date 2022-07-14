@@ -176,7 +176,7 @@ public class Projectile {
      */
     
     try {
-      Matlab script = new Matlab("matlab/Projectile.m");
+      Matlab script = new Matlab("outputs/Projectile.m");
       
       script.printMatrix(trajectory,"trajectory");
       script.printMatrix(observations,"observations");

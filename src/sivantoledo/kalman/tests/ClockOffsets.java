@@ -156,7 +156,7 @@ public class ClockOffsets {
     //}
 
     try {
-      Matlab script = new Matlab("matlab/ClockOffsets.m");
+      Matlab script = new Matlab("outputs/ClockOffsets.m");
       script.printMatrix(o,"o");
       script.printVector(tau,"tau");
       script.printMatrix(t,"t");
