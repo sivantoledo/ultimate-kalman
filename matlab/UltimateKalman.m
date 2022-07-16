@@ -3,11 +3,10 @@ classdef UltimateKalman < handle
     % filter and smoother by Sivan Toledo, Tel Aviv University.
     %
     % UltimateKalman Methods:
-    %    advance  - Create a new time step with a given state dimension
     %    evolve   - Evolve the state using a linear matrix equation
     %    observe  - Provide observations of the current state
     %    filtered - Obtain an estimate of the current state
-    %    drop     - Drop old states to save memory
+    %    forget   - Forget the oldest steps to save memory meory
     %    smooth   - Compute smooth estimates of all the stored states
     %    smoothed - Obtain the smoothed estimates of historical states
 
@@ -25,31 +24,27 @@ classdef UltimateKalman < handle
             kalman.steps = {};
         end
 
-        function advance(kalman,dim,timestamp)
+        %function advance(kalman,dim,timestamp)
             %ADVANCE   Create a new time step with a given state dimension.
             %   kalman.ADVANCE(dimension,timestamp) creates a new time step with
             %   a given dimension. The timestamp can be retrieved by the
             %   user later but is not used by the algorithm. 
             % 
             %   This method must be called before evolve and observe.
-            kalman.current = []; % clear
-            if length(kalman.steps) == 0 % starting the first step
-                kalman.current.step = 0;
-                kalman.current.local = 1; % local index in steps
-            else
-                l = length(kalman.steps);
-                kalman.current.last = l;
-                kalman.current.local = l + 1;
-                kalman.current.step  = kalman.steps{l}.step + 1;
-            end
+        %    kalman.current = []; % clear
+        %    if length(kalman.steps) == 0 % starting the first step
+        %        kalman.current.step = 0;
+        %        kalman.current.local = 1; % local index in steps
+        %    else
+        %        l = length(kalman.steps);
+        %        kalman.current.last = l;
+        %        kalman.current.local = l + 1;
+        %        kalman.current.step  = kalman.steps{l}.step + 1;
+        %    end
+        %    kalman.current.dimension = dim;
+        %end
 
-
-            kalman.current.dimension = dim;
-            %kalman.current.timestamp = timestamp;
-            %kalman.current
-        end
-
-        function evolve(kalman,H,F,be,C)
+        function evolve(kalman,ni,Hi,Fi,ci,Ki)
             %EVOLVE   Evolve the state using the given linear recurrence.
             %   kalman.EVOLVE(H,F,be,C) evolves the state using the recurrence
             %                H * u_i = F * u_{i-1} + be + e
@@ -67,39 +62,53 @@ classdef UltimateKalman < handle
             %   this state is larger than the dimension of the previous state).
             % 
             %   This method must be called after advance and before observe.
-            if kalman.current.step==0; return; end;
-            d = kalman.current.dimension;
-            evolutionCount = size(F,1); % row dimension
-            if size(H,1) ~= evolutionCount % this allows the user to pass [] for H
+
+            kalman.current = []; % clear
+            kalman.current.dimension = ni;
+            if length(kalman.steps) == 0 % starting the first step
+                kalman.current.step = 0;
+                kalman.current.local = 1; % local index in steps
+                return
+            end
+                
+            l = length(kalman.steps);
+            kalman.current.last = l;  % TODO do we really need this? probably not
+            kalman.current.local = l + 1;
+            kalman.current.step  = kalman.steps{l}.step + 1;
+
+            lastDim = kalman.steps{l}.dimension;
+
+            evolutionCount = size(Fi,1); % row dimension
+            if size(Hi,1) ~= evolutionCount % this allows the user to pass [] for H
                 if evolutionCount == kalman.current.dimension
-                    H = eye(evolutionCount);
+                    Hi = eye(evolutionCount);
                 else
-                    H = [ eye(evolutionCount) zeros(evolutionCount,kalman.current.dimension - evolutionCount)];
+                    Hi = [ eye(evolutionCount) zeros(evolutionCount,kalman.current.dimension - evolutionCount)];
                 end
             end
 
-            WF  = - C.weigh(F);
-            Wbe =   C.weigh(be);
-            WI  =   C.weigh(H);
+            WF  = - Ki.weigh(Fi);
+            Wbe =   Ki.weigh(ci);
+            WI  =   Ki.weigh(Hi);
 
             l = kalman.current.last;
 
             if isfield(kalman.steps{l},'Rdiag') && ~isempty(kalman.steps{l}.Rdiag)
                 lastRdiagRowDim = size(kalman.steps{l}.Rdiag,1);
-                K = [ kalman.steps{l}.Rdiag ; WF ];
+                Ki = [ kalman.steps{l}.Rdiag ; WF ];
             else
                 lastRdiagRowDim = 0;
-                K = WF;
+                Ki = WF;
             end
 
-            [Q,R] = qr(K);
-            kalman.steps{l}.Rdiag = R(1:min(size(K,1),kalman.steps{l}.dimension),:);
-            Z = [ zeros( lastRdiagRowDim, d) ; WI ];
+            [Q,R] = qr(Ki);
+            kalman.steps{l}.Rdiag = R(1:min(size(Ki,1),lastDim),:);
+            Z = [ zeros( lastRdiagRowDim, ni) ; WI ];
             Y = Q' * Z;
-            kalman.steps{l}.Rsupdiag = Y(1:min(size(Y,1),kalman.steps{l}.dimension),:);
+            kalman.steps{l}.Rsupdiag = Y(1:min(size(Y,1),lastDim),:);
 
-            if (size(Y,1) > kalman.steps{l}.dimension) % we have leftover rows that go into the current Rdiag
-                kalman.current.Rdiag = Y(kalman.steps{l}.dimension+1:end,:);
+            if (size(Y,1) > lastDim) % we have leftover rows that go into the current Rdiag
+                kalman.current.Rdiag = Y(lastDim+1:end,:);
             end
 
             if isfield(kalman.steps{l},'QTb') && ~isempty(kalman.steps{l}.QTb)
@@ -110,12 +119,18 @@ classdef UltimateKalman < handle
 
             v = Q' * rhs;
 
-            kalman.steps{l}.QTb = v(1:min(length(v),kalman.steps{l}.dimension),1);
-            if (length(v) > kalman.steps{l}.dimension) % we have leftover rows that go into the current Rdiag
-                kalman.current.QTb = v(kalman.steps{l}.dimension+1:end,1);
+            kalman.steps{l}.QTb = v(1:min(length(v),lastDim),1);
+            if (length(v) > lastDim) % we have leftover rows that go into the current Rdiag
+                kalman.current.QTb = v(lastDim+1:end,1);
             else
                 kalman.current.QTb = [];
             end
+
+            % not sure if we need to test for the existance of Rdiag
+            %if isfield(kalman.current,'Rdiag') && ~isempty(kalman.current.Rdiag) && size(kalman.current.Rdiag,1) == size(kalman.current.Rdiag,1) % Rdiag is square, we can predict the next state
+            %    kalman.current.predictedEstimate   = (kalman.current.Rdiag) \ (kalman.current.QTb);
+            %    kalman.current.predictedCovariance = CovarianceMatrix(kalman.current.Rdiag, 'W');
+            %end
         end
 
         function observe(kalman,G,bo,C)
@@ -195,6 +210,22 @@ classdef UltimateKalman < handle
             index = i - first + 1;
             estimate = kalman.steps{index}.estimatedState;
             cov = kalman.steps{index}.estimatedCovariance;
+        end
+
+        function forget(kalman,howmany)
+            %FORGET  Forget the oldest steps to save memory meory.
+            %
+            %   kalman.FORGET() forgets all but the last step.
+            %   
+            %   kalman.FORGET(howmany) forgets the requested number of steps
+            %   from memory. The steps that are forgoten are the oldest ones.
+            %   The method always leaves at least the most recent step in memory. 
+            
+            l = length(kalman.steps);
+            if nargin<2 || howmany >= l
+                howmany = l-1;
+            end
+            kalman.steps = { kalman.steps{howmany+1:l} }; % leave a single step
         end
 
         function drop(kalman)
