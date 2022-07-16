@@ -12,11 +12,8 @@ import sivantoledo.kalman.DiagonalCovarianceMatrix;
 import sivantoledo.kalman.PaigeSaundersKalman;
 import sivantoledo.kalman.UltimateKalman;
 
-public class Overdetermined {
-  
-  private static Random random = new Random(69978);
-  
-  
+public class Rotation {
+    
   /**
    * A simple rotating point.
    * 
@@ -24,7 +21,9 @@ public class Overdetermined {
    * be between 1 and 6.
    */
   
-  public static void overOrUnderDetermined(int GRowDim) {
+  public static void rotation(long seed, int GRowDim) {
+    
+    Random random = new Random(seed);
     
     double alpha = 2 * Math.PI / 16; // angle
     
@@ -81,18 +80,18 @@ public class Overdetermined {
     script.printf("if size(obs,2)==2; plot(obs(:,1),obs(:,2),'r-'); end;\n");
     script.printf("plot(filtered(:,1),filtered(:,2),'b-','LineWidth',1);\n");
     script.printf("plot(smoothed(:,1),smoothed(:,2),'m-','LineWidth',1);\n");
-    script.printf("xlim([-1.1 1.1]);\n");
-    script.printf("ylim([-1.1 1.1]);\n");
+    script.printf("xlim([-1.25 1.25]);\n");
+    script.printf("ylim([-1.25 1.25]);\n");
     //script.printf("daspect([1 1 1]);\n");
-    if (GRowDim < 2) script.save("Underdetermined");
-    if (GRowDim > 2) script.save("Overdetermined");
+    //if (GRowDim < 2) script.save("Underdetermined");
+    //if (GRowDim > 2) script.save("Overdetermined");
 
   }
   
   public static void main(String[] args) {
     //dynamic();
     //simple(1);
-    overOrUnderDetermined(1);
+    rotation(5,1);
   }
 
 }

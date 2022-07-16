@@ -1,6 +1,12 @@
-clear all; 
+function rotation(seed,obs_dim)
 
-obsDim = 1; % number of rows in each observation, from 1 to 6
+if nargin<2
+    obs_dim = 2; % number of rows in each observation, from 1 to 6
+end
+
+if nargin>=1
+    rng(seed);
+end
 
 alpha = 2*pi/16;
 
@@ -14,18 +20,18 @@ G = [ 1 0
       1 2
       3 1 ];
 
-G = G(1:obsDim, :);
+G = G(1:obs_dim, :);
 
 evolutionStd   = 1e-3;
 observationStd = 1e-1;
 
-Ce = CovarianceMatrix(evolutionStd  *evolutionStd  *eye(2), 'C');
-Co = CovarianceMatrix(observationStd*observationStd*eye(obsDim), 'C');
+K = CovarianceMatrix(evolutionStd  *evolutionStd  *eye(2),      'C');
+C = CovarianceMatrix(observationStd*observationStd*eye(obs_dim), 'C');
 
 k = 16;
 
 states = NaN * zeros(2,k);
-obs    = NaN * zeros(obsDim,k);
+obs    = NaN * zeros(obs_dim,k);
 states(:,1) = [ 1 ; 0 ];
 
 for i=2:k
@@ -33,47 +39,67 @@ for i=2:k
 end
 
 for i=1:k
-    obs(:,i) = G*states(:,i) + observationStd * randn(obsDim,1);
+    obs(:,i) = G*states(:,i) + observationStd * randn(obs_dim,1);
 end
 
-kalman = UltimateKalman();
-filtered = NaN * zeros(2,k);
-for i=1:k
-    kalman.advance(2,NaN);
-    kalman.evolve([],F,zeros(2,1),Ce);
-    kalman.observe(G,obs(:,i),Co);
+%[states' obs']
 
-    filtered(:,i) = kalman.filtered();
+kalman = UltimateKalman();
+filtered  = NaN * zeros(2,k);
+predicted = NaN * zeros(2,k);
+
+if true
+% do the first step
+kalman.evolve(2,[],F,zeros(2,1),K);
+kalman.observe(G,obs(:,1),C);
+predicted(:,1) = kalman.estimate(0); 
+% predict
+for i=2:k
+    kalman.evolve(2,[],F,zeros(2,1),K);
+    kalman.observe(G);
+    predicted(:,i) = kalman.estimate(i-1); % zero based step numbers
+end
+
+% roll back and add observation of step 1
+kalman.rollback(1);
+kalman.observe(G,obs(:,2),C);
+end
+
+filtered(:,1) = kalman.estimate(0);
+filtered(:,2) = kalman.estimate(1);
+% evolve and observe steps 2 and up
+for i=3:k
+    kalman.evolve(2,[],F,zeros(2,1),K);
+
+    kalman.observe(G,obs(:,i),C);
+
+    filtered(:,i) = kalman.estimate(i-1); % zero based step numbers
     % uncomment to test dropping (but then you can't smooth the entire
     % track.
-    %kalman.drop();
+    %kalman.forget();
 end
 
 kalman.smooth();
 
 smoothed = NaN * zeros(2,k);
 for i=1:k 
-    smoothed(:,i) = kalman.smoothed(i-1); % step numbers are zero based
+    smoothed(:,i) = kalman.estimate(i-1); % zero based step numbers
 end
 
 close all; 
 figure;
 
 axis square
-set(gca,'Box','on');;
+set(gca,'Box','on');
 hold on;
 
 plot(states(1,:),states(2,:),'k-','LineWidth',1);
-if obsDim==2; plot(obs(1,:),obs(2,:),'r.'); end
+if obs_dim==2; plot(obs(1,:),obs(2,:),'r.'); end
 plot(filtered(1,:),filtered(2,:),'b-','LineWidth',1);
 plot(smoothed(1,:),smoothed(2,:),'m-','LineWidth',1);
+plot(predicted(1,:),predicted(2,:),'c-','LineWidth',1);
 
 xlim([-1.1 1.1]);
 ylim([-1.1 1.1]);
 hold off;
-exportgraphics(gca,'Underdetermined.pdf');
-
-
-
-
-
+%exportgraphics(gca,'Underdetermined.pdf');

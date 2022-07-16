@@ -45,5 +45,21 @@ classdef CovarianceMatrix < handle
                 WA = (cov.W)*A;
             end
         end
+
+        function C = explicit(cov)
+            if cov.type=='C'       
+                C = (cov.invW)' * (cov.invW);
+            end
+            if cov.type=='I'
+                C = inv(cov.Wtrans * cov.Wtrans');
+            end
+            if cov.type=='M'
+                C = (cov.invW)' * (cov.invW);
+            end
+            if cov.type=='W'
+                C = inv(cov.W'  *cov.W);
+            end
+        end
+
     end
 end

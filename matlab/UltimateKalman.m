@@ -96,7 +96,7 @@ classdef UltimateKalman < handle
             % we denote by z_i the row dimension of Rtilde_{i-1,i-1}
             if isfield(kalman.steps{ptr_imo},'Rdiag') ...
                && ~isempty(kalman.steps{ptr_imo}.Rdiag)                    % coverage tested in ... ?
-                z_i = size(kalman.steps{ptr_imo}.Rdiag,1);                 
+                z_i = size(kalman.steps{ptr_imo}.Rdiag,1);    
                 A = [ kalman.steps{ptr_imo}.Rdiag ; V_i_F_i ];
                 B = [ zeros( z_i, n_i)            ; V_i_H_i ];
                 y = [ kalman.steps{ptr_imo}.y ; V_i_c_i ];
@@ -163,7 +163,7 @@ classdef UltimateKalman < handle
                 end
             end % of we have observations
 
-            if size(kalman.current.Rdiag,1) == kalman.current.dimension
+            if isfield(kalman.current,'Rbar') && size(kalman.current.Rdiag,1) == kalman.current.dimension
                 kalman.current.estimatedState      = kalman.current.Rdiag \ kalman.current.y;
                 kalman.current.estimatedCovariance = CovarianceMatrix( kalman.current.Rdiag, 'W');
             end
@@ -205,6 +205,9 @@ classdef UltimateKalman < handle
             l = length(kalman.steps);
             latest   = kalman.steps{l}.step;
             earliest = kalman.steps{1}.step;
+            if nargin < 2
+                s = latest;
+            end
             if s < earliest || s > latest 
                 warning('cannot provide an estimate, too old or in the future')
                 return
