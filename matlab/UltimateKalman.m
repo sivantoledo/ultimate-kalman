@@ -2,6 +2,13 @@ classdef UltimateKalman < handle
     % UltimateKalman   An implementation of the Paige-Saunders Kalman
     % filter and smoother by Sivan Toledo, Tel Aviv University.
     %
+    % The filter is advanced by calling evolve and then observe every
+    % step.
+    %
+    % To predict the next state(s) before providing the observations
+    % (possibly before you have them) call observe and then filtered. Then
+    % you can roll back and provide observations.
+    %
     % UltimateKalman Methods:
     %    evolve   - Evolve the state using a linear matrix equation
     %    observe  - Provide observations of the current state
@@ -9,7 +16,6 @@ classdef UltimateKalman < handle
     %    forget   - Forget the oldest steps to save memory meory
     %    smooth   - Compute smooth estimates of all the stored states
     %    smoothed - Obtain the smoothed estimates of historical states
-
 
     properties (Access = private)
         steps;   % old states
@@ -24,32 +30,28 @@ classdef UltimateKalman < handle
             kalman.steps = {};
         end
 
-        %function advance(kalman,dim,timestamp)
-            %ADVANCE   Create a new time step with a given state dimension.
-            %   kalman.ADVANCE(dimension,timestamp) creates a new time step with
-            %   a given dimension. The timestamp can be retrieved by the
-            %   user later but is not used by the algorithm. 
-            % 
-            %   This method must be called before evolve and observe.
-        %    kalman.current = []; % clear
-        %    if length(kalman.steps) == 0 % starting the first step
-        %        kalman.current.step = 0;
-        %        kalman.current.local = 1; % local index in steps
-        %    else
-        %        l = length(kalman.steps);
-        %        kalman.current.last = l;
-        %        kalman.current.local = l + 1;
-        %        kalman.current.step  = kalman.steps{l}.step + 1;
-        %    end
-        %    kalman.current.dimension = dim;
-        %end
+        function i = earliest(kalman)
+            if isempty(kalman.steps)
+                i = -1;
+            else
+                i = kalman.steps{ 1 }.step;
+            end
+        end
 
-        function evolve(kalman,ni,Hi,Fi,ci,Ki)
+        function i = latest(kalman)
+            if isempty(kalman.steps)
+                i = -1;
+            else
+                i = kalman.steps{ length(kalman.steps) }.step;
+            end
+        end
+
+        function evolve(kalman,n_i,H_i,F_i,c_i,K_i)
             %EVOLVE   Evolve the state using the given linear recurrence.
-            %   kalman.EVOLVE(H,F,be,C) evolves the state using the recurrence
-            %                H * u_i = F * u_{i-1} + be + e
-            %   where C is the covariance matrix of the error term e.
-            %   The covariance matrix C must be an instance of
+            %   kalman.EVOLVE(H_i,F_i,c_i,K_i) evolves the state using the recurrence
+            %                H_i * u_i = F_i * u_{i-1} + c_i + epsilon
+            %   where C_i is the covariance matrix of the error term epsilon.
+            %   The covariance matrix C_i must be an instance of
             %   CovarianceMatrix. The matrices H and F are standard Matlab
             %   matrices, and be is a standard column vector.
             % 
@@ -60,197 +62,226 @@ classdef UltimateKalman < handle
             %   The argument H can be empty, []. If it is, H is taken to be
             %   an identity matrix (possibly rectangular, if the dimension of
             %   this state is larger than the dimension of the previous state).
-            % 
-            %   This method must be called after advance and before observe.
 
             kalman.current = []; % clear
-            kalman.current.dimension = ni;
-            if length(kalman.steps) == 0 % starting the first step
+            kalman.current.dimension = n_i;
+            if isempty(kalman.steps) % starting the first step
                 kalman.current.step = 0;
-                kalman.current.local = 1; % local index in steps
+                %kalman.current.local = 1; % local index in steps
                 return
             end
                 
-            l = length(kalman.steps);
-            kalman.current.last = l;  % TODO do we really need this? probably not
-            kalman.current.local = l + 1;
-            kalman.current.step  = kalman.steps{l}.step + 1;
+            ptr_imo = length(kalman.steps);                                % pointer to row i-1 in the cell array
+            %kalman.current.last = ptr_imo;  % TODO do we really need this? probably not
+            %kalman.current.local = ptr_imo + 1;
+            kalman.current.step  = kalman.steps{ptr_imo}.step + 1;
 
-            lastDim = kalman.steps{l}.dimension;
+            n_imo = kalman.steps{ptr_imo}.dimension;                             % n_{i-1}
 
-            evolutionCount = size(Fi,1); % row dimension
-            if size(Hi,1) ~= evolutionCount % this allows the user to pass [] for H
-                if evolutionCount == kalman.current.dimension
-                    Hi = eye(evolutionCount);
+            l_i = size(F_i,1);                                             % row dimension
+            if size(H_i,1) ~= l_i                                          % this allows the user to pass [] for H
+                if l_i == n_i
+                    H_i = eye(l_i);
                 else
-                    Hi = [ eye(evolutionCount) zeros(evolutionCount,kalman.current.dimension - evolutionCount)];
+                    H_i = [ eye(l_i) zeros(l_i,n_i - l_i)];
                 end
             end
 
-            WF  = - Ki.weigh(Fi);
-            Wbe =   Ki.weigh(ci);
-            WI  =   Ki.weigh(Hi);
+            V_i_F_i  = - K_i.weigh(F_i);
+            V_i_c_i =    K_i.weigh(c_i);
+            V_i_H_i  =   K_i.weigh(H_i);
 
-            l = kalman.current.last;
+            %ptr_imo = kalman.current.last;
 
-            if isfield(kalman.steps{l},'Rdiag') && ~isempty(kalman.steps{l}.Rdiag)
-                lastRdiagRowDim = size(kalman.steps{l}.Rdiag,1);
-                Ki = [ kalman.steps{l}.Rdiag ; WF ];
+            % we denote by z_i the row dimension of Rtilde_{i-1,i-1}
+            if isfield(kalman.steps{ptr_imo},'Rdiag') ...
+               && ~isempty(kalman.steps{ptr_imo}.Rdiag)                    % coverage tested in ... ?
+                z_i = size(kalman.steps{ptr_imo}.Rdiag,1);                 
+                A = [ kalman.steps{ptr_imo}.Rdiag ; V_i_F_i ];
+                B = [ zeros( z_i, n_i)            ; V_i_H_i ];
+                y = [ kalman.steps{ptr_imo}.y ; V_i_c_i ];
             else
-                lastRdiagRowDim = 0;
-                Ki = WF;
+                %z_i = 0;
+                A = V_i_F_i;
+                B = V_i_H_i;
+                y = V_i_c_i;
             end
 
-            [Q,R] = qr(Ki);
-            kalman.steps{l}.Rdiag = R(1:min(size(Ki,1),lastDim),:);
-            Z = [ zeros( lastRdiagRowDim, ni) ; WI ];
-            Y = Q' * Z;
-            kalman.steps{l}.Rsupdiag = Y(1:min(size(Y,1),lastDim),:);
+            [Q,R] = qr(A);
+            B = Q' * B;
+            y = Q' * y;
+            kalman.steps{ptr_imo}.Rdiag    = R(1:min(size(A,1),n_imo),:);
+            kalman.steps{ptr_imo}.Rsupdiag = B(1:min(size(B,1),n_imo),:);
+            kalman.steps{ptr_imo}.y        = y(1:min(length(y),n_imo),1);
 
-            if (size(Y,1) > lastDim) % we have leftover rows that go into the current Rdiag
-                kalman.current.Rdiag = Y(lastDim+1:end,:);
+            % block row i-1 is now sealed
+
+            if (size(B,1) > n_imo)                                         % we have leftover rows that go into the Rbar
+                kalman.current.Rbar = B(n_imo+1:end,:);
+                kalman.current.ybar = y(n_imo+1:end,1);
             end
-
-            if isfield(kalman.steps{l},'QTb') && ~isempty(kalman.steps{l}.QTb)
-                rhs = [ kalman.steps{l}.QTb ; Wbe ];
-            else
-                rhs = Wbe;
-            end
-
-            v = Q' * rhs;
-
-            kalman.steps{l}.QTb = v(1:min(length(v),lastDim),1);
-            if (length(v) > lastDim) % we have leftover rows that go into the current Rdiag
-                kalman.current.QTb = v(lastDim+1:end,1);
-            else
-                kalman.current.QTb = [];
-            end
-
-            % not sure if we need to test for the existance of Rdiag
-            %if isfield(kalman.current,'Rdiag') && ~isempty(kalman.current.Rdiag) && size(kalman.current.Rdiag,1) == size(kalman.current.Rdiag,1) % Rdiag is square, we can predict the next state
-            %    kalman.current.predictedEstimate   = (kalman.current.Rdiag) \ (kalman.current.QTb);
-            %    kalman.current.predictedCovariance = CovarianceMatrix(kalman.current.Rdiag, 'W');
-            %end
         end
 
-        function observe(kalman,G,bo,C)
+        function observe(kalman,G_i,o_i,C_i)
             %OBSERVE   Provide observations of the current state.
-            %   kalman.OBSERVE(G,bo,C) provide observations that satisfy
+            %   kalman.OBSERVE(G_i,o_i,C_i) provide observations that satisfy
             %   the linear equation
-            %                bo = G * u_i + e
-            %   where C is the covariance matrix of the error term e.
-            %   The covariance matrix C must be an instance of
-            %   CovarianceMatrix. The matrix G is a standard Matlab
+            %                o_i = G_i * u_i + delta_i
+            %   where C_i is the covariance matrix of the error term delta_i.
+            %   The covariance matrix C_i must be an instance of
+            %   CovarianceMatrix. The matrix G_i is a standard Matlab
             %   matrix, and bo is a standard column vector. 
             % 
             %   kalman.OBSERVE() tells the algorithm that no
             %   observations are availble of the state of this step.
             % 
             %   This method must be called after advance and evolve.
-            d = kalman.current.dimension;
-            if nargin<4 || length(bo) == 0 % no observations, pass []
-                kalman.current.observationCount = 0;
-
-                if isfield(kalman.current,'Rdiag') && ~isempty(kalman.current.Rdiag)
-                    [Q,R] = qr( kalman.current.Rdiag );
+            n_i = kalman.current.dimension;
+            if nargin<4 || isempty(o_i) % no observations, pass []
+                %m_i = 0;
+                if isfield(kalman.current,'Rbar') && ~isempty(kalman.current.Rbar)
+                    [Q,R] = qr( kalman.current.Rbar );
                     kalman.current.Rdiag = R;
-                    kalman.current.QTb   = Q' * kalman.current.QTb ;
+                    kalman.current.y     = Q' * kalman.current.ybar ;
                 end
             else % no observations
-                kalman.current.observationCount = length(bo);
+                %m_i = length(o_i);
 
-                WG  = C.weigh(G);
-                Wbo = C.weigh(bo);
+                W_i_G_i = C_i.weigh(G_i);
+                W_i_o_i = C_i.weigh(o_i);
 
-                if isfield(kalman.current,'Rdiag') && ~isempty(kalman.current.Rdiag)
-                    [Q,R] = qr( [ kalman.current.Rdiag ; WG ] , 0 ); % thin QR
+                if isfield(kalman.current,'Rbar') && ~isempty(kalman.current.Rbar)
+                    [Q,R] = qr( [ kalman.current.Rbar ; W_i_G_i ] , 0 ); % thin QR
                     kalman.current.Rdiag = R;
-                    kalman.current.QTb   = Q' * [ kalman.current.QTb ; Wbo ];
+                    kalman.current.y   = Q' * [ kalman.current.ybar ; W_i_o_i ];
                 else % no Rdiag yet
-                    RdiagRowDim = min(d, size(WG,1));
-                    [Q,R] = qr(WG);
-                    kalman.current.Rdiag = R(1:RdiagRowDim,1:d);
-                    QTb                  = Q' * Wbo;
-                    kalman.current.QTb   = QTb(1:RdiagRowDim,1);
+                    RdiagRowDim = min(n_i, size(W_i_G_i,1));
+                    [Q,R] = qr(W_i_G_i);
+                    kalman.current.Rdiag = R(1:RdiagRowDim,1:n_i);
+                    y                  = Q' * W_i_o_i;
+                    kalman.current.y   = y(1:RdiagRowDim,1);
                 end
             end % of we have observations
-            kalman.current.estimatedCovariance = CovarianceMatrix( kalman.current.Rdiag, 'W');
 
-            kalman.steps{ kalman.current.local } = kalman.current;
+            if size(kalman.current.Rdiag,1) == kalman.current.dimension
+                kalman.current.estimatedState      = kalman.current.Rdiag \ kalman.current.y;
+                kalman.current.estimatedCovariance = CovarianceMatrix( kalman.current.Rdiag, 'W');
+            end
+
+            kalman.steps{ length(kalman.steps)+1 } = kalman.current;
         end
 
-        function [estimate,cov] = filtered(kalman)
+        %function [estimate,cov] = filtered(kalman)
             %FILTERED   Obtain an estimate of the current state and the 
             %           covariance of the estimate.
             %
             %   kalman.FILTERED() returns the estimate of the state of the
-            %   last step that was observed (including with an empty observation).
+            %   last step that was observed (even if the observation was
+            %   empty).
+            %
             %   The method also returns the covariance of the estimate. The
             %   covariance is an instance of CovarianceMatrix.
             % 
-            %   This method can be called after observe.
+            %   This method can only be called after observe.
 
-            l = length(kalman.steps);
-            estimate = kalman.steps{l}.Rdiag \ kalman.steps{l}.QTb;
-            cov = kalman.steps{l}.estimatedCovariance;
-        end
+        %    l = length(kalman.steps);
+        %    estimate = kalman.steps{l}.Rdiag \ kalman.steps{l}.y;
+        %    cov = kalman.steps{l}.estimatedCovariance;
+        %end
 
-        function [estimate,cov] = smoothed(kalman,i)
-            %SMOOTHED  Obtain an estimate of the smooth estimate of a historical
-            %          state and the covariance of the estimate.
+        function [estimate,cov] = estimate(kalman,s)
+            %ESTIMATE  Obtain the most recent estimate of the state of a step
+            %          and the covariance of the estimate.
             %
-            %   kalman.SMOOTHED(i) returns the estimate of state i, which must still be
-            %   in memory. It also returns the covariance of the estimate. 
-            %   The estimate is only available if the smooth method was called
-            %   when step i was in memory.
-            % 
-            %   This method can be called after smooth.
+            %   kalman.ESTIMATE(s) returns an estimate of the state of step
+            %   s, which must still be in memory. It also returns the 
+            %   covariance of the estimate.
+            %
+            %   If kalman.smooth() was not called after step s was
+            %   observed, the estimate is a filtered estimate. Otherwise it
+            %   is the most recent smoothed estimate.
+            
+            %length(kalman.steps)
+            l = length(kalman.steps);
+            latest   = kalman.steps{l}.step;
+            earliest = kalman.steps{1}.step;
+            if s < earliest || s > latest 
+                warning('cannot provide an estimate, too old or in the future')
+                return
+            end
+            ptr_s = s - earliest + 1;
 
-            first = kalman.steps{1}.step;
-            index = i - first + 1;
-            estimate = kalman.steps{index}.estimatedState;
-            cov = kalman.steps{index}.estimatedCovariance;
+            if isfield(kalman.steps{ptr_s},'estimatedState') && ~isempty(kalman.steps{ptr_s}.estimatedState)
+                estimate = kalman.steps{ptr_s}.estimatedState;
+                cov      = kalman.steps{ptr_s}.estimatedCovariance;
+            else
+                estimate = NaN * zeros(kalman.steps{ptr_s}.dimension,1);
+                cov      = CovarianceMatrix(NaN*eye(kalman.steps{ptr_s}.dimension),'W');
+                warning('state is currently underdetermined');
+            end
         end
 
-        function forget(kalman,howmany)
+        function forget(kalman,s)
             %FORGET  Forget the oldest steps to save memory meory.
             %
-            %   kalman.FORGET() forgets all but the last step.
+            %   kalman.FORGET()  forgets all but the last step.
             %   
-            %   kalman.FORGET(howmany) forgets the requested number of steps
-            %   from memory. The steps that are forgoten are the oldest ones.
-            %   The method always leaves at least the most recent step in memory. 
+            %   kalman.FORGET(s) forgets steps s and older. 
             
             l = length(kalman.steps);
-            if nargin<2 || howmany >= l
-                howmany = l-1;
+            earliest = kalman.steps{ 1 }.step;
+            if nargin<2
+                ptr_s = l-1;
+            else
+                ptr_s = s - earliest + 1;
             end
-            kalman.steps = { kalman.steps{howmany+1:l} }; % leave a single step
+            kalman.steps = { kalman.steps{ptr_s+1:l} };
         end
 
-        function drop(kalman)
-            %DROP  Drop all but the last step from meory.
+        function rollback(kalman,s)
+            %FORGET  Forget the oldest steps to save memory meory.
             %
-            %   kalman.DROP() drops all but the last step from memory.
+            %   kalman.ROLLBACK(s) rolls back the filter to its state immediately
+            %   after step s has been evolved (but before it was observed). 
             
             l = length(kalman.steps);
-            kalman.steps = { kalman.steps{l} }; % leave a single step
+            earliest = kalman.steps{ 1 }.step;
+            ptr_s = s - earliest + 1;
+            if ptr_s > l || ptr_s < 1
+                warning('cannot roll back to this state (too old or future');
+            else
+                kalman.current = [];
+                kalman.current.dimension = kalman.steps{ ptr_s }.dimension;
+                kalman.current.step      = kalman.steps{ ptr_s }.step;
+                kalman.current.Rbar      = kalman.steps{ ptr_s }.Rbar;
+                kalman.current.ybar      = kalman.steps{ ptr_s }.ybar;
+                %kalman.current = kalman.steps{ ptr_s };
+                kalman.steps = { kalman.steps{1:ptr_s-1} };
+                %kalman.current = rmfield(kalman.current,{'Rdiag','Rsupdiag','y','estimatedState','estimatedCovariance'});
+                %ptr_s
+                %kalman
+                %kalman.steps
+                %kalman.current
+            end
         end
-
+        
         function smooth(kalman)
             %SMOOTH  Compute smooth estimates of all the stored states.
             %
             %   kalman.SMOOTH() computes the smoothed estimated state of all
             %   the steps that are still in memory.
+            % 
+            %   This method must be called after the last step has been
+            %   observed.
 
             l = length(kalman.steps);
 
             v = [];
             for i=l:-1:1
-                if length(v)==0 || ~isfield( kalman.steps{i}, 'Rsupdiag' )
-                    v = kalman.steps{i}.QTb;
+                if i == l
+                    v = kalman.steps{i}.y;
                 else
-                    v = kalman.steps{i}.QTb - (kalman.steps{i}.Rsupdiag) * v;
+                    v = kalman.steps{i}.y - (kalman.steps{i}.Rsupdiag) * v;
                 end
 
                 v = (kalman.steps{i}.Rdiag) \ v;
@@ -265,13 +296,13 @@ classdef UltimateKalman < handle
                     % the covariance matrix has already been constructed
                     % here.
                 else
-                    n = size(R,1);
-                    m = size(kalman.steps{i}.Rdiag,1);
+                    n_i   = size(R,1);
+                    n_imo = size(kalman.steps{i}.Rdiag,1);
 
                     [Q,~] = qr( [ kalman.steps{i}.Rsupdiag ; R ]);
 
-                    QTC = Q' * [ kalman.steps{i}.Rdiag ; zeros(n,size(kalman.steps{i}.Rdiag,2)) ];
-                    R = QTC( n+1:n+m , 1:m );
+                    S = Q' * [ kalman.steps{i}.Rdiag ; zeros(n_i,size(kalman.steps{i}.Rdiag,2)) ];
+                    R = S( n_i+1:n_i+n_imo , 1:n_imo );
 
                     kalman.steps{i}.estimatedCovariance = CovarianceMatrix( R, 'W' );
                 end
@@ -279,51 +310,6 @@ classdef UltimateKalman < handle
         end
 
         %============== OLD STUFF BELOW ==============
-
-        function u = old_smooth(obj)
-            %obj.k
-            %obj.steps{obj.k}
-            d = length(obj.steps{obj.k}.QTb);
-            for i=obj.k:-1:1
-                %i
-                %obj.steps{i}
-                u(i*d-d+1:i*d,1) = obj.steps{i}.Rdiag \ obj.steps{i}.QTb;
-                %[i length(u)]
-                if i>1
-                    j=i-1;
-                    obj.steps{j}.QTb = obj.steps{j}.QTb - obj.steps{j}.Rsupdiag * u(i*d-d+1:i*d,1);
-                end
-            end
-        end
-
-        function invSquareRoots = covInvSquareRoots(obj)
-            %obj.k
-            %obj.steps{obj.k}
-            d = length(obj.steps{obj.k}.QTb);
-            Rdiag    = obj.steps{ obj.k }.Rdiag;
-            invSquareRoots{ obj.k } = Rdiag;
-            for i=obj.k:-1:2
-                Rsupdiag_i = obj.steps{ i-1 }.Rsupdiag;
-                Rdiag_i    = obj.steps{ i-1 }.Rdiag;
-                [ iblock, ~ ] = qr( sparse([ Rsupdiag_i ; Rdiag ]), [ Rdiag_i ; zeros(d,d) ]);
-
-                invSquareRoots{ i-1 } = iblock(d+1:d+d, 1:d);
-            end
-        end
-
-        function [covs,stddevs] = covariances(obj)
-            stddevs = [];
-            invSquareRoots = covInvSquareRoots(obj);
-            for i=1:obj.k
-                isqrt = invSquareRoots{i};
-
-                covsqrt = inv(isqrt);
-                cov = covsqrt*covsqrt';
-                %full(cov)
-                covs{ i } = cov;
-                stddevs = [ stddevs ; sqrt(diag(cov)) ];
-            end
-        end
 
         function [A,b] = rawLS(obj)
             if isfield(obj.steps{1},'WG')
@@ -349,9 +335,9 @@ classdef UltimateKalman < handle
                 end
             end
         end
-        function [R,QTb] = triangularLS(obj)
+        function [R,y] = triangularLS(obj)
             R   = obj.steps{1}.Rdiag;
-            QTb = obj.steps{1}.QTb;
+            y = obj.steps{1}.y;
             %size(R)
             for i=2:obj.k-1
                 %i
@@ -360,8 +346,8 @@ classdef UltimateKalman < handle
                 %[m n d]
                 R = [ R         [ zeros(m-d,d) ; obj.steps{i-1}.Rsupdiag ]
                     zeros(d,n) obj.steps{i}.Rdiag ];
-                QTb = [ QTb
-                    obj.steps{i}.QTb ];
+                y = [ y
+                    obj.steps{i}.y ];
             end
             i = obj.k;
             [m,n] = size(R);
@@ -373,8 +359,8 @@ classdef UltimateKalman < handle
             %size(R)
             R = [ R         [ zeros(m-d,d) ; obj.steps{i-1}.Rsupdiag ]
                 zeros(l,n) obj.steps{i}.Rdiag ];
-            QTb = [ QTb
-                obj.steps{i}.QTb ];
+            y = [ y
+                obj.steps{i}.y ];
         end
     end
 end
