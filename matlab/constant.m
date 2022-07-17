@@ -1,10 +1,5 @@
 function constant(seed, k, smooth, sloping, exception)
 
-% the exception is a pair of a step number and a standard deviation  
-if nargin < 5
-    exception = false;
-end
-
 rng(seed);
 
 n = 1;
@@ -18,7 +13,7 @@ m = size(G,1);
 
 evolutionStd   =  1;
 observationStd = 10;
-exceptionStd   = 0.25;
+exceptionStd   = exception(2);
 
 K   = CovarianceMatrix(evolutionStd  *evolutionStd  *eye(l), 'C');
 C   = CovarianceMatrix(observationStd*observationStd*eye(m), 'C');
@@ -39,7 +34,7 @@ end
 
 % generate observations
 for i=1:k
-    if exception && i == floor(k/2)
+    if  i == exception(1)
         obs(:,i) = G*states(:,i) + exceptionStd   * randn(m,1);
     else
         obs(:,i) = G*states(:,i) + observationStd * randn(m,1);
@@ -58,7 +53,7 @@ smthstd  = NaN * zeros(n,k);
 for i=1:k
     kalman.evolve(1,[],F,c,K);
 
-    if exception && i == floor(k/2)
+    if  i == exception(1)
         kalman.observe(G,obs(:,i),Cex);
     else
         kalman.observe(G,obs(:,i),C);

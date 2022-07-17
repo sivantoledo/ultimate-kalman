@@ -12,10 +12,10 @@ classdef UltimateKalman < handle
     % UltimateKalman Methods:
     %    evolve   - Evolve the state using a linear matrix equation
     %    observe  - Provide observations of the current state
-    %    filtered - Obtain an estimate of the current state
+    %    estimate - Return the most up to date estimate of a state vector
     %    forget   - Forget the oldest steps to save memory meory
-    %    smooth   - Compute smooth estimates of all the stored states
-    %    smoothed - Obtain the smoothed estimates of historical states
+    %    latest   - The index of the last step that was observed
+    %    earliest - The index of the earliest step that has not been forgoten
 
     properties (Access = private)
         steps;   % old states
@@ -31,6 +31,11 @@ classdef UltimateKalman < handle
         end
 
         function i = earliest(kalman)
+            %EARLIST   The index of the oldest step that has not been
+            %          forgotten
+            %
+            %   kalman.EARLIEST() returns the index of the earliest step
+            %   that has not been forgoten. Step numbers start from zero.
             if isempty(kalman.steps)
                 i = -1;
             else
@@ -39,6 +44,10 @@ classdef UltimateKalman < handle
         end
 
         function i = latest(kalman)
+            %LATEST   The index of the last step that was observed.
+            %
+            %   kalman.LATEST() returns the index of the latest step that 
+            %   was observed.
             if isempty(kalman.steps)
                 i = -1;
             else
@@ -163,7 +172,7 @@ classdef UltimateKalman < handle
                 end
             end % of we have observations
 
-            if isfield(kalman.current,'Rbar') && size(kalman.current.Rdiag,1) == kalman.current.dimension
+            if isfield(kalman.current,'Rdiag') && size(kalman.current.Rdiag,1) == kalman.current.dimension
                 kalman.current.estimatedState      = kalman.current.Rdiag \ kalman.current.y;
                 kalman.current.estimatedCovariance = CovarianceMatrix( kalman.current.Rdiag, 'W');
             end
@@ -193,9 +202,12 @@ classdef UltimateKalman < handle
             %ESTIMATE  Obtain the most recent estimate of the state of a step
             %          and the covariance of the estimate.
             %
-            %   kalman.ESTIMATE(s) returns an estimate of the state of step
-            %   s, which must still be in memory. It also returns the 
-            %   covariance of the estimate.
+            %   [estimate,cov] = kalman.ESTIMATE(s) returns an estimate of 
+            %   the state of step s, which must still be in memory. It also 
+            %   returns the covariance of the estimate.
+            %
+            %   [estimate,cov] = kalman.ESTIMATE() returns an estimate of
+            %   the state of the latest step.
             %
             %   If kalman.smooth() was not called after step s was
             %   observed, the estimate is a filtered estimate. Otherwise it
@@ -226,10 +238,10 @@ classdef UltimateKalman < handle
 
         function forget(kalman,s)
             %FORGET  Forget the oldest steps to save memory meory.
-            %
-            %   kalman.FORGET()  forgets all but the last step.
             %   
             %   kalman.FORGET(s) forgets steps s and older. 
+            %
+            %   kalman.FORGET()  forgets all but the last step.
             
             l = length(kalman.steps);
             earliest = kalman.steps{ 1 }.step;
@@ -242,10 +254,17 @@ classdef UltimateKalman < handle
         end
 
         function rollback(kalman,s)
-            %FORGET  Forget the oldest steps to save memory meory.
+            %ROLLBACK  Rolls the object back to just after the evolution
+            %          to step s (but before the observation in step s).
             %
-            %   kalman.ROLLBACK(s) rolls back the filter to its state immediately
-            %   after step s has been evolved (but before it was observed). 
+            %   kalman.ROLLBACK(s) rolls back the filter. Steps later than
+            %   s are discareded, and so is the observation of step s, if
+            %   there was any.
+            % 
+            %   This method allows you to roll back the object after it was
+            %   used for prediction of future state that have not been
+            %   observed yet. Typically steps s+1 and higher do not have
+            %   any observation at the time of the rollback.
             
             l = length(kalman.steps);
             earliest = kalman.steps{ 1 }.step;
@@ -311,59 +330,5 @@ classdef UltimateKalman < handle
                 end
             end
         end
-
-        %============== OLD STUFF BELOW ==============
-
-        function [A,b] = rawLS(obj)
-            if isfield(obj.steps{1},'WG')
-                A = obj.steps{1}.WG;
-                b = obj.steps{1}.Wbo;
-            else
-                A = [];
-                b = [];
-            end
-            for i=2:obj.k
-                [m,n] = size(A);
-                d = size(obj.steps{i}.WF,1);
-                A = [ A                            zeros(m,d)
-                    zeros(d,n-d) -obj.steps{i}.WF obj.steps{i}.WI ];
-                b = [ b
-                    obj.steps{i}.Wbe ];
-                if isfield(obj.steps{i},'WG')
-                    l = size(obj.steps{i}.WG,1);
-                    A = [ A
-                        zeros(l,n) obj.steps{i}.WG ];
-                    b = [ b
-                        obj.steps{i}.Wbo ];
-                end
-            end
-        end
-        function [R,y] = triangularLS(obj)
-            R   = obj.steps{1}.Rdiag;
-            y = obj.steps{1}.y;
-            %size(R)
-            for i=2:obj.k-1
-                %i
-                [m,n] = size(R);
-                d = size(obj.steps{i}.Rdiag,1);
-                %[m n d]
-                R = [ R         [ zeros(m-d,d) ; obj.steps{i-1}.Rsupdiag ]
-                    zeros(d,n) obj.steps{i}.Rdiag ];
-                y = [ y
-                    obj.steps{i}.y ];
-            end
-            i = obj.k;
-            [m,n] = size(R);
-            %disp('zzz');
-            %i
-            %size(obj.steps{i-1}.Rsupdiag,1)
-            l=size(obj.steps{i}.Rdiag,1);
-            %[m n d]
-            %size(R)
-            R = [ R         [ zeros(m-d,d) ; obj.steps{i-1}.Rsupdiag ]
-                zeros(l,n) obj.steps{i}.Rdiag ];
-            y = [ y
-                obj.steps{i}.y ];
-        end
-    end
+    end % methods
 end
