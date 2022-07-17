@@ -1,4 +1,7 @@
 function clock_offsets(seed)
+% clock_offsets(seed) a test function for UltimateKalman
+%
+% copyright 2022 Sivan Toledo
 
 if nargin < 1
     seed = 4;

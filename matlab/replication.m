@@ -1,3 +1,6 @@
+% test-replication script for UltimateKalman
+%
+% copyright 2022 Sivan Toledo
 
 clock_offsets(6)
 exportgraphics(gca,'..\outputs\clock_offsets.pdf');

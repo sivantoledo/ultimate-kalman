@@ -1,4 +1,7 @@
 function constant(seed, k, smooth, sloping, exception)
+% constant(seed, k, smooth, sloping, exception) a test function for UltimateKalman
+%
+% copyright 2022 Sivan Toledo
 
 rng(seed);
 
