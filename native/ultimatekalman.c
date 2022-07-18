@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -5,6 +6,8 @@
 
 #include <blas.h>
 #include <lapack.h>
+
+#include "ultimatekalman.h"
 
 /******************************************************************************/
 /* UTILITIES                                                                  */
@@ -17,15 +20,8 @@
 /* MATRICES                                                                   */
 /******************************************************************************/
 
-typedef struct matrix_st {
-	int32_t row_dim;
-	int32_t col_dim;
-	double* elements;
-} matrix_t;
-
 #ifdef NDEBUG
-#define matrix_set(A,i,j,v) ( ((A)->elements)[ (j)*((A)->row_dim) + (i)  ] = (v) )
-#define matrix_get(A,i,j)   ( ((A)->elements)[ (j)*((A)->row_dim) + (i)  ] )
+// defined in the header file ...
 #else
 static void matrix_set(matrix_t* A, int32_t i, int32_t j, double v) {
 	assert(i >= 0);
@@ -113,14 +109,6 @@ static void matrix_print(matrix_t* A, FILE* f, char* format) {
 
 #define FARRAY_INITIAL_SIZE 1024
 
-typedef struct farray_st {
-	int64_t first; // logical index of first element
-	int64_t start; // physical index
-	int64_t end;   // physical index
-	int64_t array_size;
-	void**  elements;
-} farray_t;
-
 static farray_t* farray_create() {
 	farray_t* a = malloc(sizeof(farray_t));
 	assert( a != NULL );
@@ -206,19 +194,9 @@ static void farray_drop_first(farray_t* a) {
 /* COVARIANCE MATRICES                                                        */
 /******************************************************************************/
 
-typedef struct cov_st {
-	int64_t first; // logical index of first element
-	//farray_t* steps;
-} cov_t;
-
 /******************************************************************************/
 /* KALMAN STEPS                                                               */
 /******************************************************************************/
-
-typedef struct step_st {
-	int64_t first; // logical index of first element
-	//farray_t* steps;
-} step_t;
 
 static step_t* step_create() {
 	step_t* s = malloc(sizeof(step_t));
@@ -230,18 +208,17 @@ static step_t* step_create() {
 /* KALMAN                                                                     */
 /******************************************************************************/
 
-typedef struct kalman_st {
-	//int64_t first; // logical index of first element
-	farray_t* steps;
-	step_t*   current;
-} kalman_t;
-
 kalman_t* kalman_create() {
 	kalman_t* kalman = malloc(sizeof(kalman_t));
 	assert( kalman != NULL );
 	kalman->steps   = farray_create();
 	kalman->current = NULL;
 	return kalman;
+}
+
+void kalman_free(kalman_t* kalman) {
+	printf("waning: kalman_free not yet implemented\n");
+	//if (kalman->steps != NULL)
 }
 
 void advance(kalman_t* kalman, int32_t dim, double timestamp) {
@@ -262,9 +239,6 @@ void observe(kalman_t* kalman, matrix_t* G, matrix_t* bo, cov_t* Co) {
 
 matrix_t* filter(kalman_t* kalman) {
 }
-
-
-
 
 /******************************************************************************/
 /* MAIN                                                                       */
@@ -342,3 +316,4 @@ int main(int argc, char *argv[]) {
 /******************************************************************************/
 /* END OF FILE                                                                */
 /******************************************************************************/
+
