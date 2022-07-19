@@ -24,17 +24,11 @@
 
 #include "ultimatekalman.h"
 
-static double NaN = 0.0 / 0.0;
+#ifndef BUILD_MEX
+#error "You must define -DBUILD_MEX to build the mex version of ultimatekalman"
+#endif
 
-/* The computational routine */
-void arrayProduct(double x, double *y, double *z, mwSize n)
-{
-    mwSize i;
-    /* multiply each element y by x */
-    for (i=0; i<n; i++) {
-        z[i] = x * y[i];
-    }
-}
+static double NaN = 0.0 / 0.0;
 
 /*******************************************************************/
 /* HANDLES                                                         */
@@ -114,8 +108,8 @@ static void argCheck(char* selector,
   	mexErrMsgIdAndTxt("MyToolbox:arrayProduct:nlhs",msg);
   }
 
-  for (i=1; i<nrhs; i++) if( !mxIsDouble(prhs[i]) ) { // skip the selector
-  	sprintf(msg,"All inputs to %s must be real.",selector);
+  for (i=1; i<nrhs; i++) if( !mxIsDouble(prhs[i]) || mxIsComplex(prhs[i])) { // skip the selector
+  	sprintf(msg,"All inputs to %s must be double-precision and real.",selector);
   	mexErrMsgIdAndTxt("MyToolbox:arrayProduct:type",msg);
   }
 }
@@ -133,29 +127,101 @@ static void mexTemplate(char* selector,int nlhs, mxArray *plhs[], int nrhs, cons
 static void mexCreate(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 	argCheck("create",0,0,1,1,nlhs,plhs,nrhs,prhs);
 
+  int handle;
+
+  kalman_t* kalman = kalman_create();
+
+  if (kalman==NULL) {
+  	handle = -1;
+  } else {
+  	handle = handleAllocate(kalman_handles);
+  	if (handle==-1) kalman_free(kalman);
+  	handleSet(kalman_handles,handle,kalman);
+
+  	plhs[0] = mxCreateDoubleMatrix(1,1,mxREAL);
+  	double* out = mxGetPr(plhs[0]);
+
+  	printf("create %d %08x\n",handle,kalman);
+
+  	if (handle != -1) out[0] = handle;
+  	else              out[0] = NaN;
+  }
+}
+
+static void mexFree(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
+	argCheck("free",1,1,0,0,nlhs,plhs,nrhs,prhs);
+
+	int handle = (int) floor(mxGetScalar(prhs[1]));
+
+ 	void* kalman = handleGet(kalman_handles,handle);
+	printf("free %d %08x\n",handle,kalman);
+ 	kalman_free( kalman );
+ 	handleFree(kalman_handles, handle);
+}
+
+static void mexEarliest(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
+	argCheck("earliest",1,1,1,1,nlhs,plhs,nrhs,prhs);
+
+	int handle = (int) floor(mxGetScalar(prhs[1]));
+ 	void* p = handleGet(kalman_handles,handle);
+
   plhs[0] = mxCreateDoubleMatrix(1,1,mxREAL);
   double* out = mxGetPr(plhs[0]);
 
-  int handle = handleAllocate(kalman_handles);
-
-  handleSet(kalman_handles,handle,kalman_create());
-
-  if (handle != -1) out[0] = handle;
-  else              out[0] = NaN;
+  if (p==NULL) out[0] = NaN;
+  else                  out[0] = (double) kalman_earliest(p);
 }
 
-static void mexRelease(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
-  //mexPrintf("-- release\n");
-	argCheck("release",1,1,0,0,nlhs,plhs,nrhs,prhs);
+static void mexLatest(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
+	argCheck("latest",1,1,1,1,nlhs,plhs,nrhs,prhs);
 
-   //int handle = (int) floor(phandle[0]);
+	int handle = (int) floor(mxGetScalar(prhs[1]));
+ 	void* kalman = handleGet(kalman_handles,handle);
 
-   int handle = (int) floor(mxGetScalar(prhs[1]));
+  plhs[0] = mxCreateDoubleMatrix(1,1,mxREAL);
+  double* out = mxGetPr(plhs[0]);
 
-   handleFree(kalman_handles, handle);
-
-   //mexPrintf("-- release handle=%d\n",handle);
+  if (kalman==NULL) out[0] = NaN;
+  else                  out[0] = (double) kalman_latest(kalman);
 }
+
+static void mexEvolve(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
+	argCheck("evolve",6,6,0,0,nlhs,plhs,nrhs,prhs);
+
+	int handle = (int) floor(mxGetScalar(prhs[1]));
+	void* kalman = handleGet(kalman_handles,handle);
+
+	int32_t n_i = (int32_t) mxGetScalar(prhs[2]);
+
+	printf("evolve %d %d %08x\n",n_i,handle,kalman);
+
+	matrix_t* H_i = matrix_create_from_mxarray(prhs[3]);
+	matrix_t* F_i = matrix_create_from_mxarray(prhs[4]);
+	matrix_t* c_i = matrix_create_from_mxarray(prhs[5]);
+
+	kalman_evolve(kalman, n_i, H_i, F_i, c_i,	NULL);
+
+	matrix_free(c_i);
+	matrix_free(F_i);
+	matrix_free(c_i);
+}
+
+static void mexObserve(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
+	argCheck("evolve",4,4,0,0,nlhs,plhs,nrhs,prhs);
+
+	int handle = (int) floor(mxGetScalar(prhs[1]));
+	void* kalman = handleGet(kalman_handles,handle);
+
+	matrix_t* G_i = matrix_create_from_mxarray(prhs[2]);
+	matrix_t* o_i = matrix_create_from_mxarray(prhs[3]);
+
+	kalman_observe(kalman, G_i, o_i,	NULL);
+
+	matrix_free(o_i);
+	matrix_free(G_i);
+}
+
+
 
 /*******************************************************************/
 /* MEX FUNCTION                                                    */
@@ -172,94 +238,15 @@ void mexFunction( int nlhs, mxArray *plhs[],
 
     mexPrintf("Build time = %s %s\n",__DATE__,__TIME__);
 
+
     selector(NULL,nrhs,prhs);
 
 
     if      (selector("create"   ,nrhs,prhs)) { mexCreate  (nlhs,plhs,nrhs,prhs); return; }
-    else if (selector("release"  ,nrhs,prhs)) { mexRelease (nlhs,plhs,nrhs,prhs); return; }
-    /*
-    else if (!strcmp(selector,"earliest")) {
-      mexPrintf("-- earliest\n");
-    }
-
-    else if (!strcmp(selector,"latest  ")) {
-      mexPrintf("-- latest\n");
-    }
-
-    else if (!strcmp(selector,"evolve  ")) {
-      mexPrintf("-- evolve\n");
-    }
-
-    else if (!strcmp(selector,"observe ")) {
-      mexPrintf("-- observe\n");
-    }
-
-    else if (!strcmp(selector,"estimate")) {
-      mexPrintf("-- estimate\n");
-    }
-
-    else if (!strcmp(selector,"smooth  ")) {
-      mexPrintf("-- smooth\n");
-    }
-
-    else if (!strcmp(selector,"forget  ")) {
-      mexPrintf("-- forget\n");
-    }
-
-    else if (!strcmp(selector,"rollback")) {
-      mexPrintf("-- rollback\n");
-    }
-    */
+    else if (selector("free"     ,nrhs,prhs)) { mexFree    (nlhs,plhs,nrhs,prhs); return; }
+    else if (selector("earliest" ,nrhs,prhs)) { mexEarliest(nlhs,plhs,nrhs,prhs); return; }
+    else if (selector("latest"   ,nrhs,prhs)) { mexLatest  (nlhs,plhs,nrhs,prhs); return; }
+    else if (selector("evolve"   ,nrhs,prhs)) { mexEvolve  (nlhs,plhs,nrhs,prhs); return; }
+    else if (selector("observe"  ,nrhs,prhs)) { mexObserve (nlhs,plhs,nrhs,prhs); return; }
     else mexErrMsgIdAndTxt("sivantoledo:UltimateKalman:invalidSelector","invalid selector");
-
-    /* check for proper number of arguments */
-    if(nrhs!=2) {
-        mexErrMsgIdAndTxt("MyToolbox:arrayProduct:nrhs","Two inputs required.");
-    }
-    if(nlhs!=1) {
-        mexErrMsgIdAndTxt("MyToolbox:arrayProduct:nlhs","One output required.");
-    }
-    /* make sure the first input argument is scalar */
-    if( !mxIsDouble(prhs[0]) ||
-         mxIsComplex(prhs[0]) ||
-         mxGetNumberOfElements(prhs[0])!=1 ) {
-        mexErrMsgIdAndTxt("MyToolbox:arrayProduct:notScalar","Input multiplier must be a scalar.");
-    }
-
-    /* make sure the second input argument is type double */
-    if( !mxIsDouble(prhs[1]) ||
-         mxIsComplex(prhs[1])) {
-        mexErrMsgIdAndTxt("MyToolbox:arrayProduct:notDouble","Input matrix must be type double.");
-    }
-
-    /* check that number of rows in second input argument is 1 */
-    if(mxGetM(prhs[1])!=1) {
-        mexErrMsgIdAndTxt("MyToolbox:arrayProduct:notRowVector","Input must be a row vector.");
-    }
-
-    /* get the value of the scalar input  */
-    multiplier = mxGetScalar(prhs[0]);
-
-    /* create a pointer to the real data in the input matrix  */
-    #if MX_HAS_INTERLEAVED_COMPLEX
-    inMatrix = mxGetDoubles(prhs[1]);
-    #else
-    inMatrix = mxGetPr(prhs[1]);
-    #endif
-
-    /* get dimensions of the input matrix */
-    ncols = mxGetN(prhs[1]);
-
-    /* create the output matrix */
-    plhs[0] = mxCreateDoubleMatrix(1,(mwSize)ncols,mxREAL);
-
-    /* get a pointer to the real data in the output matrix */
-    #if MX_HAS_INTERLEAVED_COMPLEX
-    outMatrix = mxGetDoubles(plhs[0]);
-    #else
-    outMatrix = mxGetPr(plhs[0]);
-    #endif
-
-    /* call the computational routine */
-    arrayProduct(multiplier,inMatrix,outMatrix,(mwSize)ncols);
 }

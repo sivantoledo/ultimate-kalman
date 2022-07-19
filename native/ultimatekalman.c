@@ -9,6 +9,24 @@
 
 #include "ultimatekalman.h"
 
+#ifdef BUILD_MEX
+#include "mex.h"
+
+static char assert_msg[81];
+static void mex_assert(int c) {
+	if (!c) {
+		sprintf(assert_msg,"Assert failed in %s line %d",__FILE__,__LINE__);
+		mexErrMsgIdAndTxt("MyToolbox:arrayProduct:assertion",assert_msg);
+	}
+}
+
+#define assert(c) mex_assert((c))
+#define blas_int_t mwSignedIndex
+#else
+#define blas_int_t int
+#endif
+
+
 /******************************************************************************/
 /* UTILITIES                                                                  */
 /******************************************************************************/
@@ -23,7 +41,7 @@
 #ifdef NDEBUG
 // defined in the header file ...
 #else
-static void matrix_set(matrix_t* A, int32_t i, int32_t j, double v) {
+void matrix_set(matrix_t* A, int32_t i, int32_t j, double v) {
 	assert(i >= 0);
 	assert(j >= 0);
 	assert(i < A->row_dim);
@@ -31,7 +49,7 @@ static void matrix_set(matrix_t* A, int32_t i, int32_t j, double v) {
 	(A->elements)[ j*(A->row_dim) + i ] = v;
 }
 
-static double matrix_get(matrix_t* A, int32_t i, int32_t j) {
+double matrix_get(matrix_t* A, int32_t i, int32_t j) {
 	assert(i >= 0);
 	assert(j >= 0);
 	assert(i < A->row_dim);
@@ -41,23 +59,32 @@ static double matrix_get(matrix_t* A, int32_t i, int32_t j) {
 #endif
 
 /*
- * Creates a zero matrix
+ * Creates a matrix with undefined elements
  */
-static matrix_t* matrix_create(int32_t rows, int32_t cols) {
+matrix_t* matrix_create(int32_t rows, int32_t cols) {
 	matrix_t* A = malloc(sizeof(matrix_t));
 	assert( A!= NULL );
 	A->row_dim = rows;
 	A->col_dim = cols;
-	A->elements = calloc(rows*cols, sizeof(double));
+	A->elements = malloc(rows*cols*sizeof(double));
 	assert( A->elements != NULL );
 	return A;
 }
 
+void matrix_free(matrix_t* A) {
+	if (A==NULL) return;
+	free( A->elements );
+	free( A );
+}
+
+int32_t matrix_rows(matrix_t* A) { return A->row_dim; }
+int32_t matrix_cols(matrix_t* A) { return A->col_dim; }
+
 /*
  * Creates an identity matrix (can be rectangular; main diagonal is 1, rest 0).
  */
-static matrix_t* matrix_create_identity(int32_t rows, int32_t cols) {
-	int32_t i,j;
+matrix_t* matrix_create_identity(int32_t rows, int32_t cols) {
+	int32_t i;
 
 	matrix_t* I = matrix_create(rows,cols);
 
@@ -68,15 +95,10 @@ static matrix_t* matrix_create_identity(int32_t rows, int32_t cols) {
 	return I;
 }
 
-static matrix_t* matrix_create_from_rowwise(double* naked, int32_t rows, int32_t cols) {
+matrix_t* matrix_create_from_rowwise(double* naked, int32_t rows, int32_t cols) {
 	int32_t i,j;
 
-	matrix_t* A = malloc(sizeof(matrix_t));
-	assert( A!= NULL );
-	A->row_dim = rows;
-	A->col_dim = cols;
-	A->elements = calloc(rows*cols, sizeof(double));
-	assert( A->elements != NULL );
+	matrix_t* A = matrix_create(rows,cols);
 
 	for (i=0; i<rows; i++) {
 		for (j=0; j<cols; j++) {
@@ -87,21 +109,102 @@ static matrix_t* matrix_create_from_rowwise(double* naked, int32_t rows, int32_t
 	return A;
 }
 
-
-static void matrix_print(matrix_t* A, FILE* f, char* format) {
+matrix_t* matrix_create_constant(int32_t rows, int32_t cols, double c) {
 	int32_t i,j;
 
-	if (f == NULL)      f      = stdout;
+	matrix_t* A = matrix_create(rows,cols);
+
+	for (i=0; i<rows; i++) {
+		for (j=0; j<cols; j++) {
+			matrix_set(A,i,j, c);
+		}
+	}
+
+	return A;
+}
+
+void matrix_print(matrix_t* A, char* format) {
+	int32_t i,j;
+
+	printf("matrix_print %d %d\n",A->row_dim,A->col_dim);
+
 	if (format == NULL) format = "%f";
 
 	for (i=0; i<A->row_dim; i++) {
 		for (j=0; j<A->col_dim; j++) {
-			fprintf(f,format,matrix_get(A,i,j));
-			fprintf(f," ");
+			printf(format,matrix_get(A,i,j));
+			printf(" ");
 		}
-		fprintf(f,"\n");
+		printf("\n");
 	}
 }
+
+matrix_t* matrix_create_copy(matrix_t* A) {
+	int i,j;
+
+	int rows  = (A->row_dim);
+	int cols  = (A->col_dim);
+
+	matrix_t* C = matrix_create(rows,cols);
+
+	for (i=0; i<rows; i++) {
+		for (j=0; j<cols; j++) {
+			matrix_set(C,i,j,matrix_get(A,i,j));
+		}
+	}
+
+	return C;
+}
+
+matrix_t* matrix_create_vconcat(matrix_t* A, matrix_t* B) {
+	int i,j;
+
+	assert( A->col_dim == B->col_dim );
+
+	int rows  = (A->row_dim) + (B->row_dim);
+	int cols  = (A->col_dim);
+	int Arows = A->row_dim;
+
+	matrix_t* C = matrix_create(rows,cols);
+
+	for (i=0; i<Arows; i++) {
+		for (j=0; j<C->col_dim; j++) {
+			matrix_set(C,i,j,matrix_get(A,i,j));
+		}
+	}
+
+	for (   ; i<C->row_dim; i++) {
+		for (j=0; j<C->col_dim; j++) {
+			matrix_set(C,i,j,matrix_get(B,i-Arows,j));
+		}
+	}
+
+	return C;
+}
+
+
+#ifdef BUILD_MEX
+matrix_t* matrix_create_from_mxarray(const mxArray* mx) {
+	int32_t rows = (int32_t) mxGetM(mx);
+	int32_t cols = (int32_t) mxGetN(mx);
+
+	if (rows==0 || cols==0) return NULL;
+
+	printf("== create from mx %d %d\n",rows,cols);
+
+	matrix_t* A = malloc(sizeof(matrix_t));
+	assert( A!= NULL );
+	A->row_dim = rows;
+	A->col_dim = cols;
+	A->elements = calloc(rows*cols, sizeof(double));
+	assert( A->elements != NULL );
+
+	memcpy( A->elements, mxGetPr(mx), rows*cols*sizeof(double));
+
+	return A;
+}
+#endif
+
 
 /******************************************************************************/
 /* FLEXIBLE ARRAYS OF POINTERS                                                */
@@ -120,6 +223,12 @@ static farray_t* farray_create() {
 	assert( a->elements != NULL );
 	return a;
 }
+
+static void farray_free(farray_t* a) {
+  free( a->elements );
+  free( a );
+}
+
 
 static int64_t farray_size(farray_t* a) {
 	if (a->end < a->start) return 0;
@@ -194,6 +303,12 @@ static void farray_drop_first(farray_t* a) {
 /* COVARIANCE MATRICES                                                        */
 /******************************************************************************/
 
+matrix_t* cov_weigh(cov_t* cov, matrix_t* A) {
+	printf("cov_weigh not implemented yet\n");
+	assert(false);
+	return NULL;
+}
+
 /******************************************************************************/
 /* KALMAN STEPS                                                               */
 /******************************************************************************/
@@ -217,32 +332,132 @@ kalman_t* kalman_create() {
 }
 
 void kalman_free(kalman_t* kalman) {
-	printf("waning: kalman_free not yet implemented\n");
-	//if (kalman->steps != NULL)
+	printf("waning: kalman_free not fully implemented yet (steps not processed)\n");
+	farray_free( kalman->steps );
+	// step_free( kalman->current );
+	free( kalman );
 }
 
-void advance(kalman_t* kalman, int32_t dim, double timestamp) {
-	kalman->current = step_create(dim, timestamp);
+int64_t   kalman_earliest(kalman_t* kalman) {
+	if ( farray_size(kalman->steps) == 0 ) return -1;
+	step_t* s = farray_get_first(kalman->steps);
+	return s->step;
 }
 
-void evolve(kalman_t* kalman, matrix_t* H, matrix_t* F, matrix_t* be, cov_t* Ce) {
+int64_t   kalman_latest(kalman_t* kalman) {
+	if ( farray_size(kalman->steps) == 0 ) return -1;
+	step_t* s = farray_get_last(kalman->steps);
+	return s->step;
 }
 
-void evolve_simple(kalman_t* kalman, matrix_t* F, matrix_t* be, cov_t* Ce) {
+void kalman_evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, matrix_t* c_i, cov_t* K_i) {
+	printf("kalman_evolve n_i = %d\n",n_i);
+	printf("kalman_evolve H_i = %08x\n",H_i);
+	printf("kalman_evolve F_i = %08x\n",F_i);
+	printf("kalman_evolve i_i = %08x\n",c_i);
+	printf("kalman_evolve K_i = %08x\n",K_i);
+
+	kalman->current = step_create();
+
+	if (farray_size(kalman->steps)==0) {
+		printf("kalman_evolve first step\n");
+		kalman->current->step = 0;
+		return;
+	}
+
+	step_t* imo = farray_get_last( kalman->steps );
+	kalman->current->step = (imo->step) + 1;
+
+	printf("kalman_evolve step = %d\n",kalman->current->step);
+
+	assert(H_i!=NULL);
+	assert(F_i!=NULL);
+	assert(c_i!=NULL);
+	assert(K_i!=NULL);
+
+	printf("kalman_evolve F_i = %08x %d %d\n",F_i,F_i->row_dim,F_i->col_dim);
+	matrix_print(F_i,NULL);
+return;
+	matrix_t* V_i_H_i = cov_weigh(K_i,H_i);
+	matrix_t* V_i_F_i = cov_weigh(K_i,F_i);
+	matrix_t* V_i_c_i = cov_weigh(K_i,c_i);
+
+	matrix_t* A;
+	matrix_t* B;
+	matrix_t* y;
+
+	if ( imo->Rdiag != NULL ) {
+		int32_t z_i = matrix_rows( imo->Rdiag );
+		A = matrix_create_vconcat( imo->Rdiag                             , V_i_F_i );
+		B = matrix_create_vconcat( matrix_create_constant( z_i, n_i, 0.0 ), V_i_H_i );
+		y = matrix_create_vconcat( imo->y                                 , V_i_c_i );
+	} else {
+		A = matrix_create_copy( V_i_F_i );
+		B = matrix_create_copy( V_i_H_i );
+		y = matrix_create_copy( V_i_c_i );
+	}
+
+	/*
+	 * QR factorization
+	 */
+
+	blas_int_t M,N,K,LDA,LDC,LWORK,INFO;
+
+	M   = matrix_rows(A);
+	N   = matrix_cols(A);
+	LDA = matrix_rows(A);
+
+	matrix_t* TAU = matrix_create(M,1);
+
+	double WORK_SCALAR;
+	LWORK = -1; // tell lapack to compute the size of the work area required
+
+#if 0
+	dgeqrf(&M, &N, A->elements, &LDA, TAU->elements, &WORK_SCALAR, &LWORK, &INFO);
+
+	if (INFO != 0) printf("dgeqrf INFO=%d\n",INFO);
+	assert(INFO==0);
+
+	printf("dgeqrf requires %f words in WORK\n",WORK_SCALAR);
+
+	LWORK = (int32_t) WORK_SCALAR;
+	matrix_t* WORK = matrix_create(LWORK,1);
+
+	dgeqrf(&M, &N, A->elements, &LDA, TAU->elements, WORK->elements, &LWORK, &INFO);
+
+	matrix_free(WORK);
+
+	if (INFO != 0) printf("dgeqrf INFO=%d\n",INFO);
+	assert(INFO==0);
+#endif
+	// left (pre) multiplication by Q^T
+	//dormqr("L", "T", &M, &N, &K, A->elements, &LDA, tau, B->elements, &LDC, &WORK, &LWORD, &INFO);
+
+	printf("kalman_evolve (incomplete)\n");
+
+	matrix_free(y);
+	matrix_free(A);
+	matrix_free(B);
+
+	matrix_free(V_i_c_i);
+	matrix_free(V_i_F_i);
+	matrix_free(V_i_H_i);
 }
 
-void observe_nothing(kalman_t* kalman) {
+void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, cov_t* C_i) {
+
+	farray_append(kalman->steps,kalman->current);
+	kalman->current = NULL;
+
+	printf("kalman_observe (incomplete)\n");
 }
 
-void observe(kalman_t* kalman, matrix_t* G, matrix_t* bo, cov_t* Co) {
-}
-
-matrix_t* filter(kalman_t* kalman) {
-}
 
 /******************************************************************************/
 /* MAIN                                                                       */
 /******************************************************************************/
+
+#if false
 
 int main(int argc, char *argv[]) {
   printf("hello world\n");
@@ -312,6 +527,7 @@ int main(int argc, char *argv[]) {
   matrix_t* W = matrix_create_from_rowwise(A,2,3);
   matrix_print(W,NULL,NULL);
 }
+#endif
 
 /******************************************************************************/
 /* END OF FILE                                                                */
