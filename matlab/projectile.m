@@ -1,4 +1,4 @@
-function projectile(seed)
+function projectile(kalman_factory,seed)
 
 if nargin < 1
     seed = 1;
@@ -60,7 +60,7 @@ initialExpectation = [ obs(1,400)
                        (obs(1,410) - obs(1,400)) / (10*delta_t) 
                        (obs(2,410) - obs(2,400)) / (10*delta_t) ];
 
-kalman = UltimateKalman();
+kalman = kalman_factory();
 filtered = NaN * zeros(n,k);
 smoothed = NaN * zeros(n,k);
 est      = NaN * zeros(n,k);
@@ -90,7 +90,7 @@ end
 % smooth to get point of origin
 % now we start the filter from 0, but 
 % we do not provide the initial expectation
-kalman = UltimateKalman();
+kalman = kalman_factory();
 % evolve and observe
 for i=1:k
     kalman.evolve(4,[],F,c,K);

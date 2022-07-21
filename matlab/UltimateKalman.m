@@ -97,9 +97,9 @@ classdef UltimateKalman < handle
                 end
             end
 
-            V_i_F_i  = - K_i.weigh(F_i);
-            V_i_c_i =    K_i.weigh(c_i);
-            V_i_H_i  =   K_i.weigh(H_i);
+            V_i_F_i = - K_i.weigh(F_i);
+            V_i_c_i =   K_i.weigh(c_i);
+            V_i_H_i =   K_i.weigh(H_i);
 
             %ptr_imo = kalman.current.last;
 
@@ -130,6 +130,12 @@ classdef UltimateKalman < handle
                 kalman.current.Rbar = B(n_imo+1:end,:);
                 kalman.current.ybar = y(n_imo+1:end,1);
             end
+
+            if kalman.current.step > 395 && kalman.current.step < 405
+            fprintf("ev %d\n",kalman.current.step);
+            size(A)
+            size(B)
+            end
         end
 
         function observe(kalman,G_i,o_i,C_i)
@@ -150,9 +156,15 @@ classdef UltimateKalman < handle
             if nargin<4 || isempty(o_i) % no observations, pass []
                 %m_i = 0;
                 if isfield(kalman.current,'Rbar') && ~isempty(kalman.current.Rbar)
-                    [Q,R] = qr( kalman.current.Rbar );
-                    kalman.current.Rdiag = R;
-                    kalman.current.y     = Q' * kalman.current.ybar ;
+                    A = kalman.current.Rbar;
+                    y = kalman.current.ybar;
+
+                    %[Q,R] = qr( kalman.current.Rbar );
+                    %kalman.current.Rdiag = R;
+                    %kalman.current.y     = Q' * kalman.current.ybar ;
+                else
+                    A = [];
+                    y = [];
                 end
             else % no observations
                 %m_i = length(o_i);
@@ -161,20 +173,52 @@ classdef UltimateKalman < handle
                 W_i_o_i = C_i.weigh(o_i);
 
                 if isfield(kalman.current,'Rbar') && ~isempty(kalman.current.Rbar)
-                    [Q,R] = qr( [ kalman.current.Rbar ; W_i_G_i ] , 0 ); % thin QR
-                    kalman.current.Rdiag = R;
-                    kalman.current.y   = Q' * [ kalman.current.ybar ; W_i_o_i ];
+                    A = [ kalman.current.Rbar ; W_i_G_i ];
+                    y = [ kalman.current.ybar ; W_i_o_i ];
+
+                    %[Q,R] = qr( [ kalman.current.Rbar ; W_i_G_i ] , 0 ); % thin QR
+                    %kalman.current.Rdiag = R;
+                    %kalman.current.y   = Q' * [ kalman.current.ybar ; W_i_o_i ];
                 else % no Rdiag yet
-                    RdiagRowDim = min(n_i, size(W_i_G_i,1));
-                    [Q,R] = qr(W_i_G_i);
-                    kalman.current.Rdiag = R(1:RdiagRowDim,1:n_i);
-                    y                  = Q' * W_i_o_i;
-                    kalman.current.y   = y(1:RdiagRowDim,1);
+                    A = W_i_G_i;
+                    y =  W_i_o_i;
+                    %RdiagRowDim = min(n_i, size(W_i_G_i,1));
+                    %[Q,R] = qr(W_i_G_i);
+                    %kalman.current.Rdiag = R(1:RdiagRowDim,1:n_i);
+                    %y                  = Q' * W_i_o_i;
+                    %kalman.current.y   = y(1:RdiagRowDim,1);
                 end
             end % of we have observations
 
+            %if kalman.current.step > 395 && kalman.current.step < 405
+            %fprintf("ob %d\n",kalman.current.step);
+            %size(A)
+            %end
+
+            'observe'
+            A
+            y
+
+            if ~isempty(A) 
+                if size(A,1) >= size(A,2)
+                  [Q,R] = qr(A,0);
+                  y = Q'*y;
+                  n = min(n_i,size(A,1));
+                  n_i
+                  R
+                  y
+                  kalman.current.Rdiag = R(1:n,:);
+                  kalman.current.y   = y(1:n,1);
+                else
+                  kalman.current.Rdiag = A;
+                  kalman.current.y   = y;
+                end
+            end
+            
+
             if isfield(kalman.current,'Rdiag') && size(kalman.current.Rdiag,1) == kalman.current.dimension
                 kalman.current.estimatedState      = kalman.current.Rdiag \ kalman.current.y;
+                %Rdiag = kalman.current.Rdiag
                 kalman.current.estimatedCovariance = CovarianceMatrix( kalman.current.Rdiag, 'W');
             end
 
@@ -273,6 +317,7 @@ classdef UltimateKalman < handle
             if ptr_s > l || ptr_s < 1
                 warning('cannot roll back to this state (too old or future');
             else
+                if true
                 kalman.current = [];
                 kalman.current.dimension = kalman.steps{ ptr_s }.dimension;
                 kalman.current.step      = kalman.steps{ ptr_s }.step;
@@ -280,6 +325,9 @@ classdef UltimateKalman < handle
                 kalman.current.ybar      = kalman.steps{ ptr_s }.ybar;
                 %kalman.current = kalman.steps{ ptr_s };
                 kalman.steps = { kalman.steps{1:ptr_s-1} };
+                else
+                kalman.steps = { kalman.steps{1:ptr_s} };
+                end
                 %kalman.current = rmfield(kalman.current,{'Rdiag','Rsupdiag','y','estimatedState','estimatedCovariance'});
                 %ptr_s
                 %kalman

@@ -1,4 +1,4 @@
-function constant(seed, k, smooth, sloping, exception)
+function constant(kalman_factory, seed, k, smooth, sloping, exception)
 % constant(seed, k, smooth, sloping, exception) a test function for UltimateKalman
 %
 % copyright 2022 Sivan Toledo
@@ -22,6 +22,10 @@ K   = CovarianceMatrix(evolutionStd  *evolutionStd  *eye(l), 'C');
 C   = CovarianceMatrix(observationStd*observationStd*eye(m), 'C');
 Cex = CovarianceMatrix(exceptionStd  *exceptionStd  *eye(m), 'C');
 
+
+K   = CovarianceMatrix(evolutionStd^-1  *ones(1,1), 'w');
+C   = CovarianceMatrix(observationStd^-1*ones(m,1), 'w');
+
 states = NaN * zeros(1,k);
 obs    = NaN * zeros(1,k);
 
@@ -44,7 +48,7 @@ for i=1:k
     end
 end
 
-kalman = UltimateKalman();
+kalman = kalman_factory();
 filtered = NaN * zeros(n,k);
 smoothed = NaN * zeros(n,k);
 est      = NaN * zeros(n,k);
@@ -77,7 +81,7 @@ end
 
 t = 0:k-1;
 
-close all
+%close all
 figure
 axis square
 set(gca,'Box','on');;

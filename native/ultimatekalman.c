@@ -13,19 +13,20 @@
 #include "mex.h"
 
 static char assert_msg[81];
-static void mex_assert(int c) {
+static void mex_assert(int c, int line) {
 	if (!c) {
-		sprintf(assert_msg,"Assert failed in %s line %d",__FILE__,__LINE__);
+		sprintf(assert_msg,"Assert failed in %s line %d",__FILE__,line);
 		mexErrMsgIdAndTxt("MyToolbox:arrayProduct:assertion",assert_msg);
 	}
 }
 
-#define assert(c) mex_assert((c))
+#define assert(c) mex_assert((c),__LINE__)
 #define blas_int_t mwSignedIndex
 #else
 #define blas_int_t int
 #endif
 
+static int debug = 1;
 
 /******************************************************************************/
 /* UTILITIES                                                                  */
@@ -33,6 +34,8 @@ static void mex_assert(int c) {
 
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
 #define MAX(a,b) ((a)>(b) ? (a) : (b))
+
+static double NaN = 0.0 / 0.0;
 
 /******************************************************************************/
 /* MATRICES                                                                   */
@@ -46,7 +49,7 @@ void matrix_set(matrix_t* A, int32_t i, int32_t j, double v) {
 	assert(j >= 0);
 	assert(i < A->row_dim);
 	assert(j < A->col_dim);
-	(A->elements)[ j*(A->row_dim) + i ] = v;
+	(A->elements)[ j*(A->ld) + i ] = v;
 }
 
 double matrix_get(matrix_t* A, int32_t i, int32_t j) {
@@ -54,9 +57,31 @@ double matrix_get(matrix_t* A, int32_t i, int32_t j) {
 	assert(j >= 0);
 	assert(i < A->row_dim);
 	assert(j < A->col_dim);
-	return (A->elements)[ j*(A->row_dim) + i ];
+	return (A->elements)[ j*(A->ld) + i ];
 }
 #endif
+
+// this replaces the matrix by its top-left block
+void matrix_mutate_chop(matrix_t* A, int32_t rows, int32_t cols) {
+	assert(rows >= 0);
+	assert(rows >= 0);
+	assert(rows <= A->row_dim);
+	assert(cols <= A->col_dim);
+
+	A->row_dim = rows;
+	A->col_dim = cols;
+}
+
+void matrix_mutate_triu(matrix_t* A) {
+	int32_t n = matrix_rows(A);
+	int32_t i,j;
+
+	for (j=0; j<n; j++) {
+		for (i=j+1; i<n; i++) {
+			matrix_set(A,i,j,0.0);
+		}
+	}
+}
 
 /*
  * Creates a matrix with undefined elements
@@ -66,6 +91,7 @@ matrix_t* matrix_create(int32_t rows, int32_t cols) {
 	assert( A!= NULL );
 	A->row_dim = rows;
 	A->col_dim = cols;
+	A->ld      = rows;
 	A->elements = malloc(rows*cols*sizeof(double));
 	assert( A->elements != NULL );
 	return A;
@@ -79,6 +105,7 @@ void matrix_free(matrix_t* A) {
 
 int32_t matrix_rows(matrix_t* A) { return A->row_dim; }
 int32_t matrix_cols(matrix_t* A) { return A->col_dim; }
+int32_t matrix_ld  (matrix_t* A) { return A->ld;      }
 
 /*
  * Creates an identity matrix (can be rectangular; main diagonal is 1, rest 0).
@@ -126,24 +153,26 @@ matrix_t* matrix_create_constant(int32_t rows, int32_t cols, double c) {
 void matrix_print(matrix_t* A, char* format) {
 	int32_t i,j;
 
-	printf("matrix_print %d %d\n",A->row_dim,A->col_dim);
+	if (debug) printf("matrix_print %d %d\n",A->row_dim,A->col_dim);
 
 	if (format == NULL) format = "%f";
 
 	for (i=0; i<A->row_dim; i++) {
 		for (j=0; j<A->col_dim; j++) {
-			printf(format,matrix_get(A,i,j));
-			printf(" ");
+			if (debug) printf(format,matrix_get(A,i,j));
+			if (debug) printf(" ");
 		}
-		printf("\n");
+		if (debug) printf("\n");
 	}
 }
 
 matrix_t* matrix_create_copy(matrix_t* A) {
+	if (A==NULL) return NULL;
+
 	int i,j;
 
-	int rows  = (A->row_dim);
-	int cols  = (A->col_dim);
+	int32_t rows  = (A->row_dim);
+	int32_t cols  = (A->col_dim);
 
 	matrix_t* C = matrix_create(rows,cols);
 
@@ -156,26 +185,19 @@ matrix_t* matrix_create_copy(matrix_t* A) {
 	return C;
 }
 
-matrix_t* matrix_create_vconcat(matrix_t* A, matrix_t* B) {
+matrix_t* matrix_create_sub(matrix_t* A, int32_t first_row, int32_t rows, int32_t first_col, int32_t cols) {
 	int i,j;
 
-	assert( A->col_dim == B->col_dim );
-
-	int rows  = (A->row_dim) + (B->row_dim);
-	int cols  = (A->col_dim);
-	int Arows = A->row_dim;
+	assert(first_row >= 0);
+	assert(first_col >= 0);
+	assert(first_row+rows <= A->row_dim);
+	assert(first_col+cols <= A->col_dim);
 
 	matrix_t* C = matrix_create(rows,cols);
 
-	for (i=0; i<Arows; i++) {
-		for (j=0; j<C->col_dim; j++) {
-			matrix_set(C,i,j,matrix_get(A,i,j));
-		}
-	}
-
-	for (   ; i<C->row_dim; i++) {
-		for (j=0; j<C->col_dim; j++) {
-			matrix_set(C,i,j,matrix_get(B,i-Arows,j));
+	for (i=0; i<rows; i++) {
+		for (j=0; j<cols; j++) {
+			matrix_set(C,i,j,matrix_get(A,first_row+i,first_col+j));
 		}
 	}
 
@@ -183,25 +205,200 @@ matrix_t* matrix_create_vconcat(matrix_t* A, matrix_t* B) {
 }
 
 
+matrix_t* matrix_create_vconcat(matrix_t* A, matrix_t* B) {
+	int i,j;
+
+	int32_t Arows = (A == NULL ? 0 : A->row_dim);
+	int32_t Acols = (A == NULL ? 0 : A->col_dim);
+	int32_t Brows = (B == NULL ? 0 : B->row_dim);
+	int32_t Bcols = (B == NULL ? 0 : B->col_dim);
+
+	//if (debug) printf("vconcat %d %d %d %d\n",Arows,Acols,Brows,Bcols);
+
+	if (Arows + Brows == 0) return NULL;
+
+	int32_t rows = Arows+Brows;
+	int32_t cols = MAX(Acols,Bcols); // one could be zero
+
+	//if (debug) printf("vconcat %d %d %d\n",rows,cols,Arows);
+	//assert( A->col_dim == B->col_dim );
+
+	matrix_t* C = matrix_create(rows,cols);
+
+	for (i=0; i<Arows; i++) {
+		for (j=0; j<cols; j++) {
+			matrix_set(C,i,j,matrix_get(A,i,j));
+		}
+	}
+
+	for (   ; i<rows; i++) {
+		for (j=0; j<cols; j++) {
+			matrix_set(C,i,j,matrix_get(B,i-Arows,j));
+		}
+	}
+
+	//if (debug) printf("vconcat done\n");
+
+	return C;
+}
+
+void matrix_mutate_scale(matrix_t* A, double s) {
+	int32_t i,j;
+
+	int32_t rows = matrix_rows(A);
+	int32_t cols = matrix_cols(A);
+
+	for (j=0; j<cols; j++) {
+		for (i=0; i<rows; i++) {
+			matrix_set(A,i,j, s * matrix_get(A,i,j));
+		}
+	}
+}
+
+// returns TAU
+// nor for flat matrices
+matrix_t* matrix_create_mutate_qr(matrix_t* A) {
+	assert(A != NULL);
+	int32_t i,j;
+
+	int32_t rows = matrix_rows(A);
+	int32_t cols = matrix_cols(A);
+
+	assert(rows >= cols);
+
+	blas_int_t M,N,LDA,LWORK,INFO;
+	double     WORK_SCALAR;
+
+	M   = matrix_rows(A);
+	N   = matrix_cols(A);
+	LDA = matrix_ld  (A);
+
+	matrix_t* TAU = matrix_create(N,1);
+
+	LWORK = -1; // tell lapack to compute the size of the work area required
+	//if (debug) printf("dgeqrf: M=%d N=%d LDA=%d LWORK=%d\n",M,N,LDA,LWORK);
+	dgeqrf(&M, &N, A->elements, &LDA, TAU->elements, &WORK_SCALAR, &LWORK, &INFO);
+	if (INFO != 0) printf("dgeqrf INFO=%d\n",INFO);
+	assert(INFO==0);
+
+	LWORK = (blas_int_t) WORK_SCALAR;
+	matrix_t* WORK = matrix_create(LWORK,1);
+	//printf("dgeqrf requires %f (%d) words in WORK\n",WORK_SCALAR,LWORK);
+	dgeqrf(&M, &N, A->elements, &LDA, TAU->elements, WORK->elements, &LWORK, &INFO);
+	if (INFO != 0) printf("dgeqrf INFO=%d\n",INFO);
+	assert(INFO==0);
+
+	matrix_free(WORK);
+
+	return TAU;
+}
+
+
+matrix_t* matrix_mutate_apply_qt(matrix_t* QR, matrix_t* TAU, matrix_t* C) {
+	assert(QR != NULL);
+
+	blas_int_t M,N,K,LDA,LDC,LWORK,INFO;
+	double     WORK_SCALAR;
+
+	//int32_t rows = matrix_rows(A);
+	//int32_t cols = matrix_cols(A);
+
+	LWORK = -1; // tell lapack to compute the size of the work area required
+
+	M = matrix_rows(C);
+	N = matrix_cols(C);
+	K = matrix_cols(QR); // number of reflectors
+	LDA = matrix_ld(QR);
+	LDC = matrix_ld(C);
+	//printf("dormqr M=%d N=%d K=%d LDA=%d LDC=%d\n",M,N,K,LDA,LDC);
+
+	dormqr("L", "T", &M, &N, &K, QR->elements, &LDA, TAU->elements, C->elements, &LDC, &WORK_SCALAR, &LWORK, &INFO);
+	if (INFO != 0) printf("dormqr INFO=%d\n",INFO);
+	assert(INFO==0);
+
+	LWORK = (blas_int_t) WORK_SCALAR;
+	matrix_t* WORK = matrix_create(LWORK,1);
+
+	//if (debug) printf("dormqr requires %f (%d) words in WORK\n",WORK_SCALAR,LWORK);
+
+	// left (pre) multiplication by Q^T
+	dormqr("L", "T", &M, &N, &K, QR->elements, &LDA, TAU->elements, C->elements, &LDC, WORK->elements, &LWORK, &INFO);
+	if (INFO != 0) printf("dormqr INFO=%d\n",INFO);
+	assert(INFO==0);
+
+	matrix_free(WORK);
+}
+
+matrix_t* matrix_create_trisolve(matrix_t* U, matrix_t* b) {
+	assert(U != NULL);
+	assert(b != NULL);
+	assert(matrix_rows(U) == matrix_cols(U));
+	assert(matrix_rows(b) == matrix_cols(U));
+
+	blas_int_t N,NRHS,LDA,LDB,INFO;
+
+	matrix_t* x = matrix_create_copy(b);
+
+	//if (debug) printf("**** %d %d %d %d\n",matrix_rows(A),matrix_ld(A),matrix_rows(kalman->current->state),matrix_ld(kalman->current->state));
+
+	N = matrix_cols(U);
+	LDA = matrix_ld(U);
+
+	NRHS = matrix_cols(x);
+	LDB = matrix_ld(x);
+
+	if (debug) printf("dtrtrs N=%d NRHS=%d LDA=%d LDB=%d\n",N,NRHS,LDA,LDB);
+
+	//if (debug) matrix_print(kalman->current->Rdiag,NULL);
+	//if (debug) matrix_print(state,NULL);
+
+	// upper triangular, no transpose, diagonal is general (not unit)
+	dtrtrs("U","N","N", &N, &NRHS, U->elements, &LDA, x->elements, &LDB, &INFO);
+	if (INFO != 0) printf("dormqr INFO=%d\n",INFO);
+	assert(INFO==0);
+	if (debug) printf("dtrtr done\n");
+
+	return x;
+}
+
+
+
 #ifdef BUILD_MEX
 matrix_t* matrix_create_from_mxarray(const mxArray* mx) {
+	if (mx==NULL) {
+		mexErrMsgIdAndTxt("MyToolbox:arrayProduct:assertion","matrix_create_from_mxarray: argument must not be null");
+	}
 	int32_t rows = (int32_t) mxGetM(mx);
 	int32_t cols = (int32_t) mxGetN(mx);
 
 	if (rows==0 || cols==0) return NULL;
 
-	printf("== create from mx %d %d\n",rows,cols);
+	//if (debug) printf("== create from mx %d %d\n",rows,cols);
 
-	matrix_t* A = malloc(sizeof(matrix_t));
-	assert( A!= NULL );
-	A->row_dim = rows;
-	A->col_dim = cols;
-	A->elements = calloc(rows*cols, sizeof(double));
-	assert( A->elements != NULL );
+	matrix_t* A = matrix_create(rows,cols);
 
 	memcpy( A->elements, mxGetPr(mx), rows*cols*sizeof(double));
 
 	return A;
+}
+
+mxArray* matrix_copy_to_mxarray(matrix_t* A) {
+	int32_t i,j;
+
+	int32_t rows = matrix_rows(A);
+	int32_t cols = matrix_cols(A);
+
+	mxArray* mx = mxCreateDoubleMatrix(rows,cols,mxREAL);
+
+	double* out = mxGetPr(mx);
+
+	for (j=0; j<cols; j++) {
+		for (i=0; i<rows; i++) {
+			out[ (j*rows) + i ] = matrix_get(A,i,j);
+		}
+	}
+
+	return mx;
 }
 #endif
 
@@ -271,7 +468,7 @@ static void farray_append(farray_t* a, void* v) {
 		int64_t logical_size = farray_size(a);
 		int64_t array_size   = a->array_size;
 
-		// printf("append l=%lld p=%lld\n",logical_size,array_size);
+		// if (debug) printf("append l=%lld p=%lld\n",logical_size,array_size);
 
 		if (logical_size <= array_size/2) { // can just shift back less than half the array
 			for (i=0; i<logical_size; i++) {
@@ -279,12 +476,12 @@ static void farray_append(farray_t* a, void* v) {
 			}
 			a->start = 0;
 			a->end   = logical_size-1;
-			//printf("farray shifted back, physical size %lld pointers, logical size %lld\n",a->array_size,logical_size);
+			//if (debug) printf("farray shifted back, physical size %lld pointers, logical size %lld\n",a->array_size,logical_size);
 		} else { // array is currently more than half full, realloc at a larger size
 			a->array_size *= 2;
 			a->elements = realloc( a->elements, (a->array_size)*sizeof(void*) );
 			assert( a->elements != NULL);
-			//printf("farray reallocated, new physical size is %lld pointers, logical size %lld\n",a->array_size,logical_size);
+			//if (debug) printf("farray reallocated, new physical size is %lld pointers, logical size %lld\n",a->array_size,logical_size);
 		}
 	}
 
@@ -294,19 +491,109 @@ static void farray_append(farray_t* a, void* v) {
 	(a->elements)[ a->end ] = v;
 }
 
-static void farray_drop_first(farray_t* a) {
+static void* farray_drop_first(farray_t* a) {
+	void* r = (a->elements)[ a->start ];
 	(a->first)++;
 	(a->start)++;
+	return r;
+}
+
+static void* farray_drop_last(farray_t* a) {
+	void* r = (a->elements)[ a->end ];
+	(a->end)--;
+	return r;
 }
 
 /******************************************************************************/
 /* COVARIANCE MATRICES                                                        */
 /******************************************************************************/
 
-matrix_t* cov_weigh(cov_t* cov, matrix_t* A) {
-	printf("cov_weigh not implemented yet\n");
-	assert(false);
-	return NULL;
+matrix_t* cov_weigh(matrix_t* cov, char cov_type, matrix_t* A) {
+	blas_int_t M,N,K,LDA,LDB,LDC,NRHS,INFO;
+	double ALPHA, BETA;
+
+	assert(A != NULL);
+	assert(cov != NULL);
+
+	//if (debug) printf("cov type %c\n",cov_type);
+	//if (debug) printf("cov ");
+	//if (debug) matrix_print(cov,"%.3e");
+	//if (debug) printf("A ");
+	//if (debug) matrix_print(A,"%.3e");
+
+	matrix_t* WA = NULL;
+
+	switch (cov_type) {
+	case 'W':
+
+		//if (debug) printf("cov W %d %d %d %d\n",matrix_cols(cov),matrix_rows(cov),matrix_cols(A),matrix_rows(A));
+
+		assert(matrix_cols(cov) == matrix_rows(A));
+
+		WA = matrix_create_constant(matrix_rows(A), matrix_cols(A),0.0);
+
+		M = matrix_rows(WA);
+		N = matrix_cols(WA);
+		K = matrix_cols(cov);
+		LDA = matrix_ld(cov);
+		LDB = matrix_ld(A);
+		LDC = matrix_ld(WA);
+		ALPHA = 1.0;
+		BETA  = 0.0;
+		dgemm("n","N",&M,&N,&K,&ALPHA, cov->elements, &LDA, A->elements, &LDB, &BETA, WA->elements, &LDC);
+		break;
+	case 'U': // cov and an upper triangular matrix that we need to solve with
+
+		//if (debug) printf("cov U %d %d %d %d\n",matrix_cols(cov),matrix_rows(cov),matrix_cols(A),matrix_rows(A));
+
+		WA = matrix_create_trisolve(cov,A);
+		/*
+		assert(matrix_cols(cov) == matrix_rows(A));
+
+		WA = matrix_create_copy(A);
+
+		N = matrix_cols(cov);
+		LDA = matrix_ld(cov);
+
+		NRHS = matrix_cols(WA);
+		LDB = matrix_ld(WA);
+
+		//if (debug) printf("dtrtrs N=%d NRHS=%d LDA=%d LDB=%d\n",N,NRHS,LDA,LDB);
+		//if (debug) printf("dtrtrs A %08x state %08x\n",step->Rdiag->elements, state->elements);
+
+		//if (debug) matrix_print(step->Rdiag,NULL);
+		//if (debug) matrix_print(kalman->current->state,NULL);
+
+		// upper triangular, no transpose, diagonal is general (not unit)
+		dtrtrs("U","N","N", &N, &NRHS, cov->elements, &LDA, WA->elements, &LDB, &INFO);
+		*/
+		break;
+	case 'w':
+		int32_t i,j, rows, cols;
+
+		assert(matrix_rows(cov) == matrix_rows(A));
+
+		rows = matrix_rows(A);
+		cols = matrix_cols(A);
+
+		WA = matrix_create_constant(rows, cols,0.0);
+
+		for (j=0; j<cols; j++) {
+			for (i=0; i<rows; i++) {
+				matrix_set(WA,i,j, matrix_get(cov,i,0) * matrix_get(A,i,j) );
+			}
+		}
+		break;
+	default:
+		assert( false );
+		WA = matrix_create_constant(matrix_rows(A), matrix_cols(A), NaN);
+		break;
+	}
+
+	//if (debug) printf("WA ");
+	//if (debug) matrix_print(WA,"%.3e");
+
+	return WA;
 }
 
 /******************************************************************************/
@@ -315,8 +602,32 @@ matrix_t* cov_weigh(cov_t* cov, matrix_t* A) {
 
 static step_t* step_create() {
 	step_t* s = malloc(sizeof(step_t));
+	s->step      = -1;
+	s->dimension = -1;
+
+	s->Rdiag     = NULL;
+	s->Rsupdiag  = NULL;
+	s->y         = NULL;
+
+	s->Rbar      = NULL;
+	s->ybar      = NULL;
+
+	s->state     = NULL;
+	s->covariance= NULL;
+
 	assert( s != NULL );
 	return s;
+}
+
+void step_free(step_t* s) {
+	matrix_free(s->covariance);
+	matrix_free(s->state);
+	matrix_free(s->Rdiag);
+	matrix_free(s->Rsupdiag);
+	matrix_free(s->y);
+	matrix_free(s->Rbar);
+	matrix_free(s->ybar);
+	free(s);
 }
 
 /******************************************************************************/
@@ -350,37 +661,56 @@ int64_t   kalman_latest(kalman_t* kalman) {
 	return s->step;
 }
 
-void kalman_evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, matrix_t* c_i, cov_t* K_i) {
-	printf("kalman_evolve n_i = %d\n",n_i);
-	printf("kalman_evolve H_i = %08x\n",H_i);
-	printf("kalman_evolve F_i = %08x\n",F_i);
-	printf("kalman_evolve i_i = %08x\n",c_i);
-	printf("kalman_evolve K_i = %08x\n",K_i);
+void kalman_evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, matrix_t* c_i, matrix_t* K_i, char K_type) {
+	//if (debug) printf("kalman_evolve n_i = %d\n",n_i);
+	//if (debug) printf("kalman_evolve H_i = %08x\n",H_i);
+	//if (debug) printf("kalman_evolve F_i = %08x\n",F_i);
+	//if (debug) printf("kalman_evolve i_i = %08x\n",c_i);
+	//if (debug) printf("kalman_evolve K_i = %08x\n",K_i);
 
 	kalman->current = step_create();
+	kalman->current->dimension = n_i;
 
 	if (farray_size(kalman->steps)==0) {
-		printf("kalman_evolve first step\n");
+		//if (debug) printf("kalman_evolve first step\n");
 		kalman->current->step = 0;
 		return;
 	}
 
 	step_t* imo = farray_get_last( kalman->steps );
+	assert(imo != NULL);
 	kalman->current->step = (imo->step) + 1;
 
-	printf("kalman_evolve step = %d\n",kalman->current->step);
+	//if (debug) printf("kalman_evolve step = %d\n",kalman->current->step);
 
 	assert(H_i!=NULL);
 	assert(F_i!=NULL);
 	assert(c_i!=NULL);
-	assert(K_i!=NULL);
+	//assert(K_i!=NULL);
 
-	printf("kalman_evolve F_i = %08x %d %d\n",F_i,F_i->row_dim,F_i->col_dim);
-	matrix_print(F_i,NULL);
-return;
-	matrix_t* V_i_H_i = cov_weigh(K_i,H_i);
-	matrix_t* V_i_F_i = cov_weigh(K_i,F_i);
-	matrix_t* V_i_c_i = cov_weigh(K_i,c_i);
+	//if (debug) printf("kalman_evolve F_i = %08x %d %d\n",F_i,F_i->row_dim,F_i->col_dim);
+	//if (debug) matrix_print(F_i,NULL);
+
+#if 1
+	matrix_t* V_i_H_i = cov_weigh(K_i,K_type,H_i);
+	matrix_t* V_i_F_i = cov_weigh(K_i,K_type,F_i);
+	matrix_t* V_i_c_i = cov_weigh(K_i,K_type,c_i);
+#else
+	matrix_t* V_i_H_i = matrix_create_copy(H_i);
+	matrix_t* V_i_F_i = matrix_create_copy(F_i);
+	matrix_t* V_i_c_i = matrix_create_copy(c_i);
+#endif
+
+	matrix_mutate_scale(V_i_F_i,-1.0);
+
+	if (debug) printf("evolve!\n");
+
+	if (debug) printf("V_i_H_i ");
+	if (debug) matrix_print(V_i_H_i,"%.3e");
+	if (debug) printf("V_i_F_i ");
+	if (debug) matrix_print(V_i_F_i,"%.3e");
+	if (debug) printf("V_i_c_i ");
+	if (debug) matrix_print(V_i_c_i,"%.3e");
 
 	matrix_t* A;
 	matrix_t* B;
@@ -397,61 +727,447 @@ return;
 		y = matrix_create_copy( V_i_c_i );
 	}
 
+	if (debug) printf("A ");
+	if (debug) matrix_print(A,"%.3e");
+	if (debug) printf("B ");
+	if (debug) matrix_print(B,"%.3e");
+	if (debug) printf("y ");
+	if (debug) matrix_print(y,"%.3e");
+
 	/*
 	 * QR factorization
 	 */
 
+	/*
 	blas_int_t M,N,K,LDA,LDC,LWORK,INFO;
 
 	M   = matrix_rows(A);
 	N   = matrix_cols(A);
-	LDA = matrix_rows(A);
+	LDA = matrix_ld (A);
 
 	matrix_t* TAU = matrix_create(M,1);
 
 	double WORK_SCALAR;
 	LWORK = -1; // tell lapack to compute the size of the work area required
 
-#if 0
+	//if (debug) printf("dgeqrf: M=%d N=%d LDA=%d LWORK=%d\n",M,N,LDA,LWORK);
+
 	dgeqrf(&M, &N, A->elements, &LDA, TAU->elements, &WORK_SCALAR, &LWORK, &INFO);
 
 	if (INFO != 0) printf("dgeqrf INFO=%d\n",INFO);
 	assert(INFO==0);
 
-	printf("dgeqrf requires %f words in WORK\n",WORK_SCALAR);
-
 	LWORK = (int32_t) WORK_SCALAR;
 	matrix_t* WORK = matrix_create(LWORK,1);
 
+	//printf("dgeqrf requires %f (%d) words in WORK\n",WORK_SCALAR,LWORK);
+
+//#if 0
+
 	dgeqrf(&M, &N, A->elements, &LDA, TAU->elements, WORK->elements, &LWORK, &INFO);
+	if (INFO != 0) printf("dgeqrf INFO=%d\n",INFO);
+	assert(INFO==0);
 
 	matrix_free(WORK);
 
-	if (INFO != 0) printf("dgeqrf INFO=%d\n",INFO);
+//#endif
+
+	LWORK = -1; // tell lapack to compute the size of the work area required
+
+	M = matrix_rows(B);
+	N = matrix_cols(B);
+	K = matrix_cols(A); // number of reflectors
+	LDC = matrix_ld(B);
+	//printf("dormqr M=%d N=%d K=%d LDA=%d LDC=%d\n",M,N,K,LDA,LDC);
+
+	dormqr("L", "T", &M, &N, &K, A->elements, &LDA, TAU->elements, B->elements, &LDC, &WORK_SCALAR, &LWORK, &INFO);
+	if (INFO != 0) printf("dormqr INFO=%d\n",INFO);
 	assert(INFO==0);
-#endif
+
+	LWORK = (int32_t) WORK_SCALAR;
+
+	//if (debug) printf("dormqr requires %f (%d) words in WORK\n",WORK_SCALAR,LWORK);
+
+	WORK = matrix_create(LWORK,1);
+
 	// left (pre) multiplication by Q^T
-	//dormqr("L", "T", &M, &N, &K, A->elements, &LDA, tau, B->elements, &LDC, &WORK, &LWORD, &INFO);
+	dormqr("L", "T", &M, &N, &K, A->elements, &LDA, TAU->elements, B->elements, &LDC, WORK->elements, &LWORK, &INFO);
+	if (INFO != 0) printf("dormqr INFO=%d\n",INFO);
+	assert(INFO==0);
 
-	printf("kalman_evolve (incomplete)\n");
+	// we use hte same LWORK since clearly less memory is required now.
+	N = matrix_cols(y);
+	LDC = matrix_rows(y);
+	dormqr("L", "T", &M, &N, &K, A->elements, &LDA, TAU->elements, y->elements, &LDC, WORK->elements, &LWORK, &INFO);
+	if (INFO != 0) printf("dormqr INFO=%d\n",INFO);
+	assert(INFO==0);
 
-	matrix_free(y);
-	matrix_free(A);
-	matrix_free(B);
+
+	matrix_free(WORK);
+
+	*/
+	matrix_t* TAU = matrix_create_mutate_qr(A);
+	matrix_mutate_apply_qt(A,TAU,B);
+	matrix_mutate_apply_qt(A,TAU,y);
+	matrix_free(TAU);
+
+	//if (debug) matrix_print(A,NULL);
+	//if (debug) matrix_print(TAU,NULL);
+
+	/*
+	 * These do not require copying either, but we do not want to define references to matrices,
+	 * for memory management reasons.
+	 */
+
+	int32_t n_imo = imo->dimension;
+
+	if (debug) printf("B ");
+	if (debug) matrix_print(B,"%.3e");
+	if (debug) printf("y ");
+	if (debug) matrix_print(y,"%.3e");
+
+	//printf("%d: A %d %d B %d %d\n",kalman->current->step,matrix_rows(A),matrix_cols(A),matrix_rows(B),matrix_cols(B));
+
+	if (matrix_rows(B) > n_imo) {
+		kalman->current->Rbar = matrix_create_sub(B,n_imo,matrix_rows(B)-n_imo, 0, matrix_cols(B));
+		kalman->current->ybar = matrix_create_sub(y,n_imo,matrix_rows(y)-n_imo, 0, matrix_cols(y));
+	}
+
+	// free imo's Rdiag and y, if they are set
+	if (imo->Rdiag != NULL) matrix_free(imo->Rdiag);
+	if (imo->y     != NULL) matrix_free(imo->y    );
+
+	matrix_mutate_chop(A,MIN(matrix_rows(A),n_imo),matrix_cols(A)); // we only need the upper triangular part, and that's what we'll use; with the too-long LDA.
+	matrix_mutate_chop(B,MIN(matrix_rows(B),n_imo),matrix_cols(B));
+	matrix_mutate_chop(y,MIN(matrix_rows(y),n_imo),matrix_cols(y));
+
+	imo->Rdiag    = A;
+	imo->Rsupdiag = B;
+	imo->y        = y;
+
+	matrix_mutate_triu(imo->Rdiag);
+
+	//matrix_free(y);
+	//matrix_free(A);
+	//matrix_free(B);
+
 
 	matrix_free(V_i_c_i);
 	matrix_free(V_i_F_i);
 	matrix_free(V_i_H_i);
 }
 
-void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, cov_t* C_i) {
+void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_i, char C_type) {
+
+	if (debug) printf("observe!\n");
+	assert(kalman != NULL);
+	assert(kalman->current != NULL);
+	int32_t n_i = kalman->current->dimension;
+
+	if (debug) printf("observe %d\n",kalman->current->step,n_i);
+
+	matrix_t* W_i_G_i = NULL;
+	matrix_t* W_i_o_i = NULL;
+
+	if (o_i != NULL) { // no observations
+#if 1
+		W_i_G_i = cov_weigh(C_i,C_type,G_i);
+		W_i_o_i = cov_weigh(C_i,C_type,o_i);
+#else
+		W_i_G_i = matrix_create_copy(G_i);
+		W_i_o_i = matrix_create_copy(o_i);
+#endif
+
+		if (debug) printf("W_i_G_i ");
+		if (debug) matrix_print(W_i_G_i,"%.3e");
+		if (debug) printf("W_i_o_i ");
+		if (debug) matrix_print(W_i_o_i,"%.3e");
+	}
+
+
+	//if (debug) printf("kalman_observe %08x %d %08x %d\n",G_i,G_i?matrix_rows(G_i):0, kalman->current->Rbar, kalman->current->Rbar?matrix_rows(kalman->current->Rbar):0);
+	//if (debug) printf("current ybar %08x Rbar %08x Woi %08x\n",kalman->current->Rbar, kalman->current->ybar, W_i_o_i);
+
+	matrix_t* A = matrix_create_vconcat(kalman->current->Rbar, W_i_G_i);
+	matrix_t* y = matrix_create_vconcat(kalman->current->ybar, W_i_o_i);
+
+	if ( A != NULL ) { // we got some rows from at least one of the two blocks
+		if (debug) printf("A ");
+		if (debug) matrix_print(A,"%.3e");
+		if (debug) printf("y ");
+		if (debug) matrix_print(y,"%.3e");
+
+		if (matrix_rows(A) >= matrix_cols(A)) {
+		//printf("%d: A %d %d obs? %d Rbar? %d\n",kalman->current->step,matrix_rows(A),matrix_cols(A),o_i!=NULL, kalman->current->Rbar!=NULL);
+
+		/*
+		 * QR factorization
+		 */
+			/*
+		blas_int_t M,N,K,LDA,LDC,LWORK,INFO;
+
+		M   = matrix_rows(A);
+		N   = matrix_cols(A);
+		LDA = matrix_ld  (A);
+
+		matrix_t* TAU = matrix_create(M,1);
+
+		double WORK_SCALAR;
+		LWORK = -1; // tell lapack to compute the size of the work area required
+
+		//if (debug) printf("dgeqrf: M=%d N=%d LDA=%d LWORK=%d\n",M,N,LDA,LWORK);
+
+		dgeqrf(&M, &N, A->elements, &LDA, TAU->elements, &WORK_SCALAR, &LWORK, &INFO);
+		if (INFO != 0) printf("dgeqrf INFO=%d\n",INFO);
+		assert(INFO==0);
+
+		LWORK = (int32_t) WORK_SCALAR;
+		matrix_t* WORK = matrix_create(LWORK,1);
+
+		//if (debug) printf("dgeqrf requires %f (%d) words in WORK\n",WORK_SCALAR,LWORK);
+
+		dgeqrf(&M, &N, A->elements, &LDA, TAU->elements, WORK->elements, &LWORK, &INFO);
+		if (INFO != 0) printf("dgeqrf INFO=%d\n",INFO);
+		assert(INFO==0);
+
+		matrix_free(WORK);
+
+		LWORK = -1; // tell lapack to compute the size of the work area required
+
+		M = matrix_rows(y);
+		N = matrix_cols(y);
+		K = matrix_cols(A); // number of reflectors
+		LDC = matrix_ld(y);
+		//if (debug) printf("dormqr M=%d N=%d K=%d LDA=%d LDC=%d\n",M,N,K,LDA,LDC);
+		if (debug) printf("%d: dormqr M=%d N=%d K=%d LDA=%d LDC=%d\n",kalman->current->step,M,N,K,LDA,LDC);
+
+		dormqr("L", "T", &M, &N, &K, A->elements, &LDA, TAU->elements, y->elements, &LDC, &WORK_SCALAR, &LWORK, &INFO);
+		if (INFO != 0) printf("dormqr INFO=%d\n",INFO);
+		assert(INFO==0);
+
+		LWORK = (int32_t) WORK_SCALAR;
+
+		//if (debug) printf("dormqr requires %f (%d) words in WORK\n",WORK_SCALAR,LWORK);
+
+		WORK = matrix_create(LWORK,1);
+
+		// left (pre) multiplication by Q^T
+		dormqr("L", "T", &M, &N, &K, A->elements, &LDA, TAU->elements, y->elements, &LDC, WORK->elements, &LWORK, &INFO);
+		if (INFO != 0) printf("dormqr INFO=%d\n",INFO);
+		assert(INFO==0);
+
+		matrix_free(WORK);
+		matrix_free(TAU);
+		*/
+
+			matrix_t* TAU = matrix_create_mutate_qr(A);
+			matrix_mutate_apply_qt(A,TAU,y);
+			matrix_free(TAU);
+
+
+		/*********************************************/
+
+		int32_t n_i = kalman->current->dimension;
+
+		//if (debug) printf("observe n_i = %d\n",n_i);
+
+		//if (debug) printf("**** %d %d %d %d\n",matrix_rows(A),matrix_ld(A),matrix_rows(y),matrix_ld(y));
+
+		if (debug) printf("A ");
+		if (debug) matrix_print(A,"%.3e");
+		if (debug) printf("y ");
+		if (debug) matrix_print(y,"%.3e");
+
+		matrix_mutate_chop(A,MIN(matrix_rows(A),n_i),matrix_cols(A));
+		matrix_mutate_chop(y,MIN(matrix_rows(y),n_i),matrix_cols(y));
+
+		//if (debug) printf("**** %d %d %d %d\n",matrix_rows(A),matrix_ld(A),matrix_rows(y),matrix_ld(y));
+
+		if (debug) printf("A ");
+		if (debug) matrix_print(A,"%.3e");
+
+		kalman->current->Rdiag  = A;
+		kalman->current->y      = y;
+
+		matrix_mutate_triu(kalman->current->Rdiag);
+
+		} else { // A is flat, no need to factor
+			printf("obs step %d no need to factor, flat\n",kalman->current->step);
+			kalman->current->Rdiag  = A;
+			kalman->current->y      = y;
+		}
+
+		// solve for the estimate
+
+		matrix_t* state = NULL;
+
+		if (matrix_rows(kalman->current->Rdiag)==n_i) {
+
+			state = matrix_create_trisolve(kalman->current->Rdiag,y);
+
+			/*
+
+			state = matrix_create_copy(y);
+
+			//if (debug) printf("**** %d %d %d %d\n",matrix_rows(A),matrix_ld(A),matrix_rows(kalman->current->state),matrix_ld(kalman->current->state));
+
+			blas_int_t N,LDA,NRHS,LDB,INFO;
+			N = matrix_cols(kalman->current->Rdiag);
+			LDA = matrix_ld(kalman->current->Rdiag);
+
+			NRHS = matrix_cols(state);
+			LDB = matrix_ld(state);
+
+			if (debug) printf("dtrtrs N=%d NRHS=%d LDA=%d LDB=%d\n",N,NRHS,LDA,LDB);
+
+			if (debug) matrix_print(kalman->current->Rdiag,NULL);
+			if (debug) matrix_print(state,NULL);
+
+			// upper triangular, no transpose, diagonal is general (not unit)
+			dtrtrs("U","N","N", &N, &NRHS, kalman->current->Rdiag->elements, &LDA, state->elements, &LDB, &INFO);
+			if (INFO != 0) printf("dormqr INFO=%d\n",INFO);
+			assert(INFO==0);
+			if (debug) printf("dtrtr done\n");
+			*/
+		} else {
+			state = matrix_create_constant(n_i,1,NaN);
+		}
+
+		kalman->current->state = state;
+		kalman->current->covariance = matrix_create_copy(kalman->current->Rdiag);
+	}
+
+	matrix_free(W_i_G_i);
+	matrix_free(W_i_o_i);
 
 	farray_append(kalman->steps,kalman->current);
 	kalman->current = NULL;
 
-	printf("kalman_observe (incomplete)\n");
+	if (debug) printf("kalman_observe done\n");
 }
 
+matrix_t* kalman_estimate(kalman_t* kalman, int64_t si) {
+	if (debug) printf("kalman_estimate\n");
+
+	if (farray_size(kalman->steps) == 0) return NULL;
+
+	if (si < 0) si = farray_last_index(kalman->steps);
+	step_t* step = farray_get(kalman->steps,si);
+
+	if (step->state == NULL) return matrix_create_constant(step->dimension,1,NaN);
+
+	return matrix_create_copy(step->state);
+#if 0
+	int32_t n_i = step->dimension;
+
+	matrix_t* state = NULL;
+
+	if (step->Rdiag != NULL && step->y != NULL && matrix_rows(step->Rdiag)==n_i) {
+		state = matrix_create_copy(step->y);
+
+		//if (debug) printf("**** %d %d %d %d\n",matrix_rows(A),matrix_ld(A),matrix_rows(kalman->current->state),matrix_ld(kalman->current->state));
+
+		blas_int_t N,LDA,NRHS,LDB,INFO;
+		N = matrix_cols(step->Rdiag);
+		LDA = matrix_ld(step->Rdiag);
+
+		NRHS = matrix_cols(state);
+		LDB = matrix_ld(state);
+
+		if (debug) printf("dtrtrs N=%d NRHS=%d LDA=%d LDB=%d\n",N,NRHS,LDA,LDB);
+		if (debug) printf("dtrtrs A %08x state %08x\n",step->Rdiag->elements, state->elements);
+
+		//if (debug) matrix_print(step->Rdiag,NULL);
+		//if (debug) matrix_print(kalman->current->state,NULL);
+
+		// upper triangular, no transpose, diagonal is general (not unit)
+		dtrtrs("U","N","N", &N, &NRHS, step->Rdiag->elements, &LDA, state->elements, &LDB, &INFO);
+		if (INFO != 0) if (debug) printf("dormqr INFO=%d\n",INFO);
+		assert(INFO==0);
+	} else {
+		state = matrix_create_constant(n_i,1,NaN);
+	}
+
+	return state;
+#endif
+}
+
+matrix_t* kalman_covariance(kalman_t* kalman, int64_t si) {
+	//int32_t i,j;
+
+	if (debug) printf("kalman_covariance\n");
+
+	if (farray_size(kalman->steps) == 0) return NULL;
+
+	if (si < 0) si = farray_last_index(kalman->steps);
+	step_t* step = farray_get(kalman->steps,si);
+
+	int32_t n_i = step->dimension;
+
+	matrix_t* cov = NULL;
+
+	if (step->Rdiag != NULL && matrix_rows(step->Rdiag)==n_i) {
+		cov = matrix_create_copy(step->covariance);
+
+		//printf("cov ");
+		//matrix_print(cov,"%.3e");
+
+		//for (j=0; j<n_i; j++) {
+		//	for (i=j+1; i<n_i; i++) {
+		//		matrix_set(cov,i,j,0.0);
+		//	}
+		//}
+	} else {
+		cov = matrix_create_constant(n_i,n_i,NaN);
+	}
+
+	return cov;
+}
+
+
+void kalman_forget(kalman_t* kalman, int64_t si) {
+	printf("forget %d\n",si);
+	if (farray_size(kalman->steps) == 0) return;
+
+	if (si < 0) si = farray_last_index(kalman->steps) - 1;
+
+	if (si > farray_last_index (kalman->steps) - 1) return; // don't delete last step
+	if (si < farray_first_index(kalman->steps)    ) return; // nothing to delete
+
+	while (farray_first_index(kalman->steps) <= si) {
+		step_t* step = farray_drop_first(kalman->steps);
+		step_free(step);
+	}
+}
+
+void kalman_rollback(kalman_t* kalman, int64_t si) {
+	printf("rollback %d\n",si);
+	if (farray_size(kalman->steps) == 0) return;
+
+	if (si > farray_last_index (kalman->steps)) return; // we can roll  back even the last step (its observation)
+	if (si < farray_first_index(kalman->steps)) return;
+
+	step_t* step;
+	do {
+		step = farray_drop_last(kalman->steps);
+		if (step->step == si) {
+			printf("rollback got to %d\n",si);
+
+			kalman->current = step_create();
+			kalman->current->dimension = step->dimension;
+			kalman->current->step      = step->step;
+			kalman->current->Rbar      = step->Rbar;
+			kalman->current->ybar      = step->ybar;
+
+			// TODO free...
+		} else {
+			printf("rollback dropped step %d\n",step->step);
+		}
+	} while (step->step > si);
+
+	printf("rollback to %d new latest %d\n",si,kalman_latest(kalman));
+
+}
 
 /******************************************************************************/
 /* MAIN                                                                       */
@@ -466,7 +1182,7 @@ int main(int argc, char *argv[]) {
   matrix_t* A = matrix_create(7,8);
   matrix_t* I = matrix_create_identity(7,8);
   matrix_set(I,6,7,13.0);
-  matrix_print(I,NULL,NULL);
+  if (debug) matrix_print(I,NULL,NULL);
   //matrix_set(I,7,0,13.0);
 #endif
 
@@ -525,7 +1241,7 @@ int main(int argc, char *argv[]) {
   };
 
   matrix_t* W = matrix_create_from_rowwise(A,2,3);
-  matrix_print(W,NULL,NULL);
+  if (debug) matrix_print(W,NULL,NULL);
 }
 #endif
 

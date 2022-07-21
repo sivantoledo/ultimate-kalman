@@ -1,4 +1,4 @@
-function clock_offsets(seed)
+function clock_offsets(kalman_factory,seed)
 % clock_offsets(seed) a test function for UltimateKalman
 %
 % copyright 2022 Sivan Toledo
@@ -49,7 +49,7 @@ for i=1:k
     end
 end
 
-kalman = UltimateKalman();
+kalman = kalman_factory();
 filtered = NaN * zeros(n,k);
 
 kalman.evolve(n);

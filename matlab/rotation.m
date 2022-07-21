@@ -1,10 +1,10 @@
-function rotation(seed,obs_dim)
+function rotation(kalman_factory,seed,obs_dim)
 
-if nargin<2
+if nargin<3
     obs_dim = 2; % number of rows in each observation, from 1 to 6
 end
 
-if nargin>=1
+if nargin>=2
     rng(seed);
 end
 
@@ -25,8 +25,10 @@ G = G(1:obs_dim, :);
 evolutionStd   = 1e-3;
 observationStd = 1e-1;
 
-K = CovarianceMatrix(evolutionStd  *evolutionStd  *eye(2),      'C');
+K = CovarianceMatrix(evolutionStd  *evolutionStd  *eye(2),       'C');
 C = CovarianceMatrix(observationStd*observationStd*eye(obs_dim), 'C');
+K = CovarianceMatrix(evolutionStd^-1  *ones(2,1),'w');
+C = CovarianceMatrix(observationStd^-1*ones(obs_dim,1), 'w');
 
 k = 16;
 
@@ -44,7 +46,7 @@ end
 
 %[states' obs']
 
-kalman = UltimateKalman();
+kalman = kalman_factory();
 filtered  = NaN * zeros(2,k);
 predicted = NaN * zeros(2,k);
 
@@ -56,12 +58,19 @@ predicted(:,1) = kalman.estimate(0);
 % predict
 for i=2:k
     kalman.evolve(2,[],F,zeros(2,1),K);
-    kalman.observe(G);
+    kalman.observe();
     predicted(:,i) = kalman.estimate(i-1); % zero based step numbers
 end
-
+predicted
+if true
 % roll back and add observation of step 1
+kalman.earliest
+kalman.latest
 kalman.rollback(1);
+disp('rollback')
+kalman.earliest
+kalman.latest
+%kalman.evolve(2,[],F,zeros(2,1),K);
 kalman.observe(G,obs(:,2),C);
 end
 
@@ -79,14 +88,16 @@ for i=3:k
     %kalman.forget();
 end
 
-kalman.smooth();
-
-smoothed = NaN * zeros(2,k);
-for i=1:k 
-    smoothed(:,i) = kalman.estimate(i-1); % zero based step numbers
+filtered
 end
+%kalman.smooth();
 
-close all; 
+%smoothed = NaN * zeros(2,k);
+%for i=1:k 
+%    smoothed(:,i) = kalman.estimate(i-1); % zero based step numbers
+%end
+
+%close all; 
 figure;
 
 axis square
@@ -96,7 +107,7 @@ hold on;
 plot(states(1,:),states(2,:),'k-','LineWidth',1);
 if obs_dim==2; plot(obs(1,:),obs(2,:),'r.'); end
 plot(filtered(1,:),filtered(2,:),'b-','LineWidth',1);
-plot(smoothed(1,:),smoothed(2,:),'m-','LineWidth',1);
+%plot(smoothed(1,:),smoothed(2,:),'m-','LineWidth',1);
 plot(predicted(1,:),predicted(2,:),'c-','LineWidth',1);
 
 xlim([-1.25 1.25]);
