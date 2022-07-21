@@ -1,4 +1,4 @@
-function add_remove(seed)
+function add_remove(kalman_factory,seed)
 
 if nargin<1
     seed = 1;
@@ -33,10 +33,15 @@ C1   = CovarianceMatrix(observationStd*observationStd*eye(1), 'C');
 K2   = CovarianceMatrix(evolutionStd  *evolutionStd  *eye(2), 'C');
 C2   = CovarianceMatrix(observationStd*observationStd*eye(2), 'C');
 
+K1   = CovarianceMatrix(evolutionStd^-1  *ones(1,1), 'w');
+C1   = CovarianceMatrix(observationStd^-1*ones(1,1), 'w');
+K2   = CovarianceMatrix(evolutionStd^-1  *ones(2,1), 'w');
+C2   = CovarianceMatrix(observationStd^-1*ones(2,1), 'w');
+
 c1 = zeros(1,1);
 c2 = zeros(2,1);
 
-kalman = UltimateKalman();
+kalman = kalman_factory();
 obs      = NaN * zeros(n,k);
 
 % generate observations
@@ -73,4 +78,3 @@ e = kalman.estimate()
 kalman.evolve(1,[],F1,c1,K1);
 kalman.observe(G1,S_2*obs(:,1),C1);
 e = kalman.estimate()
-
