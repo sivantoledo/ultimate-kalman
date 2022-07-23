@@ -1,4 +1,4 @@
-function t = stress_test(kalman_factory, seed, sizes, count, decimation)
+function t = performance(kalman_factory, seed, sizes, count, decimation)
 
 if nargin < 1
     seed = 1;

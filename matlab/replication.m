@@ -9,10 +9,10 @@ end
 
 addpath 'C:\Users\stoledo\git\ultimate-kalman\native'
 
-stress_test(@factory, 1,[6 12],1e6,10000);
+performance(@factory, 1,[6 12],1e6,10000);
 exportgraphics(gca,'../outputs/stress_6_12_long.pdf');
 
-stress_test(@factory, 1,[6 12 24 48 96],1e5,1000);
+performance(@factory, 1,[6 12 24 48 96],1e5,1000);
 exportgraphics(gca,'../outputs/stress_6_96.pdf');
 
 return
