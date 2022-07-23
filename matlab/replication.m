@@ -9,13 +9,13 @@ end
 
 addpath 'C:\Users\stoledo\git\ultimate-kalman\native'
 
-performance(@factory, 1,[6 12],1e6,10000);
-exportgraphics(gca,'../outputs/stress_6_12_long.pdf');
+%performance(@factory, 1,[6 12],1e6,10000);
+%exportgraphics(gca,'../outputs/stress_6_12_long.pdf');
 
-performance(@factory, 1,[6 12 24 48 96],1e5,1000);
-exportgraphics(gca,'../outputs/stress_6_96.pdf');
+%performance(@factory, 1,[6 12 24 48 96],1e5,1000);
+%exportgraphics(gca,'../outputs/stress_6_96.pdf');
 
-return
+%return
 
 clock_offsets(@factory, 6)
 exportgraphics(gca,'..\outputs\clock_offsets.pdf');

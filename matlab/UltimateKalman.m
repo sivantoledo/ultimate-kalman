@@ -21,8 +21,6 @@ classdef UltimateKalman < handle
     properties (Access = private)
         steps;   % old states
         current; % the current state; moved to steps at the end of observe
-
-        k;     % old, now sure what this was
     end
 
     methods (Access = public)
@@ -30,6 +28,8 @@ classdef UltimateKalman < handle
             kalman = kalman@handle();
             kalman.steps = {};
         end
+
+        % no need for a destructor
 
         function i = earliest(kalman)
             %EARLIST   The index of the oldest step that has not been
@@ -179,7 +179,7 @@ classdef UltimateKalman < handle
                     %[Q,R] = qr( [ kalman.current.Rbar ; W_i_G_i ] , 0 ); % thin QR
                     %kalman.current.Rdiag = R;
                     %kalman.current.y   = Q' * [ kalman.current.ybar ; W_i_o_i ];
-                else % no Rdiag yet
+                else % no Rbar yet
                     A = W_i_G_i;
                     y =  W_i_o_i;
                     %RdiagRowDim = min(n_i, size(W_i_G_i,1));

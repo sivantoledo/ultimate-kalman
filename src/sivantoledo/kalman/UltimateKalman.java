@@ -1,61 +1,78 @@
 package sivantoledo.kalman;
 
+import java.util.ArrayList;
+
 import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.linear.MatrixUtils;
+import org.apache.commons.math3.linear.QRDecomposition;
 //import org.apache.commons.math3.exception.MathArithmeticException;
 //import org.apache.commons.math3.linear.MatrixUtils;
 //import org.apache.commons.math3.linear.QRDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 
+import sivantoledo.kalman.PaigeSaundersKalman.Step;
+import sivantoledo.kalman.PaigeSaundersKalman.StepState;
+
 
 /**
  * 
  * An Ultimate Kalman filter/smoother.
  * 
- * Each state is created by calling three methods in a particular order:
- *   advance
- *   evolve
- *   observe
- *   
- * In the first step, omit the call to advance.
- * 
  * @author Sivan Toledo
  *
  */
-public interface UltimateKalman {
+public class UltimateKalman {
+  
+  private static class Step {
+    public long       step;
+    public int        dimension;
+    //public StepState  stepState;
+    
+    public RealMatrix Rdiag;    // diagonal block of the R factor of WA
+    public RealMatrix Rsupdiag; // the next block in the same block row of WA as Rdiag
+    public RealVector y;      // the transformed right-hand side for the same blcok row
+    
+    public RealMatrix Rbar;
+    public RealVector ybar;
 
+    public RealVector state;
+    public RealMatrix covariance; // the W factor of the covariance matrix
+  }
+  
+  private Step current = null;
+  private ArrayList<Step> steps = new ArrayList<Step>();
+  private long first = -1; // step number of the first element in the array list
+
+  public UltimateKalman() {
+  }
+  
+  
   /**
-   * This method creates a new step in the filter. This must be called before
-   * both evolve() and observe().
+   * Index of the first (oldest) step that is still retained (has not been forgotten).
    * 
-   * The dimension can vary between states.
-   * 
-   * The time stamp for this step will be NaN.
-   * 
-   * @param dimension the dimension of the state vector of the next state
+   * @return index of the first (oldest) step that has not been forgotten
    */
-  default public void advance(int dimension) {
-    advance(dimension, Double.NaN);
+  long earliest() {
+    return first;
   }
   
   /**
-   * This method creates a new step in the filter. This must be called before
-   * both evolve() and observe().
+   * Index of the latest (newest) step that has not been rolled back.
    * 
-   * The dimension can vary between states.
-   * 
-   * @param dimension the dimension of the state vector of the next state
-   * @param timestamp a label for this step (not used internally)
+   * @return of the latest (newest) step that has not been rolled back
    */
-  void advance(int dimension, double timestamp);
-
-
+  long latest() {
+    return first + steps.size() - 1;
+  }
+  
   /**
-   * Adds evolution equations from the previous step to the current step.
+   * Creates a new step with the given state dimension and provides
+   * the evolution equations.
    * 
-   * The matrix equation is H*u_i = F*u_{i-1} + b + e
+   * The matrix equation is H_i*u_i = F_i*u_{i-1} + c_i + eps_i
    * 
-   * where e represents Gaussian random errors with zero mean and covariance C. 
+   * where eps_i represents Gaussian random errors with zero mean and covariance K_i. 
    * 
    * The number of constraints can be less than dimension of the current step.
    *
@@ -67,7 +84,61 @@ public interface UltimateKalman {
    * @param b
    * @param C
    */
-  void evolve(RealMatrix H, RealMatrix F, RealVector b, CovarianceMatrix C);
+  void evolve(int n_i, RealMatrix H_i, RealMatrix F_i, RealVector c_i, CovarianceMatrix K_i) {
+    current = new Step();
+    current.dimension = n_i;
+    
+    if (steps.size() == 0) {
+      current.step = 0;
+     return;
+    }
+    
+    Step imo = steps.get( steps.size()-1 ); // previous step
+    assert(imo != null);
+    current.step = imo.step + 1;
+    
+    assert(H_i != null);
+    assert(F_i != null);
+    assert(c_i != null);
+    assert(K_i != null);
+
+    RealMatrix V_i_H_i = K_i.weigh(H_i);
+    RealMatrix V_i_F_i = K_i.weigh(F_i).scalarMultiply(-1.0);
+    RealVector V_i_c_i = K_i.weigh(c_i);
+    
+    RealMatrix z = (imo.Rdiag==null) ? null : zeros(imo.Rdiag.getRowDimension(),n_i);
+    RealMatrix A = vconcat( imo.Rdiag, V_i_F_i );
+    RealMatrix B = vconcat( z,         V_i_H_i );
+    RealVector y = vconcat( imo.y,     V_i_c_i );
+    
+    QRDecomposition qr = new QRDecomposition(A);
+    
+    B = qr.getQT().multiply(B);
+    y = qr.getQT().operate(y);
+    
+    imo.Rdiag     = qr.getR().getSubMatrix(0, Integer.min(imo.dimension,A.getRowDimension())-1,   
+                                           0, A.getColumnDimension()-1);
+    imo.Rsupdiag = B.getSubMatrix(0, Integer.min(imo.dimension,B.getRowDimension())-1,   
+                                  0, B.getColumnDimension()-1);
+    imo.y         = y.getSubVector(0, Integer.min(imo.dimension,y.getDimension()));
+    
+    if (B.getRowDimension() > imo.dimension) {
+      current.Rbar = B.getSubMatrix(imo.dimension, B.getRowDimension()-1, 0, B.getColumnDimension()-1);
+      current.ybar = y.getSubVector(imo.dimension, y.getDimension() - imo.dimension);
+    }
+  }
+
+  /**
+   * A super simplified version for the first step (or call one of the other overloaded
+   * versions; the arguments are ignored).
+   * 
+   * @param F
+   * @param b
+   * @param C
+   */
+  void evolve(int n_i) {
+    evolve(n_i,null,null,null,null);
+  }
 
   /**
    * A simplified version with H=I.
@@ -76,120 +147,202 @@ public interface UltimateKalman {
    * @param b
    * @param C
    */
-  void evolve(RealMatrix F, RealVector b, CovarianceMatrix C);
-
+  void evolve(int dimension, RealMatrix F_i, RealVector c_i, CovarianceMatrix K_i) {
+    int n_i = dimension;
+    int l_i = F_i.getRowDimension();
+    RealMatrix H_i = MatrixUtils.createRealMatrix(l_i, n_i);
+    for (int i=0; i<Integer.min(l_i,n_i); i++) H_i.setEntry(i, i, 1.0);
+    evolve(dimension,H_i,F_i,c_i,K_i);   
+  }
 
   /**
    * Adds observation equations to the current step,
    * 
-   *   b = G*u_i + e
+   *   o_i = G_i*u_i + delta_i
    *   
-   * where e is a Gaussian random vector with zero mean and covariance C.
+   * where delta_i is a Gaussian random vector with zero mean and covariance C_i.
    * 
-   * @param G
-   * @param b
-   * @param C
+   * @param G_i
+   * @param o_i
+   * @param C_i
    */
-  void observe(RealMatrix G, RealVector b, CovarianceMatrix C);
+  void observe(RealMatrix G_i, RealVector o_i, CovarianceMatrix C_i) {
+    RealMatrix A = null;
+    RealVector y = null;
+    
+    if (o_i == null) { // no observations
+      A = current.Rbar.copy();
+      y = current.ybar.copy();
+    } else {
+    
+      RealMatrix W_i_G_i = C_i.weigh(G_i);
+      RealVector W_i_o_i = C_i.weigh(o_i);
+    
+      A = vconcat( current.Rbar, W_i_G_i );
+      y = vconcat( current.ybar, W_i_o_i );
+    }
+    
+    if (A != null) {
+      if (A.getRowDimension() >= A.getColumnDimension()) {
+        QRDecomposition qr = new QRDecomposition(A);    
+        y = qr.getQT().operate(y);
+        
+        int n = Integer.min(current.dimension, A.getRowDimension());
+        
+        current.Rdiag = qr.getR().getSubMatrix(0, n-1,   
+                                               0, A.getColumnDimension()-1);
+        current.y     = y.getSubVector(0, n);       
+      } else {
+        current.Rdiag = A;
+        current.y     = y;       
+      }
+    }
+    
+    if (current.Rdiag != null && current.Rdiag.getRowDimension() == current.dimension) {
+      current.state = current.y.copy();
+      MatrixUtils.solveUpperTriangularSystem(current.Rdiag, current.state);
+      current.covariance = current.Rdiag.copy();
+    }
+
+    steps.add(current);
+    current = null;
+  }
 
   /**
    * A simplified version for steps with no observations at all.
    */
-  void observe();
-  
-  /**
-   * The index of the current step. 
-   * Indexing starts from zero. The method returns -1 if advance()
-   * has never been called (so even step 0 is not in progress yet).
-   * 
-   * @return index of the current step
-   */
-  
-  long currentIndex();
-  
-  /**
-   * Index of the first (oldest) step that is still retained (has not been dropped).
-   * 
-   * @return index of the first (oldest) step that has not been dropped
-   */
-  long firstIndex();
-  
-  /**
-   * The time stamp associated with a particular step.
-   * If step i has been dropped or has not been reached,  
-   * the method returns Double.NaN.
-   * 
-   * @param i index of the step
-   * @return the time stamp associated with step i
-   */
-  double timestamp(long i);
-  
-  /**
-   * Computes the predicted state vector of the current step.
-   * Must be called after evolve() but before observe();
-   * 
-   * @return the predicted estimate of the state of the current step
-   */
-
-  RealVector predicted();
-
-  /**
-   * Computes the filtered state vector of the current state.
-   * Must be called after evolve() and after observe();
-   * 
-   * @return the filtered estimate of the state of the current step
-   */
-
-  RealVector filtered();
+  void observe() {
+    observe(null,null,null);
+  }
     
   /**
-   * The covariance matrix of either the current predicted or
-   * the current filtered state estimate, depending on whether
-   * observed has been called or not.  
+   * The most up to date estimate of step si
+   * 
+   * @param si the index of a step
+   * @return the most up to date estimate of the latest step
+   */
+
+  RealVector estimate(long si) {
+    if (si == -1) si = latest();
+    long index = si - first;
+    if (index < 0 || index >= steps.size()) return null;
+    Step step = steps.get( (int) (si - first) );
+    
+    return step.state;
+  }
+
+  /**
+   * The most up to date estimate of the latest step
+   * 
+   * @return the most up to date estimate of the latest step
+   */
+
+  RealVector estimate() {
+    return estimate(-1);
+  }
+    
+  /**
+   * The covariance matrix of the most up to date estimate of the latest step.  
    *
-   * @return covariance matrix of the current estimate of the state vector
+   * @return covariance matrix
    */
   
-  CovarianceMatrix covariance();
+  CovarianceMatrix covariance(long si) {
+    if (si == -1) si = latest();
+    long index = si - first;
+    if (index < 0 || index >= steps.size()) return null;
+    Step step = steps.get( (int) (si - first) );
+
+    if (step.covariance==null) return null;
+    return new RealCovarianceMatrix(step.covariance,RealCovarianceMatrix.Representation.INVERSE_FACTOR);
+  }
+
+  /**
+   * The covariance matrix of the most up to date estimate of the latest step.  
+   *
+   * @return covariance matrix
+   */
   
+  CovarianceMatrix covariance() {
+    return covariance(-1);
+  }
+
   /**
    * Computes the state vectors of all the steps that have not been dropped.
    */
 
-  void smooth();
+  void smooth() {
+    
+  }
 
   /**
    * Drops from memory all but the current step.
    */
   
-  void drop();
-  
+  void forget() {
+    forget(-1);
+  }
   
   /**
-   * Computes the filtered state vector of the current state.
-   * Must be called after evolve() and after observe();
-   * 
-   * @param i index of the step
-   * @return the smoothed estimate of the state of step i
+   * Drops from memory all but the current step.
    */
-
-  RealVector smoothed(long i);
+  
+  void forget(long si) {
+    if (si == -1) si = latest()-1;
+    if (si < earliest() || si > latest()-1) return; // nothing to do 
+    while (steps.get(0).step <= si) {
+      steps.remove(0);
+      first++;
+    }
+  }
+  
+  void rollback() {
     
+  }
+  
   /**
-   * The covariance matrix of the smoothed state estimate of step i.  
-   *
-   * @param i index of the step
-   * @return the covariance matrix of the smoothed estimate of state i
+   * Drops from memory all but the current step.
    */
   
-  CovarianceMatrix covariance(long i);
-
-
-  /**
-   * 
-   * @return a copy of the object.
-   */
+  void rollback(long si) {
+    
+  }
   
-  UltimateKalman copy();
+  /* 
+   * utilities 
+   */
 
+  private static RealMatrix vconcat(RealMatrix T, RealMatrix B) {
+    //int rows, cols;
+    
+    if (T== null && B == null) return null;
+    if (T == null) return B.copy();
+    if (B == null) return T.copy();
+    
+    assert(T.getColumnDimension() == B.getColumnDimension());
+    
+    RealMatrix C = MatrixUtils.createRealMatrix(T.getRowDimension()+B.getRowDimension(), T.getColumnDimension());
+    C.setSubMatrix(T.getData(), 0,                   0);
+    C.setSubMatrix(B.getData(), T.getRowDimension(), 0);
+    
+    return C;
+  }
+  
+  private static RealVector vconcat(RealVector T, RealVector B) {
+    if (T== null && B == null) return null;
+    if (T == null) return B.copy();
+    if (B == null) return T.copy();
+    
+    RealVector C = MatrixUtils.createRealVector(new double[ T.getDimension() + B.getDimension() ]);
+    C.setSubVector(0, T);
+    C.setSubVector(T.getDimension(), B);
+    
+    return C;
+  }
+
+  private static RealMatrix zeros(int rows, int cols) {
+    RealMatrix C = MatrixUtils.createRealMatrix(rows,cols);
+    return C;
+  }
+  
 }

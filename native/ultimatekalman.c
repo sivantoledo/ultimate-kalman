@@ -738,7 +738,13 @@ kalman_t* kalman_create() {
 }
 
 void kalman_free(kalman_t* kalman) {
-	printf("waning: kalman_free not fully implemented yet (steps not processed)\n");
+	//printf("waning: kalman_free not fully implemented yet (steps not processed)\n");
+
+	while (farray_size(kalman->steps) > 0) {
+		step_t* i = farray_drop_last(kalman->steps);
+		step_free(i);
+	}
+
 	farray_free( kalman->steps );
 	// step_free( kalman->current );
 	free( kalman );
@@ -1314,13 +1320,22 @@ void kalman_rollback(kalman_t* kalman, int64_t si) {
 		if (step->step == si) {
 			printf("rollback got to %d\n",si);
 
+			/*
 			kalman->current = step_create();
 			kalman->current->dimension = step->dimension;
 			kalman->current->step      = step->step;
 			kalman->current->Rbar      = step->Rbar;
 			kalman->current->ybar      = step->ybar;
-
+			 */
 			// TODO free...
+
+			matrix_free( step->Rdiag     );
+			matrix_free( step->Rsupdiag  );
+			matrix_free( step->y         );
+			matrix_free( step->state     );
+			matrix_free( step->covariance);
+			kalman->current = step;
+
 		} else {
 			printf("rollback dropped step %d\n",step->step);
 		}

@@ -96,10 +96,9 @@ static void*     farray_drop_last(farray_t* a);
 /* COVARIANCE MATRICES                                                        */
 /******************************************************************************/
 
-typedef struct cov_st {
-	int64_t first; // logical index of first element
-	//farray_t* steps;
-} cov_t;
+//typedef struct cov_st {
+	//int64_t first; // logical index of first element
+//} cov_t;
 
 matrix_t* cov_weigh(matrix_t* cov, char cov_type, matrix_t* A);
 //matrix_t* cov_weigh(cov_t* cov, matrix_t* A);
