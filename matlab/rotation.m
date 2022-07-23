@@ -90,12 +90,13 @@ end
 
 filtered
 end
-%kalman.smooth();
 
-%smoothed = NaN * zeros(2,k);
-%for i=1:k 
-%    smoothed(:,i) = kalman.estimate(i-1); % zero based step numbers
-%end
+kalman.smooth();
+
+smoothed = NaN * zeros(2,k);
+for i=1:k 
+    smoothed(:,i) = kalman.estimate(i-1); % zero based step numbers
+end
 
 %close all; 
 figure;
@@ -107,7 +108,7 @@ hold on;
 plot(states(1,:),states(2,:),'k-','LineWidth',1);
 if obs_dim==2; plot(obs(1,:),obs(2,:),'r.'); end
 plot(filtered(1,:),filtered(2,:),'b-','LineWidth',1);
-%plot(smoothed(1,:),smoothed(2,:),'m-','LineWidth',1);
+plot(smoothed(1,:),smoothed(2,:),'m-','LineWidth',1);
 plot(predicted(1,:),predicted(2,:),'c-','LineWidth',1);
 
 xlim([-1.25 1.25]);

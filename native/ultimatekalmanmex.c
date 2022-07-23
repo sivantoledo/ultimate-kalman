@@ -34,9 +34,9 @@ static double NaN = 0.0 / 0.0;
 /* HANDLES                                                         */
 /*******************************************************************/
 
-#define NHANDLES 16
+#define NHANDLES 1024
 static void* kalman_handles[NHANDLES] = {0 };
-static void* cov_handles   [NHANDLES] = { 0 };
+//static void* cov_handles   [NHANDLES] = { 0 };
 
 static int handleAllocate(void** handles) {
 	int i;
@@ -235,8 +235,10 @@ static void mexSmooth(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]
 	argCheck("smooth",1,1,0,0,nlhs,plhs,nrhs,prhs);
 
 	int handle = (int) floor(mxGetScalar(prhs[1]));
-
  	void* kalman = handleGet(kalman_handles,handle);
+
+ 	kalman_smooth(kalman);
+
 	//printf("smooth %d %08x\n",handle,kalman);
  	//kalman_free( kalman );
  	//handleFree(kalman_handles, handle);
@@ -308,6 +310,53 @@ static void mexRollback(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs
 	kalman_rollback(kalman,s_i);
 }
 
+static void mexPerfTest(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
+	argCheck("evolve",12,12,1,1,nlhs,plhs,nrhs,prhs);
+
+	int handle = (int) floor(mxGetScalar(prhs[1]));
+	void* kalman = handleGet(kalman_handles,handle);
+
+	//printf("evolve %d %d %08x\n",n_i,handle,kalman);
+
+	matrix_t* H = matrix_create_from_mxarray(prhs[2]);
+	matrix_t* F = matrix_create_from_mxarray(prhs[3]);
+	matrix_t* c = matrix_create_from_mxarray(prhs[4]);
+	matrix_t* K = matrix_create_from_mxarray(prhs[5]);
+	char K_type = (char) round(mxGetScalar(prhs[6]));
+
+	matrix_t* G = matrix_create_from_mxarray(prhs[7]);
+	matrix_t* o = matrix_create_from_mxarray(prhs[8]);
+	matrix_t* C = matrix_create_from_mxarray(prhs[9]);
+	char C_type = (char) round(mxGetScalar(prhs[10]));
+
+	int32_t count      = (int32_t) mxGetScalar(prhs[11]);
+	int32_t decimation = (int32_t) mxGetScalar(prhs[12]);
+
+	matrix_t* t = kalman_perftest(kalman,
+			                          H, F, c, K, K_type,
+																G, o, C, C_type,
+																count, decimation);
+
+	if (t == NULL) {
+		plhs[0] = mxCreateDoubleMatrix(0,0,mxREAL);
+	} else {
+		//printf("creating mex array %08x\n",t);
+		//printf("creating mex array %08x %d\n",t->row_dim);
+		plhs[0] = matrix_copy_to_mxarray(t);
+	  //printf("free 1\n");
+		matrix_free(t);
+		//printf("created mex array\n");
+	}
+
+	matrix_free(C);
+	matrix_free(o);
+	matrix_free(G);
+	matrix_free(K);
+	matrix_free(H);
+	matrix_free(F);
+	matrix_free(c);
+	//printf("free all\n");
+}
 
 
 /*******************************************************************/
@@ -326,7 +375,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     //mexPrintf("Build time = %s %s\n",__DATE__,__TIME__);
 
 
-    selector(NULL,nrhs,prhs);
+    //selector(NULL,nrhs,prhs);
 
 
     if      (selector("create"     ,nrhs,prhs)) { mexCreate    (nlhs,plhs,nrhs,prhs); return; }
@@ -340,5 +389,6 @@ void mexFunction( int nlhs, mxArray *plhs[],
     else if (selector("covariance" ,nrhs,prhs)) { mexCovariance(nlhs,plhs,nrhs,prhs); return; }
     else if (selector("forget"     ,nrhs,prhs)) { mexForget    (nlhs,plhs,nrhs,prhs); return; }
     else if (selector("rollback"   ,nrhs,prhs)) { mexRollback  (nlhs,plhs,nrhs,prhs); return; }
+    else if (selector("perftest"   ,nrhs,prhs)) { mexPerfTest  (nlhs,plhs,nrhs,prhs); return; }
     else mexErrMsgIdAndTxt("sivantoledo:UltimateKalman:invalidSelector","invalid selector");
 }

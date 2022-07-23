@@ -26,7 +26,7 @@ static void mex_assert(int c, int line) {
 #define blas_int_t int
 #endif
 
-static int debug = 1;
+static int debug = 0;
 
 /******************************************************************************/
 /* UTILITIES                                                                  */
@@ -36,6 +36,38 @@ static int debug = 1;
 #define MAX(a,b) ((a)>(b) ? (a) : (b))
 
 static double NaN = 0.0 / 0.0;
+
+#ifdef _WIN32
+// for "unused" attribute
+#define __attribute__(x)
+#include <float.h>
+#include <windows.h>
+
+typedef SSIZE_T ssize_t;
+
+static
+int gettimeofday(struct timeval * tp, struct timezone * tzp)
+{
+    // Note: some broken versions only have 8 trailing zero's, the correct epoch has 9 trailing zero's
+    static const uint64_t EPOCH = ((uint64_t) 116444736000000000ULL);
+
+    SYSTEMTIME  system_time;
+    FILETIME    file_time;
+    uint64_t    time;
+
+    GetSystemTime( &system_time );
+    SystemTimeToFileTime( &system_time, &file_time );
+    time =  ((uint64_t)file_time.dwLowDateTime )      ;
+    time += ((uint64_t)file_time.dwHighDateTime) << 32;
+
+    tp->tv_sec  = (long) ((time - EPOCH) / 10000000L);
+    tp->tv_usec = (long) (system_time.wMilliseconds * 1000);
+    return 0;
+}
+#else
+#include <unistd.h>
+#include <sys/time.h>
+#endif
 
 /******************************************************************************/
 /* MATRICES                                                                   */
@@ -166,24 +198,46 @@ void matrix_print(matrix_t* A, char* format) {
 	}
 }
 
-matrix_t* matrix_create_copy(matrix_t* A) {
-	if (A==NULL) return NULL;
+void matrix_mutate_copy(matrix_t* C, matrix_t* A) {
+	if (A==NULL && C==NULL) return;
+	assert(A != NULL);
+	assert(C != NULL);
+	assert(matrix_rows(A) == matrix_rows(C));
+	assert(matrix_cols(A) == matrix_cols(C));
 
 	int i,j;
 
 	int32_t rows  = (A->row_dim);
 	int32_t cols  = (A->col_dim);
 
+	for (i=0; i<rows; i++) {
+		for (j=0; j<cols; j++) {
+			matrix_set(C,i,j,matrix_get(A,i,j));
+		}
+	}
+}
+
+matrix_t* matrix_create_copy(matrix_t* A) {
+	if (A==NULL) return NULL;
+
+	int32_t rows  = (A->row_dim);
+	int32_t cols  = (A->col_dim);
+
 	matrix_t* C = matrix_create(rows,cols);
+
+	matrix_mutate_copy(C,A);
+	/*
+	int32_t i,j;
 
 	for (i=0; i<rows; i++) {
 		for (j=0; j<cols; j++) {
 			matrix_set(C,i,j,matrix_get(A,i,j));
 		}
 	}
-
+  */
 	return C;
 }
+
 
 matrix_t* matrix_create_sub(matrix_t* A, int32_t first_row, int32_t rows, int32_t first_col, int32_t cols) {
 	int i,j;
@@ -259,7 +313,7 @@ void matrix_mutate_scale(matrix_t* A, double s) {
 // nor for flat matrices
 matrix_t* matrix_create_mutate_qr(matrix_t* A) {
 	assert(A != NULL);
-	int32_t i,j;
+	//int32_t i,j;
 
 	int32_t rows = matrix_rows(A);
 	int32_t cols = matrix_cols(A);
@@ -293,7 +347,7 @@ matrix_t* matrix_create_mutate_qr(matrix_t* A) {
 	return TAU;
 }
 
-
+// mutates C
 matrix_t* matrix_mutate_apply_qt(matrix_t* QR, matrix_t* TAU, matrix_t* C) {
 	assert(QR != NULL);
 
@@ -329,7 +383,8 @@ matrix_t* matrix_mutate_apply_qt(matrix_t* QR, matrix_t* TAU, matrix_t* C) {
 	matrix_free(WORK);
 }
 
-matrix_t* matrix_create_trisolve(matrix_t* U, matrix_t* b) {
+// mutates b
+void matrix_mutate_trisolve(matrix_t* U, matrix_t* b) {
 	assert(U != NULL);
 	assert(b != NULL);
 	assert(matrix_rows(U) == matrix_cols(U));
@@ -337,15 +392,13 @@ matrix_t* matrix_create_trisolve(matrix_t* U, matrix_t* b) {
 
 	blas_int_t N,NRHS,LDA,LDB,INFO;
 
-	matrix_t* x = matrix_create_copy(b);
-
 	//if (debug) printf("**** %d %d %d %d\n",matrix_rows(A),matrix_ld(A),matrix_rows(kalman->current->state),matrix_ld(kalman->current->state));
 
 	N = matrix_cols(U);
 	LDA = matrix_ld(U);
 
-	NRHS = matrix_cols(x);
-	LDB = matrix_ld(x);
+	NRHS = matrix_cols(b);
+	LDB = matrix_ld(b);
 
 	if (debug) printf("dtrtrs N=%d NRHS=%d LDA=%d LDB=%d\n",N,NRHS,LDA,LDB);
 
@@ -353,14 +406,44 @@ matrix_t* matrix_create_trisolve(matrix_t* U, matrix_t* b) {
 	//if (debug) matrix_print(state,NULL);
 
 	// upper triangular, no transpose, diagonal is general (not unit)
-	dtrtrs("U","N","N", &N, &NRHS, U->elements, &LDA, x->elements, &LDB, &INFO);
+	dtrtrs("U","N","N", &N, &NRHS, U->elements, &LDA, b->elements, &LDB, &INFO);
 	if (INFO != 0) printf("dormqr INFO=%d\n",INFO);
 	assert(INFO==0);
 	if (debug) printf("dtrtr done\n");
+}
 
+matrix_t* matrix_create_trisolve(matrix_t* U, matrix_t* b) {
+	matrix_t* x = matrix_create_copy(b);
+	matrix_mutate_trisolve(U,x);
 	return x;
 }
 
+// mutates C
+void matrix_mutate_gemm(double ALPHA, matrix_t* A, matrix_t* B, double BETA, matrix_t* C) {
+	assert(A != NULL);
+	assert(B != NULL);
+	assert(C != NULL);
+	assert(matrix_rows(B) == matrix_cols(A));
+	assert(matrix_rows(C) == matrix_rows(A));
+	assert(matrix_cols(C) == matrix_cols(B));
+
+	blas_int_t N,M,K,LDA,LDB,LDC;
+
+	//if (debug) printf("**** %d %d %d %d\n",matrix_rows(A),matrix_ld(A),matrix_rows(kalman->current->state),matrix_ld(kalman->current->state));
+
+	M = matrix_rows(C);
+	N = matrix_cols(C);
+	K = matrix_cols(A);
+	LDA = matrix_ld(A);
+	LDB = matrix_ld(B);
+	LDC = matrix_ld(C);
+
+	//if (debug) printf("dtrtrs N=%d NRHS=%d LDA=%d LDB=%d\n",N,NRHS,LDA,LDB);
+
+	// no transpose
+	dgemm("N","N", &M, &N, &K, &ALPHA, A->elements, &LDA, B->elements, &LDB, &BETA, C->elements, &LDC);
+	//if (debug) printf("dtrtr done\n");
+}
 
 
 #ifdef BUILD_MEX
@@ -385,12 +468,23 @@ matrix_t* matrix_create_from_mxarray(const mxArray* mx) {
 mxArray* matrix_copy_to_mxarray(matrix_t* A) {
 	int32_t i,j;
 
+	assert(A != NULL);
+
+	//printf("to mx array !!!\n");
+	//printf("  matrix_t* = %08x\n",A);
+	//printf("  rows %d\n",A->row_dim);
+	//printf("  cols %d\n",A->col_dim);
+
 	int32_t rows = matrix_rows(A);
 	int32_t cols = matrix_cols(A);
 
+	//printf("to mx array %d by %d\n",rows,cols);
+
 	mxArray* mx = mxCreateDoubleMatrix(rows,cols,mxREAL);
+	assert(mx != NULL);
 
 	double* out = mxGetPr(mx);
+	assert(out != NULL);
 
 	for (j=0; j<cols; j++) {
 		for (i=0; i<rows; i++) {
@@ -398,6 +492,7 @@ mxArray* matrix_copy_to_mxarray(matrix_t* A) {
 		}
 	}
 
+	//printf("  mxArray* = %08x\n",mx);
 	return mx;
 }
 #endif
@@ -662,11 +757,12 @@ int64_t   kalman_latest(kalman_t* kalman) {
 }
 
 void kalman_evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, matrix_t* c_i, matrix_t* K_i, char K_type) {
-	//if (debug) printf("kalman_evolve n_i = %d\n",n_i);
-	//if (debug) printf("kalman_evolve H_i = %08x\n",H_i);
-	//if (debug) printf("kalman_evolve F_i = %08x\n",F_i);
-	//if (debug) printf("kalman_evolve i_i = %08x\n",c_i);
-	//if (debug) printf("kalman_evolve K_i = %08x\n",K_i);
+	if (debug) printf("kalman_evolve n_i = %d\n",n_i);
+	if (debug) printf("kalman_evolve H_i = %08x %d %d\n",H_i,matrix_rows(H_i),matrix_cols(H_i));
+	if (debug) printf("kalman_evolve F_i = %08x %d %d\n",F_i,matrix_rows(F_i),matrix_cols(F_i));
+	if (debug) printf("kalman_evolve i_i = %08x %d %d\n",c_i,matrix_rows(c_i),matrix_cols(c_i));
+	if (debug) printf("kalman_evolve K_i = %08x %d %d\n",K_i,matrix_rows(K_i),matrix_cols(K_i));
+	if (debug) printf("cov type %c",K_type);
 
 	kalman->current = step_create();
 	kalman->current->dimension = n_i;
@@ -1092,6 +1188,66 @@ matrix_t* kalman_estimate(kalman_t* kalman, int64_t si) {
 #endif
 }
 
+void kalman_smooth(kalman_t* kalman) {
+	//printf("forget %d\n",si);
+	if (farray_size(kalman->steps) == 0) return;
+
+	int64_t si;
+	int64_t last  = farray_last_index (kalman->steps);
+	int64_t first = farray_first_index(kalman->steps);
+
+	step_t* i;
+
+	printf("smooth1 %d to %d\n",last,first);
+
+	matrix_t* prev_state;
+	for (si=last; si>=first; si--) {
+		i = farray_get(kalman->steps,si);
+		printf("smth %d: %08x %08x %08x\n",si,i->Rdiag,i->Rsupdiag,i->y);
+		if (i->Rdiag !=NULL) printf("smth %d: Rdiag %d X %d\n",si,matrix_rows(i->Rdiag),matrix_cols(i->Rdiag));
+		if (i->state == NULL) { // not clear why this would happen,  but it happens in projectile
+			i->state = matrix_create(matrix_rows(i->y),1);
+		}
+		assert(i->state != NULL);
+		printf("smth %d: %d <- %d\n",si,matrix_rows(i->state),matrix_rows(i->y));
+		matrix_mutate_copy(i->state,i->y);
+		if (si < last) {
+			matrix_mutate_gemm(-1.0,i->Rsupdiag,prev_state,1.0,i->state);
+		}
+		printf("smth %d: %d X %d ; %d\n",si,matrix_rows(i->Rdiag),matrix_cols(i->Rdiag),matrix_rows(i->state));
+		matrix_mutate_trisolve(i->Rdiag,i->state);
+		prev_state = i->state;
+	}
+
+	printf("smooth2 %d to %d\n",last,first);
+
+	matrix_t* R;
+	int32_t n_i, n_ipo;
+	for (si=last; si>=first; si--) {
+		i = farray_get(kalman->steps,si);
+		if (si == last) {
+			R = i->Rdiag;
+			n_ipo = matrix_rows(i->Rdiag);
+		} else {
+			matrix_free(i->covariance);
+
+			n_i = matrix_rows(i->Rdiag);
+			matrix_t* A = matrix_create_vconcat(i->Rsupdiag,R);
+			matrix_t* S = matrix_create_vconcat(i->Rdiag,matrix_create_constant(matrix_rows(R),matrix_cols(i->Rdiag),0.0));
+			matrix_t* TAU = matrix_create_mutate_qr(A);
+			matrix_mutate_apply_qt(A,TAU,S);
+			matrix_free(TAU);
+			matrix_free(A);
+
+			R = i->covariance = matrix_create_sub(S,n_ipo,n_i,0,n_i);
+			matrix_free(S);
+
+			n_ipo = n_i;
+		}
+	}
+}
+
+
 matrix_t* kalman_covariance(kalman_t* kalman, int64_t si) {
 	//int32_t i,j;
 
@@ -1126,18 +1282,23 @@ matrix_t* kalman_covariance(kalman_t* kalman, int64_t si) {
 
 
 void kalman_forget(kalman_t* kalman, int64_t si) {
-	printf("forget %d\n",si);
+	if (debug) printf("forget %d\n",si);
 	if (farray_size(kalman->steps) == 0) return;
 
 	if (si < 0) si = farray_last_index(kalman->steps) - 1;
 
+	if (debug) printf("forget %d now %d to %d\n",si,farray_first_index(kalman->steps),farray_last_index(kalman->steps));
+
 	if (si > farray_last_index (kalman->steps) - 1) return; // don't delete last step
 	if (si < farray_first_index(kalman->steps)    ) return; // nothing to delete
+
 
 	while (farray_first_index(kalman->steps) <= si) {
 		step_t* step = farray_drop_first(kalman->steps);
 		step_free(step);
+		if (debug) printf("forget new first %d\n",farray_first_index(kalman->steps));
 	}
+	if (debug) printf("forget %d done\n",si);
 }
 
 void kalman_rollback(kalman_t* kalman, int64_t si) {
@@ -1168,6 +1329,60 @@ void kalman_rollback(kalman_t* kalman, int64_t si) {
 	printf("rollback to %d new latest %d\n",si,kalman_latest(kalman));
 
 }
+
+static struct timeval begin, end;
+
+matrix_t* kalman_perftest(kalman_t* kalman,
+		                      matrix_t* H, matrix_t* F, matrix_t* c, matrix_t* K, char K_type,
+		                      matrix_t* G, matrix_t* o,              matrix_t* C, char C_type,
+									        int32_t count, int32_t decimation) {
+
+	matrix_t* t = matrix_create_constant(count/decimation, 1, NaN);
+	int32_t i,j,n;
+
+	//printf("perftest count %d decimation %d rows %d\n",count,decimation,matrix_rows(t));
+
+	//struct timeval begin, end;
+	gettimeofday(&begin, 0);
+
+	j = 0;
+	n = matrix_cols(G);
+
+	for (i=0; i<count; i++) {
+		//printf("perftest iter %d (j=%d)\n",i,j);
+		//if (debug) printf("perftest iter %d (j=%d)\n",i,j);
+		kalman_evolve(kalman,n,H,F,c,K,K_type);
+		kalman_observe(kalman,G,o,C,C_type);
+		kalman_estimate(kalman,-1);
+		kalman_forget(kalman,-1);
+
+		if ((i % decimation) == decimation-1) {
+			gettimeofday(&end, 0);
+			long seconds      = end.tv_sec  - begin.tv_sec;
+			long microseconds = end.tv_usec - begin.tv_usec;
+			double elapsed    = seconds + microseconds*1e-6;
+
+			assert(j < matrix_rows(t));
+
+			//printf("perftest store i=%d (j=%d) %.3e\n",i,j,elapsed/decimation);
+			matrix_set(t,j,0,elapsed / decimation); // average per step
+			j = j+1;
+
+			gettimeofday(&begin, 0);
+			//begin = end;
+		}
+	}
+
+	//printf("perftest done\n");
+	//printf("  matrix_t* t = %08x\n",t);
+
+	//printf("perftest count %d decimation %d rows %d cols %d\n",count,decimation,matrix_rows(t),matrix_cols(t));
+
+	//matrix_print(t,"%.3e");
+
+	return t;
+}
+
 
 /******************************************************************************/
 /* MAIN                                                                       */

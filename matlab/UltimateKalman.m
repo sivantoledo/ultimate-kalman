@@ -131,11 +131,11 @@ classdef UltimateKalman < handle
                 kalman.current.ybar = y(n_imo+1:end,1);
             end
 
-            if kalman.current.step > 395 && kalman.current.step < 405
-            fprintf("ev %d\n",kalman.current.step);
-            size(A)
-            size(B)
-            end
+            %if kalman.current.step > 395 && kalman.current.step < 405
+            %fprintf("ev %d\n",kalman.current.step);
+            %size(A)
+            %size(B)
+            %end
         end
 
         function observe(kalman,G_i,o_i,C_i)
@@ -195,18 +195,18 @@ classdef UltimateKalman < handle
             %size(A)
             %end
 
-            'observe'
-            A
-            y
+            %'observe'
+            %A
+            %y
 
             if ~isempty(A) 
                 if size(A,1) >= size(A,2)
                   [Q,R] = qr(A,0);
                   y = Q'*y;
                   n = min(n_i,size(A,1));
-                  n_i
-                  R
-                  y
+                  %n_i
+                  %R
+                  %y
                   kalman.current.Rdiag = R(1:n,:);
                   kalman.current.y   = y(1:n,1);
                 else
@@ -367,17 +367,47 @@ classdef UltimateKalman < handle
                     % the covariance matrix has already been constructed
                     % here.
                 else
-                    n_i   = size(R,1);
-                    n_imo = size(kalman.steps{i}.Rdiag,1);
+                    n_ipo   = size(R,1);
+                    n_i = size(kalman.steps{i}.Rdiag,1);
 
                     [Q,~] = qr( [ kalman.steps{i}.Rsupdiag ; R ]);
 
-                    S = Q' * [ kalman.steps{i}.Rdiag ; zeros(n_i,size(kalman.steps{i}.Rdiag,2)) ];
-                    R = S( n_i+1:n_i+n_imo , 1:n_imo );
+                    S = Q' * [ kalman.steps{i}.Rdiag ; zeros(n_ipo,size(kalman.steps{i}.Rdiag,2)) ];
+                    R = S( n_ipo+1:n_ipo+n_i , 1:n_i );
 
                     kalman.steps{i}.estimatedCovariance = CovarianceMatrix( R, 'W' );
                 end
             end
         end
+
+        function t = perftest(kalman,H,F,c,K,G,o,C,count,decimation)
+            % Stress testing
+            n = size(G,2);
+            m = size(G,1);
+
+            %count
+            %decimation
+            %floor(count/decimation)
+
+            t = zeros(floor(count/decimation),1);
+
+            tstart = tic;
+            
+            j = 1;
+
+            for i=1:count
+                evolve(kalman,n,H,F,c,K);
+                observe(kalman,G,o,C);
+                [e,cov] = estimate(kalman);
+                forget(kalman);
+                if rem(i,decimation)==0
+                    telapsed = toc(tstart);
+                    t(j) = telapsed/decimation;
+                    j = j+1;
+                    tstart = tic;
+                end
+            end
+        end
+
     end % methods
 end

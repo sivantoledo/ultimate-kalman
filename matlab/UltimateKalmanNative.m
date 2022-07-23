@@ -26,6 +26,9 @@ classdef UltimateKalmanNative < handle
         function kalman = UltimateKalmanNative()
             kalman = kalman@handle();
             kalman.handle = ultimatekalmanmex('create');
+            if kalman.handle < 0
+                error('no more handles');
+            end
         end
 
         function i = earliest(kalman)
@@ -188,5 +191,22 @@ classdef UltimateKalmanNative < handle
             %   observed.
             ultimatekalmanmex('smooth',kalman.handle);
         end
+
+        function t = perftest(kalman,H,F,c,K,G,o,C,count,decimation)
+            l = size(F,1);                                             % row dimension
+            n = size(G,2);
+            if size(H,1) ~= l                                          % this allows the user to pass [] for H
+                if l == n
+                    H = eye(l);
+                else
+                    H = [ eye(l) zeros(l,n - l)];
+                end
+            end
+
+            [C_rep,C_type] = rep(C);
+            [K_rep,K_type] = rep(K);
+            t = ultimatekalmanmex('perftest',kalman.handle,H,F,c,K_rep,double(K_type),G,o,C_rep,double(C_type),double(count),double(decimation));
+        end
+
     end % methods
 end

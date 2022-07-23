@@ -149,6 +149,11 @@ matrix_t* kalman_estimate  (kalman_t* kalman, int64_t si);
 matrix_t* kalman_covariance(kalman_t* kalman, int64_t si);
 void      kalman_forget    (kalman_t* kalman, int64_t si);
 void      kalman_rollback  (kalman_t* kalman, int64_t si);
+matrix_t* kalman_perftest(kalman_t* kalman,
+		                      matrix_t* H, matrix_t* F, matrix_t* c, matrix_t* K, char K_type,
+		                      matrix_t* G, matrix_t* o,              matrix_t* C, char C_type,
+									        int32_t count, int32_t decimation);
+
 
 /******************************************************************************/
 /* END OF FILE                                                                */
