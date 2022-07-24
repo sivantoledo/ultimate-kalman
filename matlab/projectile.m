@@ -109,7 +109,7 @@ for i=1:k
 end
 
 
-close all
+%close all
 figure
 axis square
 set(gca,'Box','on');;

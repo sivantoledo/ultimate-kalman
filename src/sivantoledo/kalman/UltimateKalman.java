@@ -370,6 +370,34 @@ public class UltimateKalman {
     current.y          = null;
   }
   
+  public double[] perftest(RealMatrix H, RealMatrix F, RealVector c, CovarianceMatrix K,
+      RealMatrix G, RealVector o, CovarianceMatrix C,
+      long count, long decimation) {
+
+    int n = G.getColumnDimension();
+    int m = G.getRowDimension();
+    
+    double[] t = new double[ (int) Math.floor(count/decimation) ];
+    
+    int j = 0;
+    long start = System.nanoTime();
+    
+    for (int i=0; i<count; i++) {
+      evolve(n,H,F,c,K);
+      observe(G,o,C);
+      estimate();
+      forget();
+      if (i % decimation == (decimation-1)) {
+        // reporting is in seconds, not nanoseconds
+        t[ j++ ] = 1e-9 * (double) (System.nanoTime() - start) / (double) decimation;
+        start = System.nanoTime();
+      }
+    }
+    
+    return t;
+  }
+
+  
   /* 
    * utilities 
    */

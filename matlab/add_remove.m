@@ -60,7 +60,7 @@ kalman.observe(G1,S_1*obs(:,2),C1);
 e = kalman.estimate()
 
 % step 2: add the second parameter using H
-kalman.evolve(2,[ 1 ; 0],F1,c1,K1);
+kalman.evolve(2,[1  0],F1,c1,K1);
 kalman.observe(G2,S_both*obs(:,3),C2);
 e = kalman.estimate()
 

@@ -10,13 +10,13 @@ classdef UltimateKalman < handle
     % you can roll back and provide observations.
     %
     % UltimateKalman Methods:
-    %    evolve   - Evolve the state using a linear matrix equation
-    %    observe  - Provide observations of the current state
-    %    estimate - Return the most up to date estimate of a state vector
-    %    forget   - Forget the oldest steps to save memory meory
-    %    rollback - Roll back the object to an earlier step
-    %    latest   - The index of the last step that was observed
-    %    earliest - The index of the earliest step that has not been forgoten
+    %    evolve   - Evolve the state using a linear matrix equation observe
+    %    - Provide observations of the current state estimate - Return the
+    %    most up to date estimate of a state vector forget   - Forget the
+    %    oldest steps to save memory meory rollback - Roll back the object
+    %    to an earlier step latest   - The index of the last step that was
+    %    observed earliest - The index of the earliest step that has not
+    %    been forgoten
 
     properties (Access = private)
         steps;   % old states

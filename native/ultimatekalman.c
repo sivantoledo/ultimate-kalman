@@ -7,6 +7,7 @@
 #include <blas.h>
 #include <lapack.h>
 
+#define ULTIMATEKALMAN_C
 #include "ultimatekalman.h"
 
 #ifdef BUILD_MEX

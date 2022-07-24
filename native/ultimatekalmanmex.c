@@ -195,10 +195,10 @@ static void mexEvolve(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]
 
 	//printf("evolve %d %d %08x\n",n_i,handle,kalman);
 
-	matrix_t* H_i = matrix_create_from_mxarray(prhs[3]);
-	matrix_t* F_i = matrix_create_from_mxarray(prhs[4]);
-	matrix_t* c_i = matrix_create_from_mxarray(prhs[5]);
-	matrix_t* K_i = matrix_create_from_mxarray(prhs[6]);
+	kalman_matrix_t* H_i = matrix_create_from_mxarray(prhs[3]);
+	kalman_matrix_t* F_i = matrix_create_from_mxarray(prhs[4]);
+	kalman_matrix_t* c_i = matrix_create_from_mxarray(prhs[5]);
+	kalman_matrix_t* K_i = matrix_create_from_mxarray(prhs[6]);
 
 	char type = (char) round(mxGetScalar(prhs[7]));
 
@@ -218,9 +218,9 @@ static void mexObserve(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[
 	int handle = (int) floor(mxGetScalar(prhs[1]));
 	void* kalman = handleGet(kalman_handles,handle);
 
-	matrix_t* G_i = matrix_create_from_mxarray(prhs[2]);
-	matrix_t* o_i = matrix_create_from_mxarray(prhs[3]);
-	matrix_t* C_i = matrix_create_from_mxarray(prhs[4]);
+	kalman_matrix_t* G_i = matrix_create_from_mxarray(prhs[2]);
+	kalman_matrix_t* o_i = matrix_create_from_mxarray(prhs[3]);
+	kalman_matrix_t* C_i = matrix_create_from_mxarray(prhs[4]);
 
 	char type = (char) round(mxGetScalar(prhs[5]));
 
@@ -254,7 +254,7 @@ static void mexEstimate(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs
 
 	//printf("estimate %d %d %08x\n",s_i,handle,kalman);
 
-	matrix_t* e = kalman_estimate(kalman,s_i);
+	kalman_matrix_t* e = kalman_estimate(kalman,s_i);
 
 	if (e == NULL) {
 		plhs[0] = mxCreateDoubleMatrix(0,0,mxREAL);
@@ -274,7 +274,7 @@ static void mexCovariance(int nlhs, mxArray *plhs[], int nrhs, const mxArray *pr
 
 	//printf("covariance %d %d %08x\n",s_i,handle,kalman);
 
-	matrix_t* W = kalman_covariance(kalman,s_i);
+	kalman_matrix_t* W = kalman_covariance(kalman,s_i);
 
 	if (W == NULL) {
 		plhs[0] = mxCreateDoubleMatrix(0,0,mxREAL);
@@ -318,21 +318,21 @@ static void mexPerfTest(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs
 
 	//printf("evolve %d %d %08x\n",n_i,handle,kalman);
 
-	matrix_t* H = matrix_create_from_mxarray(prhs[2]);
-	matrix_t* F = matrix_create_from_mxarray(prhs[3]);
-	matrix_t* c = matrix_create_from_mxarray(prhs[4]);
-	matrix_t* K = matrix_create_from_mxarray(prhs[5]);
+	kalman_matrix_t* H = matrix_create_from_mxarray(prhs[2]);
+	kalman_matrix_t* F = matrix_create_from_mxarray(prhs[3]);
+	kalman_matrix_t* c = matrix_create_from_mxarray(prhs[4]);
+	kalman_matrix_t* K = matrix_create_from_mxarray(prhs[5]);
 	char K_type = (char) round(mxGetScalar(prhs[6]));
 
-	matrix_t* G = matrix_create_from_mxarray(prhs[7]);
-	matrix_t* o = matrix_create_from_mxarray(prhs[8]);
-	matrix_t* C = matrix_create_from_mxarray(prhs[9]);
+	kalman_matrix_t* G = matrix_create_from_mxarray(prhs[7]);
+	kalman_matrix_t* o = matrix_create_from_mxarray(prhs[8]);
+	kalman_matrix_t* C = matrix_create_from_mxarray(prhs[9]);
 	char C_type = (char) round(mxGetScalar(prhs[10]));
 
 	int32_t count      = (int32_t) mxGetScalar(prhs[11]);
 	int32_t decimation = (int32_t) mxGetScalar(prhs[12]);
 
-	matrix_t* t = kalman_perftest(kalman,
+	kalman_matrix_t* t = kalman_perftest(kalman,
 			                          H, F, c, K, K_type,
 																G, o, C, C_type,
 																count, decimation);
