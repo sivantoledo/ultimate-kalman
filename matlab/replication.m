@@ -7,36 +7,47 @@ if nargin<1
     implementation = 'M'; % matlab
 end
 
-addpath '..\native'
+exp = false;
 
-javaaddpath('../ultimatekalman.jar');
-javaaddpath('../commons-math3-3.6.1.jar');
+if (~isempty(ver('MATLAB')))
+    disp('running under MATLAB, adding native and java support')
+    exp = true
+    addpath '..\native'
+    javaaddpath('../ultimatekalman.jar');
+    javaaddpath('../commons-math3-3.6.1.jar');
+end
 
-%performance(@factory, 1,[6 12],1e6,10000);
-%exportgraphics(gca,'../outputs/stress_6_12_long.pdf');
+%performance({'MATLAB', 'Java', 'C'}, 1 , [6],1e5,1000);
+%exportgraphics(gca,'../outputs/perftest_imps_6.pdf');
 
-%performance(@factory, 1,[6 12 24 48 96],1e5,1000);
+%performance({'MATLAB', 'Java', 'C'}, 1 , [48],1e5,1000);
+%exportgraphics(gca,'../outputs/perftest_imps_48.pdf');
+
+%performance({'C'}, 1 , [6 12 24 48 96],1e5,1000);
+%exportgraphics(gca,'../outputs/perftest_C_6_96.pdf');
+
+%performance(@factory, 1,[6 12 24 48 96],1e5,100);
 %exportgraphics(gca,'../outputs/stress_6_96.pdf');
 
 %return
 
 clock_offsets(@factory, 6)
-exportgraphics(gca,'..\outputs\clock_offsets.pdf');
+if exp; exportgraphics(gca,'..\outputs\clock_offsets.pdf'); end;
 
 rotation(@factory, 5,2)
-exportgraphics(gca,'..\outputs\rotation2.pdf');
+if exp; exportgraphics(gca,'..\outputs\rotation2.pdf'); end;
 rotation(@factory, 5,1)
-exportgraphics(gca,'..\outputs\rotation1.pdf');
+if exp; exportgraphics(gca,'..\outputs\rotation1.pdf'); end;
 
 constant(@factory, 1,101,true,false,[NaN,1])
-exportgraphics(gca,'..\outputs\constant_smoothed.pdf');
+if exp; exportgraphics(gca,'..\outputs\constant_smoothed.pdf'); end;
 constant(@factory, 1,101,false,false,[NaN,1])
-exportgraphics(gca,'..\outputs\constant_filtered.pdf');
+if exp; exportgraphics(gca,'..\outputs\constant_filtered.pdf'); end;
 
 constant(@factory, 1,101,true,true,[50,0.25])
-exportgraphics(gca,'..\outputs\sloping_smoothed_exception.pdf');
+if exp; exportgraphics(gca,'..\outputs\sloping_smoothed_exception.pdf'); end;
 constant(@factory, 1,101,false,true,[50,0.25])
-exportgraphics(gca,'..\outputs\sloping_filtered_exception.pdf');
+if exp; exportgraphics(gca,'..\outputs\sloping_filtered_exception.pdf'); end;
 
 % projectile
 % this function saves the plots to pdf files, so no

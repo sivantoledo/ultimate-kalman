@@ -204,9 +204,10 @@ classdef UltimateKalmanJava < handle
                     H = [ eye(l) zeros(l,n - l)];
                 end
             end
-
-            [C_rep,C_type] = rep(C);
-            [K_rep,K_type] = rep(K);
+             
+            t = kalman.handle.perftest(kalman.jmat(H),kalman.jmat(F),kalman.jvec(c),kalman.jcov(K), ...
+                                       kalman.jmat(G),kalman.jvec(o),kalman.jcov(C), ...
+                                       count,decimation);
             %t = ultimatekalmanmex('perftest',kalman.handle,H,F,c,K_rep,double(K_type),G,o,C_rep,double(C_type),double(count),double(decimation));
         end
 

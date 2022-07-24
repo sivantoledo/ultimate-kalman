@@ -1,4 +1,4 @@
-function t = performance(kalman_factory, seed, sizes, count, decimation)
+function t = performance(kalmans, seed, sizes, count, decimation)
 
 if nargin < 1
     seed = 1;
@@ -6,9 +6,10 @@ end
 
 rng(seed);
 
-%decimation = min(1000,count);
+q = 1;
 
-%t = NaN*zeros(ceil(count/100),length(sizes));
+for k = 1:length(kalmans)
+    implementation = kalmans{k}
 
 for s = 1:length(sizes)
 
@@ -25,29 +26,13 @@ for s = 1:length(sizes)
     K   = CovarianceMatrix(eye(n), 'C');
     C   = CovarianceMatrix(eye(m), 'C');
 
-    kalman = kalman_factory();
+    kalman = factory(implementation);
 
-    if true
-        t(:,s) = kalman.perftest([],F,c,K,G,o,C,count,decimation);
-    else
-        j = 1;
-
-        tic;
-
-        for i=1:count
-            if rem(i,100) == 1
-                j=j+1;
-                t(j,s) = toc;
-            end
-
-            kalman.evolve(n,[],F,c,K);
-            kalman.observe(G,randn(m,1),C);
-            filtered = kalman.estimate();
-            if filtered(1)==7 % just to make sure we use the result, to avoid deleting it as dead code
-                disp('dummy');
-            end
-            kalman.forget();
-        end
+        tstart=tic;
+        t(:,q) = kalman.perftest([],F,c,K,G,o,C,count,decimation);
+        tend=toc(tstart);
+        ave_ms = 1000*tend/count
+        q = q+1;
     end
 end
 
@@ -62,20 +47,41 @@ medians = median(r)
 size(r)
 sizes
 
-close all
+%close all
 figure
 axis square
 set(gca,'Box','on');;
 hold on;
 %plot(r,'k-','LineWidth',1);
-plot(decimation*(0:size(r,1)-1),r);
+plot(decimation*(0:size(r,1)-1),r,'LineWidth',1);
 xlim([0 decimation*(size(r,1)-1)]);
 ylim([0 1.33*max(medians)])
-legend(num2str(sizes'),'Location','SouthEast');
+if length(sizes) > 1
+  legend(num2str(sizes'),'Location','SouthEast');
+  title(kalmans{1})
+else
+  legend(kalmans,'Location','SouthEast');
+  title(sprintf('n = %d',sizes(1)));
+end
 xlabel('step');
 ylabel('time (ms)')
 hold off;
 %exportgraphics(gca,'../outputs/stress_6_96.pdf');
+
+function kalman = factory(implementation)
+    switch implementation
+        case 'C'
+            kalman = UltimateKalmanNative;
+        case 'Java'
+            kalman = UltimateKalmanJava;
+        case 'MATLAB'
+            kalman = UltimateKalman;
+        otherwise
+            error("implementation should be 'M', 'N', or 'J' (for MATLAB, native, or Java)");
+    end
+end
+
+end
 
 
 
