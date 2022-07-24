@@ -225,6 +225,7 @@ public class UltimateKalman {
   public RealVector estimate(long si) {
     if (si == -1) si = latest();
     long index = si - first;
+    System.out.printf("estimate si = %d index = %d size = %d\n", si,index,steps.size());
     if (index < 0 || index >= steps.size()) return null;
     Step step = steps.get( (int) (si - first) );
     
