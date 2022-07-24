@@ -2,7 +2,7 @@ package sivantoledo.kalman;
 
 import java.util.ArrayList;
 
-import org.apache.commons.math3.exception.DimensionMismatchException;
+//import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.QRDecomposition;
 //import org.apache.commons.math3.exception.MathArithmeticException;
@@ -10,10 +10,6 @@ import org.apache.commons.math3.linear.QRDecomposition;
 //import org.apache.commons.math3.linear.QRDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
-
-import sivantoledo.kalman.PaigeSaundersKalman.Step;
-import sivantoledo.kalman.PaigeSaundersKalman.StepState;
-
 
 /**
  * 
@@ -90,6 +86,7 @@ public class UltimateKalman {
     
     if (steps.size() == 0) {
       current.step = 0;
+      first = 0;
      return;
     }
     
@@ -170,9 +167,11 @@ public class UltimateKalman {
     RealMatrix A = null;
     RealVector y = null;
     
-    if (o_i == null) { // no observations
-      A = current.Rbar.copy();
-      y = current.ybar.copy();
+    if (o_i == null) {  // no observations
+      if (current.Rbar != null) { 
+        A = current.Rbar.copy();
+        y = current.ybar.copy();
+      }
     } else {
     
       RealMatrix W_i_G_i = C_i.weigh(G_i);
@@ -223,9 +222,10 @@ public class UltimateKalman {
    */
 
   public RealVector estimate(long si) {
+    //System.out.printf("estimate si = %d\n", si);
     if (si == -1) si = latest();
     long index = si - first;
-    System.out.printf("estimate si = %d index = %d size = %d\n", si,index,steps.size());
+    //System.out.printf("estimate si = %d first = %d index = %d size = %d\n", si,first,index,steps.size());
     if (index < 0 || index >= steps.size()) return null;
     Step step = steps.get( (int) (si - first) );
     
@@ -291,6 +291,36 @@ public class UltimateKalman {
 
   public void smooth() {
     
+    RealVector v = null;
+    for (int index = steps.size()-1; index >= 0; index--) {
+      Step step = steps.get(index);
+      if (v == null) {     // last step
+        v = step.y.copy();
+      } else {
+        v = step.y.subtract( step.Rsupdiag.operate(v) );
+      }
+      
+      MatrixUtils.solveUpperTriangularSystem(step.Rdiag, v);
+      step.state = v;
+    }
+    
+    RealMatrix R = null;
+    for (int index = steps.size()-1; index >= 0; index--) {
+      Step step = steps.get(index);
+      if (R == null) {     // last step
+        R = step.Rdiag.copy();
+      } else {
+        int n_ipo = R.getRowDimension();
+        RealMatrix A = vconcat( step.Rsupdiag, R );
+        RealMatrix B = vconcat( step.Rdiag, MatrixUtils.createRealMatrix(n_ipo, step.Rdiag.getColumnDimension()) );
+        
+        QRDecomposition qr = new QRDecomposition(A);
+        R = qr.getQT().multiply(B);
+        R = R.getSubMatrix(n_ipo, R.getRowDimension()-1, 0, step.dimension-1);
+        step.covariance = R;
+      }      
+    }
+
   }
 
   /**
