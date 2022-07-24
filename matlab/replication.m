@@ -1,13 +1,16 @@
-function replication(native)
+function replication(implementation)
 % test-replication script for UltimateKalman
 %
 % copyright 2022 Sivan Toledo
 
 if nargin<1
-    native = false;
+    implementation = 'M'; % matlab
 end
 
-addpath 'C:\Users\stoledo\git\ultimate-kalman\native'
+addpath '..\native'
+
+javaaddpath('../ultimatekalman.jar');
+javaaddpath('../commons-math3-3.6.1.jar');
 
 %performance(@factory, 1,[6 12],1e6,10000);
 %exportgraphics(gca,'../outputs/stress_6_12_long.pdf');
@@ -47,10 +50,15 @@ projectile(@factory,1);
 add_remove(@factory,1);
 
 function kalman = factory()
-    if native
-        kalman = UltimateKalmanNative;
-    else
-        kalman = UltimateKalman;
+    switch implementation
+        case 'N'
+            kalman = UltimateKalmanNative;
+        case 'J'
+            kalman = UltimateKalmanJava;
+        case 'M'
+            kalman = UltimateKalman;
+        otherwise
+            error("implementation should be 'M', 'N', or 'J' (for MATLAB, native, or Java)");
     end
 end
 

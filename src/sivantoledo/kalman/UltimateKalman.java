@@ -53,7 +53,7 @@ public class UltimateKalman {
    * 
    * @return index of the first (oldest) step that has not been forgotten
    */
-  long earliest() {
+  public long earliest() {
     return first;
   }
   
@@ -62,7 +62,7 @@ public class UltimateKalman {
    * 
    * @return of the latest (newest) step that has not been rolled back
    */
-  long latest() {
+  public long latest() {
     return first + steps.size() - 1;
   }
   
@@ -84,7 +84,7 @@ public class UltimateKalman {
    * @param b
    * @param C
    */
-  void evolve(int n_i, RealMatrix H_i, RealMatrix F_i, RealVector c_i, CovarianceMatrix K_i) {
+  public void evolve(int n_i, RealMatrix H_i, RealMatrix F_i, RealVector c_i, CovarianceMatrix K_i) {
     current = new Step();
     current.dimension = n_i;
     
@@ -136,7 +136,7 @@ public class UltimateKalman {
    * @param b
    * @param C
    */
-  void evolve(int n_i) {
+  public void evolve(int n_i) {
     evolve(n_i,null,null,null,null);
   }
 
@@ -147,7 +147,7 @@ public class UltimateKalman {
    * @param b
    * @param C
    */
-  void evolve(int dimension, RealMatrix F_i, RealVector c_i, CovarianceMatrix K_i) {
+  public void evolve(int dimension, RealMatrix F_i, RealVector c_i, CovarianceMatrix K_i) {
     int n_i = dimension;
     int l_i = F_i.getRowDimension();
     RealMatrix H_i = MatrixUtils.createRealMatrix(l_i, n_i);
@@ -166,7 +166,7 @@ public class UltimateKalman {
    * @param o_i
    * @param C_i
    */
-  void observe(RealMatrix G_i, RealVector o_i, CovarianceMatrix C_i) {
+  public void observe(RealMatrix G_i, RealVector o_i, CovarianceMatrix C_i) {
     RealMatrix A = null;
     RealVector y = null;
     
@@ -211,7 +211,7 @@ public class UltimateKalman {
   /**
    * A simplified version for steps with no observations at all.
    */
-  void observe() {
+  public void observe() {
     observe(null,null,null);
   }
     
@@ -222,13 +222,14 @@ public class UltimateKalman {
    * @return the most up to date estimate of the latest step
    */
 
-  RealVector estimate(long si) {
+  public RealVector estimate(long si) {
     if (si == -1) si = latest();
     long index = si - first;
     if (index < 0 || index >= steps.size()) return null;
     Step step = steps.get( (int) (si - first) );
     
-    return step.state;
+    if (step.state != null) return step.state;
+    return MatrixUtils.createRealVector(new double[ step.dimension ]).mapMultiply(Double.NaN);
   }
 
   /**
@@ -237,7 +238,7 @@ public class UltimateKalman {
    * @return the most up to date estimate of the latest step
    */
 
-  RealVector estimate() {
+  public RealVector estimate() {
     return estimate(-1);
   }
     
@@ -247,7 +248,7 @@ public class UltimateKalman {
    * @return covariance matrix
    */
   
-  CovarianceMatrix covariance(long si) {
+  public CovarianceMatrix covariance(long si) {
     if (si == -1) si = latest();
     long index = si - first;
     if (index < 0 || index >= steps.size()) return null;
@@ -263,7 +264,23 @@ public class UltimateKalman {
    * @return covariance matrix
    */
   
-  CovarianceMatrix covariance() {
+  public RealMatrix covarianceInverseFactor(long si) {
+    if (si == -1) si = latest();
+    long index = si - first;
+    if (index < 0 || index >= steps.size()) return null;
+    Step step = steps.get( (int) (si - first) );
+
+    if (step.covariance==null) return null;
+    return step.covariance.copy();
+  }
+
+  /**
+   * The covariance matrix of the most up to date estimate of the latest step.  
+   *
+   * @return covariance matrix
+   */
+  
+  public CovarianceMatrix covariance() {
     return covariance(-1);
   }
 
@@ -271,7 +288,7 @@ public class UltimateKalman {
    * Computes the state vectors of all the steps that have not been dropped.
    */
 
-  void smooth() {
+  public void smooth() {
     
   }
 
@@ -279,7 +296,7 @@ public class UltimateKalman {
    * Drops from memory all but the current step.
    */
   
-  void forget() {
+  public void forget() {
     forget(-1);
   }
   
@@ -287,7 +304,7 @@ public class UltimateKalman {
    * Drops from memory all but the current step.
    */
   
-  void forget(long si) {
+  public void forget(long si) {
     if (si == -1) si = latest()-1;
     if (si < earliest() || si > latest()-1) return; // nothing to do 
     while (steps.get(0).step <= si) {
@@ -296,16 +313,30 @@ public class UltimateKalman {
     }
   }
   
-  void rollback() {
-    
+  public void rollback() {
+    rollback(-1);
   }
   
   /**
    * Drops from memory all but the current step.
    */
   
-  void rollback(long si) {
+  public void rollback(long si) {
+    if (si == -1) si = latest(); // the default is to roll back to to last step
+    if (si < earliest() || si > latest()) return; // nothing to do 
+    while (steps.get( steps.size()-1 ).step > si) {
+      steps.remove( steps.size()-1 );
+    }    
+    assert( steps.get( steps.size()-1 ).step == si );
+    current = steps.get( steps.size()-1 );
+    steps.remove( steps.size()-1 );
     
+    // now remove all the fields that were added in observe
+    current.Rdiag      = null;
+    current.Rsupdiag   = null;
+    current.state      = null;
+    current.covariance = null;
+    current.y          = null;
   }
   
   /* 

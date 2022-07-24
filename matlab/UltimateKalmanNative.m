@@ -31,6 +31,11 @@ classdef UltimateKalmanNative < handle
             end
         end
 
+        function delete(kalman)
+            ultimatekalmanmex('free',kalman.handle);
+            kalman.handle = -1; % invalid; not needed but added for safety
+        end
+
         function i = earliest(kalman)
             %EARLIST   The index of the oldest step that has not been
             %          forgotten
@@ -143,7 +148,7 @@ classdef UltimateKalmanNative < handle
             if nargin<2
                 s = -1;
             end
-            estimate = ultimatekalmanmex('estimate',kalman.handle,s)
+            estimate = ultimatekalmanmex('estimate',kalman.handle,s);
             W        = ultimatekalmanmex('covariance',kalman.handle,s);
             cov = CovarianceMatrix(W,'W');
         end

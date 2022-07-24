@@ -8,90 +8,85 @@ classdef CovarianceMatrix < handle
     properties
         type; 
         invW;
-        Wtrans;
         W;
         w;
     end
 
     methods 
         function cov = CovarianceMatrix(Z,type)
+            %CovarianceMatrix constructor
+            %
+            % cov = CovarianceMatrix(Z,type)
+            %    Z is a real matrix or vector
+            %    type describes how Z represents a covariance matrix C
+            %    'C': C = Z
+            %    'I': C = inv(Z)
+            %    'W': C = inv( Z' * Z )
+            %    'w': C = diag( Z.^-2 ) = inv( diag(Z)' * diag(Z) )
+            %    'M': C = Z' * Z
+            %    'U': C = Z * Z' and Z is upper triangular
+            %
             cov = cov@handle();
-            cov.type = type;
-            if type=='C'       % an explicit covariance matrix
-                cov.invW = chol(Z);
-            end
-            if type=='I'       % the inverse of the covariance matrix 
-                cov.Wtrans = chol(Z);
-            end
-            if type=='M'       % a factor (perhaps Cholesky factor) of the covariance matrix 
-                cov.invW = Z;
-            end
-            if type=='W'       % an inverse factor W such that W'*W=C
-                cov.W = Z;
-            end
-            if type=='w'       % an inverse factor W such that W'*W=C
-                cov.w = Z;
+            switch type
+                case 'C'       % an explicit covariance matrix
+                    cov.type = 'U';
+                    cov.invW = chol(Z);
+                case 'I'       % the inverse of the covariance matrix 
+                    cov.type = 'W';
+                    cov.W = (chol(Z))';
+                case 'M'       % a factor (perhaps Cholesky factor) of the covariance matrix 
+                    cov.type = 'M'; % hopefully never happens...
+                    if (istriu(Z)); cov.type = 'U'; end;
+                    cov.invW = Z;
+                case 'W'       % an inverse factor W such that W'*W=C
+                    cov.type = 'W';
+                    cov.W = Z;
+                case 'w'       % an inverse factor W such that W'*W=C
+                    cov.type = 'w';
+                    cov.w = Z;
+                otherwise
+                    type
+                    error('illegal covariance-matrix representation');
             end
         end
 
         function WA = weigh(cov,A)
-            if cov.type=='C'       
-                WA = (cov.invW)\A;
-            end
-            if cov.type=='I'
-                WA = (cov.Wtrans)'*A;
-            end
-            if cov.type=='M'
-                WA = (cov.invW)\A;
-            end
-            if cov.type=='W'
-                WA = (cov.W)*A;
-            end
-            if cov.type=='w'
-                WA = diag(cov.w)*A;
+            switch cov.type
+                case {'U', 'M'}       
+                   WA = (cov.invW)\A;
+                case 'W'
+                    WA = (cov.W)*A;
+                case 'w'
+                    WA = diag(cov.w)*A;
+                otherwise
+                    error('illegal covariance type');
             end
         end
 
         function [R,type] = rep(cov)
-            if cov.type=='C'       % an explicit covariance matrix
-                type = 'U'; % an upper triangular matrix, WA = R \ A;
-                R = cov.invW;
-            end
-            if cov.type=='I'       % the inverse of the covariance matrix
-                type = 'W';
-                R = (cov.Wtrans)';
-            end
-            if cov.type=='M'       % a factor (perhaps Cholesky factor) of the covariance matrix 
-                R = cov.invW;
-                type = '?';
-                if (istriu(R)); type = 'U'; end;
-                if (istriu(l)); type = 'L'; end;
-            end
-            if cov.type=='W'       % an inverse factor W such that W'*W=C
-                type = 'W';
-                R = cov.W;
-            end
-            if cov.type=='w'       % an inverse factor W such that W'*W=C
-                type = 'w';
-                R = cov.w;
+            type = cov.type;
+            switch cov.type
+                case {'U', 'M'}
+                    R = cov.invW;
+                case 'W'
+                    R = cov.W;
+                case 'w'
+                    R = cov.w;
+                otherwise
+                    error('illegal covariance type');
             end
         end
 
         function C = explicit(cov)
-            if cov.type=='C'       
-                C = (cov.invW)' * (cov.invW);
-            end
-            if cov.type=='I'
-                C = inv(cov.Wtrans * cov.Wtrans');
-            end
-            if cov.type=='M'
-                C = (cov.invW)' * (cov.invW);
-            end
-            if cov.type=='W'
-                C = inv(cov.W'  *cov.W);
-            end
-            if cov.type=='w'
-                C = inv(diag(cov.w.^2));
+            switch cov.type
+                case {'U', 'M'}
+                    C = (cov.invW)' * (cov.invW);
+                case 'W'
+                    C = inv( (cov.W)' * (cov.W) );
+                case 'w'
+                    C = diag(cov.w.^-2);
+                otherwise
+                    error('illegal covariance type');
             end
         end
 

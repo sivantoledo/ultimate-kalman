@@ -72,8 +72,6 @@ public class PaigeSaundersKalman implements UltimateKalman {
     }
   }
   
-  
-  
   //private int k = 0;
   private boolean          started = false;
   private LinkedList<Step> steps   = new LinkedList<>();
