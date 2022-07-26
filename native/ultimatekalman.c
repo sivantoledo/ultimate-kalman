@@ -1369,7 +1369,8 @@ matrix_t* kalman_perftest(kalman_t* kalman,
 		//if (debug) printf("perftest iter %d (j=%d)\n",i,j);
 		kalman_evolve(kalman,n,H,F,c,K,K_type);
 		kalman_observe(kalman,G,o,C,C_type);
-		kalman_estimate(kalman,-1);
+		matrix_t* e = kalman_estimate(kalman,-1);
+		kalman_free(e);
 		kalman_forget(kalman,-1);
 
 		if ((i % decimation) == decimation-1) {

@@ -1,7 +1,19 @@
-function projectile(kalman_factory,seed)
+function projectile(kalman_factory,seed,exp)
+% PROJECTILE projectile example for UltimateKalman
+%
+%    PROJECTILE(factory,seed,exp) 
+%      factory: a handle to a function that returns UltimateKalman objects
+%      seed:    random-number generator seed (default is 1)
+%      exp:     whether to export the graphs to PDF files (default is false)
+%
+% copyright 2022 Sivan Toledo
 
-if nargin < 1
+if nargin < 2
     seed = 1;
+end
+
+if nargin < 3
+    exp = false;
 end
 
 rng(seed);
@@ -120,7 +132,7 @@ plot(filtered(1,:),filtered(2,:),'b-','LineWidth',1);
 plot(obs(1,:),obs(2,:),'r.');
 %plot(full(:,1),full(:,2),'m-','LineWidth',1);
 hold off;
-exportgraphics(gca,'../outputs/projectile.pdf');
+if exp; exportgraphics(gca,'../outputs/projectile.pdf'); end;
 
 figure
 axis square
@@ -133,7 +145,7 @@ plot(filtered(1,:),filtered(2,:),'b-','LineWidth',1);
 xlim([ min(obs(1,:)) max(obs(1,:)) ]);
 ylim([ min(obs(2,:)) max(obs(2,:)) ]);
 hold off;
-exportgraphics(gca,'../outputs/projectile_zoom.pdf');
+if exp; exportgraphics(gca,'../outputs/projectile_zoom.pdf'); end;
 
 
 
