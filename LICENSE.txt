@@ -13,7 +13,12 @@
         Foundation; either version 2 of the License, or (at your option) any
         later version.
 
-    or both in parallel, as here.
+    or both in parallel, as here, WITH THE ADDITIONAL REQUIREMENT that if you
+    use this software or derivatives of it, directly or indirectly, to produce
+    research that is described in a research paper, you need to cite the most
+    up-to-date version of the article that describes UltimateKalman in your paper.
+    
+    Currently, the version to cite is the version in this repository.
 
     UltimateKalman is distributed in the hope that it will be useful, but
     WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
