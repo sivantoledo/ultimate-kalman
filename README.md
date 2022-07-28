@@ -8,27 +8,28 @@ Most of the documentation for UltimateKalman is available in an article [availab
 
 Testing the MATLAB version is trivial. Launch MATLAB, make sure that you are in the matlab directory
 of this project (or that it is in MATLAB's search path), and run
-    replication
+`replication`.
 MATLAB will run a number
 of tests and will produce the graphs in the article, except for the performance graphs. 
 
 To build the Java version, run the Windows batch script 
-    build.bat
-It will build an archive file called ultimatekalman.jar. To test the Java version, after
+`build.bat`.
+It should build an archive file called `ultimatekalman.jar`. You need to have a the Java
+command line tools of the JDK (jar and javac) on your path for this script to work. To test the Java version, after
 you have built it, run in MATLAB
-    replication('Java')
+`replication('Java')`.
 It should produce exactly the same output as the MATLAB version.
 
 To build the C version, run the MATLAB script
-    compile
+`compile`.
 It will compile the C version into a MATLAB-callable dynamic link library (a mex file).
 To test the C version, run in MATLAB
-    replication('C')
+`replication('C')`.
 Again it should produce the same graphs.
 
 Once you have built all three versions, you can produce the performance graphs shown in the 
 article by running in MATLB
-    replication('MATLAB',false,true)
+`replication('MATLAB',false,true)`.
     
 That's it!
 
@@ -38,8 +39,6 @@ version of the Apache Commons Math library, `commons-math3-3.6.1.jar`).
 
 To use the C version with client code other than the MATLAB adapter class, add to your project a single
 C file, `ultimatekalman.c`, and a single header file, `ultimatekalman.h`.
-
-
 
 ## License
 
