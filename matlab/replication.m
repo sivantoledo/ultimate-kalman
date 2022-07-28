@@ -35,8 +35,8 @@ if exp; exportgraphics(gca,'../outputs/perftest_imps_6.pdf');  end;
 performance({'MATLAB', 'Java', 'C'}, 1 , [48],1e5,1000);
 if exp; exportgraphics(gca,'../outputs/perftest_imps_48.pdf'); end;
 
-performance({'C'}, 1 , [6 12 24 48 96],1e5,1000);
-if exp; exportgraphics(gca,'../outputs/perftest_C_6_96.pdf');  end;
+%performance({'C'}, 1 , [6 12 24 48 96],1e5,1000);
+%if exp; exportgraphics(gca,'../outputs/perftest_C_6_96.pdf');  end;
 end
 
 clock_offsets(@factory, 6)
