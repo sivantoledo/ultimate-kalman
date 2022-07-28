@@ -30,6 +30,7 @@ Again it should produce the same graphs.
 Once you have built all three versions, you can produce the performance graphs shown in the 
 article by running in MATLB
 `replication('MATLAB',false,true)`.
+**This will take a while!**
     
 That's it!
 
