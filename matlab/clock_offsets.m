@@ -67,7 +67,7 @@ end
 
 relative = f - f(:,1);
 
-close all;
+%close all;
 figure
 axis square
 set(gca,'Box','on');;
