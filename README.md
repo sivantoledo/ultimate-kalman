@@ -2,7 +2,7 @@
 
 This repository contains the source code of UltimateKalman in three different programming languages: MATLAB, C and Java.
 
-Most of the documentation for UltimateKalman is available in an article [available in this repository](uk.pdf).
+Most of the documentation for UltimateKalman is available in an article [available on arXiv](https://arxiv.org/abs/2207.13526).
 
 ## LICENSE
 
@@ -27,7 +27,7 @@ or both in parallel, as here,
     research that is described in a research paper, you need to cite the most
     up-to-date version of the article that describes UltimateKalman in your paper.
     
-Currently, the version to cite is the version in this repository.
+Currently, the version to cite is [the version on arXiv](https://arxiv.org/abs/2207.13526).
 
 UltimateKalman is distributed in the hope that it will be useful, but
     WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
