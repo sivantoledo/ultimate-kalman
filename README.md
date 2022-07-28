@@ -4,7 +4,44 @@ This repository contains the source code of UltimateKalman in three different pr
 
 Most of the documentation for UltimateKalman is available in an article [available on arXiv](https://arxiv.org/abs/2207.13526).
 
-## LICENSE
+## Building and Testing the Code
+
+Testing the MATLAB version is trivial. Launch MATLAB, make sure that you are in the matlab directory
+of this project (or that it is in MATLAB's search path), and run
+    replication
+MATLAB will run a number
+of tests and will produce the graphs in the article, except for the performance graphs. 
+
+To build the Java version, run the Windows batch script 
+    build.bat
+It will build an archive file called ultimatekalman.jar. To test the Java version, after
+you have built it, run in MATLAB
+    replication('Java')
+It should produce exactly the same output as the MATLAB version.
+
+To build the C version, run the MATLAB script
+    compile
+It will compile the C version into a MATLAB-callable dynamic link library (a mex file).
+To test the C version, run in MATLAB
+    replication('C')
+Again it should produce the same graphs.
+
+Once you have built all three versions, you can produce the performance graphs shown in the 
+article by running in MATLB
+    replication('MATLAB',false,true)
+    
+That's it!
+
+To use the Java version with client code other than the MATLAB adapter class, simply include
+`ultimatekalman.jar` and Apache Commons Math in the class path (this software comes with a particular
+version of the Apache Commons Math library, `commons-math3-3.6.1.jar`).
+
+To use the C version with client code other than the MATLAB adapter class, add to your project a single
+C file, `ultimatekalman.c`, and a single header file, `ultimatekalman.h`.
+
+
+
+## License
 
 Copyright 2020-2022 Sivan Toledo.
  
