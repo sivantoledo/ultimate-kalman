@@ -18,7 +18,7 @@ classdef UltimateKalman < handle
     %    observed earliest - The index of the earliest step that has not
     %    been forgoten
 
-    properties (Access = private)
+    properties (Access = protected)
         steps;   % old states
         current; % the current state; moved to steps at the end of observe
     end
