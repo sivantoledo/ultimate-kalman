@@ -15,7 +15,15 @@
  *========================================================*/
 
 #include "mex.h"
+
+/*
+ * In Matlab we need to include matrix.h, but in Octave it is included
+ * automatically and if we issue the include directive, it includes a C++
+ * version that breaks the build.
+ */
+#ifndef BUILD_OCTAVE
 #include "matrix.h"
+#endif
 
 #include <stdint.h>
 #include <stdio.h>
@@ -292,7 +300,7 @@ static void mexForget(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]
 
 	int64_t s_i = (int64_t) mxGetScalar(prhs[2]);
 
-	printf("forget %d %d %08x\n",s_i,handle,kalman);
+	//printf("forget %d %d %08x\n",s_i,handle,kalman);
 
 	kalman_forget(kalman,s_i);
 }
@@ -305,7 +313,7 @@ static void mexRollback(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs
 
 	int64_t s_i = (int64_t) mxGetScalar(prhs[2]);
 
-	printf("rollback %d %d %08x\n",s_i,handle,kalman);
+	//printf("rollback %d %d %08x\n",s_i,handle,kalman);
 
 	kalman_rollback(kalman,s_i);
 }

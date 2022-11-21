@@ -25,7 +25,8 @@ classdef UltimateKalmanJava < handle
     methods (Access = public)
         function kalman = UltimateKalmanJava()
             kalman = kalman@handle();
-            kalman.handle = sivantoledo.kalman.UltimateKalman();
+            % kalman.handle = sivantoledo.kalman.UltimateKalman();
+            kalman.handle = javaObject("sivantoledo.kalman.UltimateKalman");
         end
 
         function delete(kalman)
@@ -141,6 +142,7 @@ classdef UltimateKalmanJava < handle
                 %class(estimate)
                 if (~isnan(estimate(1)))
                   W        = kalman.handle.covarianceInverseFactor(s).getData();
+                  W = kalman.java2mat(W);
                   cov = CovarianceMatrix(W,'W');
                 else
                   cov = [];
@@ -221,15 +223,18 @@ classdef UltimateKalmanJava < handle
                 case 'w'
                     R = UltimateKalmanJava.jvec(R);
                     t = javaMethod('valueOf','sivantoledo.kalman.DiagonalCovarianceMatrix$Representation','DIAGONAL_INVERSE_STANDARD_DEVIATIONS');
-                    jC = sivantoledo.kalman.DiagonalCovarianceMatrix(R,t);
+                    % jC = sivantoledo.kalman.DiagonalCovarianceMatrix(R,t);
+                    jC = javaObject('sivantoledo.kalman.DiagonalCovarianceMatrix',R,t);
                 case 'W'
                     R = UltimateKalmanJava.jmat(R);
                     t = javaMethod('valueOf','sivantoledo.kalman.RealCovarianceMatrix$Representation','INVERSE_FACTOR');
-                    jC = sivantoledo.kalman.RealCovarianceMatrix(R,t);
+                    % jC = sivantoledo.kalman.RealCovarianceMatrix(R,t);
+                    jC = javaObject('sivantoledo.kalman.RealCovarianceMatrix',R,t);
                 case 'U'
                     R = UltimateKalmanJava.jmat(R);
                     t = javaMethod('valueOf','sivantoledo.kalman.RealCovarianceMatrix$Representation','FACTOR');
-                    jC = sivantoledo.kalman.RealCovarianceMatrix(R,t);
+                    % jC = sivantoledo.kalman.RealCovarianceMatrix(R,t);
+                    jC = javaObject('sivantoledo.kalman.RealCovarianceMatrix',R,t);
                 otherwise
                     type
                     error('cannot process covariance matrix type');
@@ -237,12 +242,37 @@ classdef UltimateKalmanJava < handle
         end
 
         function jA = jmat(A)
-            jA = org.apache.commons.math3.linear.MatrixUtils.createRealMatrix(A);
-        end
+            % jA = org.apache.commons.math3.linear.MatrixUtils.createRealMatrix(A);
+            jA = javaMethod('createRealMatrix','org.apache.commons.math3.linear.MatrixUtils',size(A,1),size(A,2));
+            for i=1:size(A,1)
+              for j=1:size(A,2)
+                javaMethod('setEntry',jA,i-1,j-1,A(i,j));
+              end
+            end
+         end
 
         function jv = jvec(v)
-            jv = org.apache.commons.math3.linear.MatrixUtils.createRealVector(v);
+            % jv = org.apache.commons.math3.linear.MatrixUtils.createRealVector(v);
+            % jv = javaMethod('createRealVector','org.apache.commons.math3.linear.MatrixUtils',v);
+            jv = javaMethod('jvec','sivantoledo.kalman.Matrix',v);
         end
+        
+        function A = java2mat(jA)
+            % this function fixes a problem in Octave: when the return value from a Java
+            % method is a rectangular array of double, Matlab coverts it to a matrix, but
+            % Octave does not.
+            if isjava(jA)
+              A = zeros(size(jA,1),size(jA,2));
+              for i=1:size(A,1)
+                for j=1:size(A,2)
+                  A(i,j) = jA(i,j);
+                end
+              end           
+            else
+              A = jA;
+            end
+        end
+        
 
     end % static methods
 end

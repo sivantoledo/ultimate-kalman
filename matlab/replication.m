@@ -28,6 +28,13 @@ if (~isempty(ver('MATLAB')))
     javaaddpath('../commons-math3-3.6.1.jar');
 end
 
+if (~isempty(ver('Octave')))
+    disp('running under Octave, adding native and java support')
+    addpath '..\native'
+    javaaddpath('../ultimatekalman.jar');
+    javaaddpath('../commons-math3-3.6.1.jar');
+end
+
 if perf
 performance({'MATLAB', 'Java', 'C'}, 1 , [6],1e5,1000);
 if exp; exportgraphics(gca,'../outputs/perftest_imps_6.pdf');  end;

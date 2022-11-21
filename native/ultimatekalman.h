@@ -127,8 +127,9 @@ typedef struct step_st {
 	kalman_matrix_t* covariance;
 } step_t;
 
-step_t* step_create();
-void    step_free(step_t* step);
+// Sivan Nov 2022: comment out since these are static functions.
+//step_t* step_create();
+//void    step_free(step_t* step);
 
 /******************************************************************************/
 /* KALMAN                                                                     */
