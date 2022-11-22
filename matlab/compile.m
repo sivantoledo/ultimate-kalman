@@ -2,13 +2,16 @@ clear mex;
 cd '..\native'
 if (~isempty(ver('MATLAB')))
   disp('compiling and linking under MATLAB ...');
-  mex -DBUILD_MEX ultimatekalmanmex.c ultimatekalman.c -lmwlapack -lmwblas
-  %mex -DBUILD_MEX ultimatekalmanmex.c ultimatekalman.c 
+  mex -DBUILD_MEX -DBUILD_MATLAB -DBUILD_LAPACK_H -DBUILD_BLAS_H -DBUILD_WIN32_GETTIMEOFDAY ultimatekalmanmex.c ultimatekalman.c -lmwlapack -lmwblas
 end
 if (~isempty(ver('Octave')))
   disp('compiling and linking under Octave ...');
-  mkoctfile --mex -v -fmax-errors=5 '-D BUILD_MEX' '-D BUILD_OCTAVE' '-I/Programs/OpenBLAS-0.3.21-x86/include' ultimatekalmanmex.c ultimatekalman.c -llibopenblas -lliblapack
-  %mex -DBUILD_MEX ultimatekalmanmex.c ultimatekalman.c 
+  mkoctfile --mex -v -fmax-errors=5 ...
+    -DBUILD_MEX ...
+    -DBUILD_OCTAVE ...
+    -DBUILD_BLAS_UNDERSCORE ...
+    -DBUILD_BLAS_STRLEN_END ...
+    ultimatekalmanmex.c ultimatekalman.c -llibopenblas -lliblapack
 end
 disp('compiling and linking done; now testing');
 cd '..\matlab'

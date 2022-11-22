@@ -1,17 +1,116 @@
+/*
+ * ultimatekalman.c
+ *
+ * (C) Sivan Toledo, 2022
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <assert.h>
 
-#ifdef BUILD_OCTAVE
-//#include <cblas.h>
-#include <lapack.h>
-//#include <lo-lapack-proto.h>
-// Changed ptrdiff_t to blasint throughout
+#ifdef _WIN32
+// for "unused" attribute
+#define __attribute__(x)
+#include <float.h>
+// string.h for memcpy
+#include <string.h>
 #else
+#include <unistd.h>
+#endif
+
+/******************************************************************************/
+/* BLAS AND LAPACK DECLARATIONS                                               */
+/******************************************************************************/
+
+#if defined(BUILD_MEX) && defined(BUILD_MATLAB)
+#define blas_int_t mwSignedIndex
+#else
+#define blas_int_t int
+#endif
+
+#ifdef BUILD_BLAS_H
+#define HAS_BLAS_H
 #include <blas.h>
+#endif
+
+#ifdef BUILD_LAPACK_H
+#define HAS_LAPACK_H
 #include <lapack.h>
+#endif
+
+#ifndef HAS_LAPACK_H
+#warning "LAPACK subroutines defined in ultimatekalman.c, no header file"
+void
+#ifdef BUILD_BLAS_UNDERSCORE
+     dormqr_
+#else
+     dormqr
+#endif
+		(
+    char const* side, char const* trans,
+		blas_int_t const* m, blas_int_t const* n, blas_int_t const* k,
+    double const* A, blas_int_t const* lda,
+    double const* tau,
+    double* C, blas_int_t const* ldc,
+    double* work, blas_int_t const* lwork,
+		blas_int_t* info
+#ifdef BUILD_BLAS_STRLEN_END
+    , size_t, size_t
+#endif
+);
+
+void
+#ifdef BUILD_BLAS_UNDERSCORE
+     dgeqrf_
+#else
+     dgeqrf
+#endif
+		(
+		blas_int_t const* m, blas_int_t const* n,
+    double* A, blas_int_t const* lda,
+    double* tau,
+    double* work, blas_int_t const* lwork,
+		blas_int_t* info );
+
+void
+#ifdef BUILD_BLAS_UNDERSCORE
+     dtrtrs_
+#else
+     dtrtrs
+#endif
+    (
+    char const* uplo, char const* trans, char const* diag,
+		blas_int_t const* n, blas_int_t const* nrhs,
+    double const* A, blas_int_t const* lda,
+    double* B, blas_int_t const* ldb,
+		blas_int_t* info
+#ifdef BUILD_BLAS_STRLEN_END
+    , size_t, size_t, size_t
+#endif
+);
+
+#endif
+
+#ifndef HAS_BLAS_H
+#warning "BLAS subroutines defined in ultimatekalman.c, no header file"
+void
+#ifdef BUILD_BLAS_UNDERSCORE
+     dgemm_
+#else
+     dgemm
+#endif
+          (char const* transa, char const* transb,
+           blas_int_t const* m, blas_int_t const* n, blas_int_t const* k,
+					 double* ALPHA,
+					 double* A, blas_int_t const* LDA,
+					 double* B, blas_int_t const* LDB,
+					 double* BETA,
+					 double* C, blas_int_t const* LDC
+#ifdef BUILD_BLAS_STRLEN_END
+           , size_t, size_t
+#endif
+					 );
 #endif
 
 #define ULTIMATEKALMAN_C
@@ -29,13 +128,6 @@ static void mex_assert(int c, int line) {
 }
 
 #define assert(c) mex_assert((c),__LINE__)
-#ifdef BUILD_OCTAVE
-#define blas_int_t int
-#else
-#define blas_int_t mwSignedIndex
-#endif
-#else
-#define blas_int_t int
 #endif
 
 static int debug = 0;
@@ -49,15 +141,7 @@ static int debug = 0;
 
 static double NaN = 0.0 / 0.0;
 
-#ifdef _WIN32
-// for "unused" attribute
-#define __attribute__(x)
-#include <float.h>
-// string.h for memcpy
-#include <string.h>
-#ifdef BUILD_OCTAVE
-#include <sys/time.h>
-#else
+#if defined(BUILD_WIN32_GETTIMEOFDAY) && defined(_WIN32)
 #include <windows.h>
 typedef SSIZE_T ssize_t;
 
@@ -80,9 +164,7 @@ int gettimeofday(struct timeval * tp, struct timezone * tzp)
     tp->tv_usec = (long) (system_time.wMilliseconds * 1000);
     return 0;
 }
-#endif
 #else
-#include <unistd.h>
 #include <sys/time.h>
 #endif
 
@@ -348,10 +430,10 @@ matrix_t* matrix_create_mutate_qr(matrix_t* A) {
 
 	LWORK = -1; // tell lapack to compute the size of the work area required
 	//if (debug) printf("dgeqrf: M=%d N=%d LDA=%d LWORK=%d\n",M,N,LDA,LWORK);
-#ifdef BUILD_OCTAVE
-	dgeqrf_
+#ifdef BUILD_BLAS_UNDERSCORE
+  dgeqrf_
 #else
-	dgeqrf
+  dgeqrf
 #endif
 	      (&M, &N, A->elements, &LDA, TAU->elements, &WORK_SCALAR, &LWORK, &INFO);
 	if (INFO != 0) printf("dgeqrf INFO=%d\n",INFO);
@@ -360,10 +442,10 @@ matrix_t* matrix_create_mutate_qr(matrix_t* A) {
 	LWORK = (blas_int_t) WORK_SCALAR;
 	matrix_t* WORK = matrix_create(LWORK,1);
 	//printf("dgeqrf requires %f (%d) words in WORK\n",WORK_SCALAR,LWORK);
-#ifdef BUILD_OCTAVE
-	dgeqrf_
+#ifdef BUILD_BLAS_UNDERSCORE
+  dgeqrf_
 #else
-	dgeqrf
+  dgeqrf
 #endif
 	      (&M, &N, A->elements, &LDA, TAU->elements, WORK->elements, &LWORK, &INFO);
 	if (INFO != 0) printf("dgeqrf INFO=%d\n",INFO);
@@ -393,11 +475,16 @@ matrix_t* matrix_mutate_apply_qt(matrix_t* QR, matrix_t* TAU, matrix_t* C) {
 	LDC = matrix_ld(C);
 	//printf("dormqr M=%d N=%d K=%d LDA=%d LDC=%d\n",M,N,K,LDA,LDC);
 
-#ifdef BUILD_OCTAVE
-	dormqr_("L", "T", &M, &N, &K, QR->elements, &LDA, TAU->elements, C->elements, &LDC, &WORK_SCALAR, &LWORK, &INFO,1,1);
+#ifdef BUILD_BLAS_UNDERSCORE
+  dormqr_
 #else
-	dormqr("L", "T", &M, &N, &K, QR->elements, &LDA, TAU->elements, C->elements, &LDC, &WORK_SCALAR, &LWORK, &INFO);
+  dormqr
 #endif
+        ("L", "T", &M, &N, &K, QR->elements, &LDA, TAU->elements, C->elements, &LDC, &WORK_SCALAR, &LWORK, &INFO
+#ifdef BUILD_BLAS_STRLEN_END
+         ,1,1
+#endif
+			  );
 	if (INFO != 0) printf("dormqr INFO=%d\n",INFO);
 	assert(INFO==0);
 
@@ -407,11 +494,16 @@ matrix_t* matrix_mutate_apply_qt(matrix_t* QR, matrix_t* TAU, matrix_t* C) {
 	//if (debug) printf("dormqr requires %f (%d) words in WORK\n",WORK_SCALAR,LWORK);
 
 	// left (pre) multiplication by Q^T
-#ifdef BUILD_OCTAVE
-	dormqr_("L", "T", &M, &N, &K, QR->elements, &LDA, TAU->elements, C->elements, &LDC, WORK->elements, &LWORK, &INFO,1,1);
+#ifdef BUILD_BLAS_UNDERSCORE
+  dormqr_
 #else
-	dormqr("L", "T", &M, &N, &K, QR->elements, &LDA, TAU->elements, C->elements, &LDC, WORK->elements, &LWORK, &INFO);
+  dormqr
 #endif
+	      ("L", "T", &M, &N, &K, QR->elements, &LDA, TAU->elements, C->elements, &LDC, WORK->elements, &LWORK, &INFO
+#ifdef BUILD_BLAS_STRLEN_END
+         ,1,1
+#endif
+			  );
 	if (INFO != 0) printf("dormqr INFO=%d\n",INFO);
 	assert(INFO==0);
 
@@ -441,11 +533,16 @@ void matrix_mutate_trisolve(matrix_t* U, matrix_t* b) {
 	//if (debug) matrix_print(state,NULL);
 
 	// upper triangular, no transpose, diagonal is general (not unit)
-#ifdef BUILD_OCTAVE
-	dtrtrs_("U","N","N", &N, &NRHS, U->elements, &LDA, b->elements, &LDB, &INFO,1,1,1);
+#ifdef BUILD_BLAS_UNDERSCORE
+     dtrtrs_
 #else
-	dtrtrs("U","N","N", &N, &NRHS, U->elements, &LDA, b->elements, &LDB, &INFO);
+     dtrtrs
 #endif
+           ("U","N","N", &N, &NRHS, U->elements, &LDA, b->elements, &LDB, &INFO
+#ifdef BUILD_BLAS_STRLEN_END
+    ,1,1,1
+#endif
+);
 	if (INFO != 0) printf("dormqr INFO=%d\n",INFO);
 	assert(INFO==0);
 	if (debug) printf("dtrtr done\n");
@@ -480,7 +577,16 @@ void matrix_mutate_gemm(double ALPHA, matrix_t* A, matrix_t* B, double BETA, mat
 	//if (debug) printf("dtrtrs N=%d NRHS=%d LDA=%d LDB=%d\n",N,NRHS,LDA,LDB);
 
 	// no transpose
-	dgemm("N","N", &M, &N, &K, &ALPHA, A->elements, &LDA, B->elements, &LDB, &BETA, C->elements, &LDC);
+#ifdef BUILD_BLAS_UNDERSCORE
+  dgemm_
+#else
+  dgemm
+#endif
+	     ("N","N", &M, &N, &K, &ALPHA, A->elements, &LDA, B->elements, &LDB, &BETA, C->elements, &LDC
+#ifdef BUILD_BLAS_STRLEN_END
+        ,1,1
+#endif
+			 );
 	//if (debug) printf("dtrtr done\n");
 }
 
@@ -674,7 +780,16 @@ matrix_t* cov_weigh(matrix_t* cov, char cov_type, matrix_t* A) {
 		LDC = matrix_ld(WA);
 		ALPHA = 1.0;
 		BETA  = 0.0;
-		dgemm("n","N",&M,&N,&K,&ALPHA, cov->elements, &LDA, A->elements, &LDB, &BETA, WA->elements, &LDC);
+#ifdef BUILD_BLAS_UNDERSCORE
+    dgemm_
+#else
+    dgemm
+#endif
+		     ("n","N",&M,&N,&K,&ALPHA, cov->elements, &LDA, A->elements, &LDB, &BETA, WA->elements, &LDC
+#ifdef BUILD_BLAS_STRLEN_END
+          ,1,1
+#endif
+			 );
 		break;
 	case 'U': // cov and an upper triangular matrix that we need to solve with
 
@@ -1222,7 +1337,16 @@ matrix_t* kalman_estimate(kalman_t* kalman, int64_t si) {
 		//if (debug) matrix_print(kalman->current->state,NULL);
 
 		// upper triangular, no transpose, diagonal is general (not unit)
-		dtrtrs("U","N","N", &N, &NRHS, step->Rdiag->elements, &LDA, state->elements, &LDB, &INFO);
+#ifdef BUILD_BLAS_UNDERSCORE
+     dtrtrs_
+#else
+     dtrtrs
+#endif
+		       ("U","N","N", &N, &NRHS, step->Rdiag->elements, &LDA, state->elements, &LDB, &INFO);
+#ifdef BUILD_BLAS_STRLEN_END
+    ,1,1,1
+#endif
+    );
 		if (INFO != 0) if (debug) printf("dormqr INFO=%d\n",INFO);
 		assert(INFO==0);
 	} else {
