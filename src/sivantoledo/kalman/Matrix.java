@@ -3,6 +3,7 @@ package sivantoledo.kalman;
 import org.apache.commons.math3.linear.EigenDecomposition;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.RealVector;
 //import org.apache.logging.log4j.Level;
 //import org.apache.logging.log4j.LogManager;
 //import org.apache.logging.log4j.Logger;
@@ -156,7 +157,14 @@ public class Matrix {
     s.append(']');
     return s.toString();
   }
+  
+  public static RealVector jvec(double[] v) {
+    return MatrixUtils.createRealVector(v);
+  }
 
+  public static RealVector jvec(double v1) {
+    return MatrixUtils.createRealVector(new double[] { v1 });
+  }
   
   public static void main(String[] args) {
     double[][] A = { { 4, -1 },
