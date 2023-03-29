@@ -13,8 +13,14 @@
         Foundation; either version 3 of the License, or (at your option) any
         later version.
 
-    or both in parallel, as here, 
-    WITH THE ADDITIONAL REQUIREMENT 
+    or both in parallel, as here, or
+    
+       * the Apache License as published by the Apache Software
+        Foundation; either version 2.0 of the License, or (at your option) any
+        later version.
+    
+     
+    IN ALL CASES, WITH THE ADDITIONAL REQUIREMENT 
     that if you use this software or derivatives of it, directly or indirectly, to produce
     research that is described in a research paper, you need to cite the most
     up-to-date version of the article that describes UltimateKalman in your paper.
@@ -29,3 +35,6 @@
     You should have received copies of the GNU General Public License and the
     GNU Lesser General Public License along with this software.  If not,
     see https://www.gnu.org/licenses/.
+    
+    You should have received copies of the Apache License. If not,
+    see https://www.apache.org/licenses/.
