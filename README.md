@@ -4,6 +4,8 @@ This repository contains the source code of UltimateKalman in three different pr
 
 Most of the documentation for UltimateKalman is available in an article [available on arXiv](https://arxiv.org/abs/2207.13526).
 
+The software itself is also archived on Zenodo and is citable [![DOI](https://zenodo.org/badge/512375929.svg)](https://zenodo.org/badge/latestdoi/512375929).
+
 The code has been tested with MATLAB R2021b (version 9.11) and with GNU OCTAVE 7.1.0, both running under
 Windows 11. 
 MATLAB was configured to use Microsoft Visual C++ 2019 to compile C (mex) code. 
