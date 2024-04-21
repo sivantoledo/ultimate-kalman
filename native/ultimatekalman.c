@@ -479,7 +479,7 @@ matrix_t* matrix_create_mutate_qr(matrix_t* A) {
 }
 
 // mutates C
-matrix_t* matrix_mutate_apply_qt(matrix_t* QR, matrix_t* TAU, matrix_t* C) {
+void matrix_mutate_apply_qt(matrix_t* QR, matrix_t* TAU, matrix_t* C) {
 	assert(QR != NULL);
 
 	blas_int_t M,N,K,LDA,LDC,LWORK,INFO;
