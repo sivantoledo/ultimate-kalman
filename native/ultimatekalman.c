@@ -8,13 +8,13 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <assert.h>
+#include <string.h>
 
 #ifdef _WIN32
 // for "unused" attribute
 #define __attribute__(x)
 #include <float.h>
 // string.h for memcpy
-#include <string.h>
 #else
 #include <unistd.h>
 #endif
