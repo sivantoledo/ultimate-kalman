@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <assert.h>
 #include <string.h>
 
 #ifdef _WIN32
@@ -134,6 +133,8 @@ static void mex_assert(int c, int line) {
 }
 
 #define assert(c) mex_assert((c),__LINE__)
+#else
+#include <assert.h>
 #endif
 
 static int debug = 0;
