@@ -785,6 +785,8 @@ matrix_t* cov_weigh(matrix_t* cov, char cov_type, matrix_t* A) {
 
 	matrix_t* WA = NULL;
 
+	int32_t i,j, rows, cols;
+
 	switch (cov_type) {
 	case 'W':
 
@@ -840,8 +842,6 @@ matrix_t* cov_weigh(matrix_t* cov, char cov_type, matrix_t* A) {
 		*/
 		break;
 	case 'w':
-		int32_t i,j, rows, cols;
-
 		assert(matrix_rows(cov) == matrix_rows(A));
 
 		rows = matrix_rows(A);
