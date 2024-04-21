@@ -125,7 +125,7 @@ void
 #ifdef BUILD_MEX
 #include "mex.h"
 
-static char assert_msg[81];
+static char assert_msg[128];
 static void mex_assert(int c, int line) {
 	if (!c) {
 		sprintf(assert_msg,"Assert failed in %s line %d",__FILE__,line);
