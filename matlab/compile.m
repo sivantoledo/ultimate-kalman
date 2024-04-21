@@ -19,7 +19,7 @@ if ispc
     addpath '..\native'
 end
 
-if ispc
+if isunix
     warning('Linux mex generation not yet tested');
     cd '../native'
     if (~isempty(ver('MATLAB')))
