@@ -20,7 +20,6 @@ if ispc
 end
 
 if isunix
-    warning('Linux mex generation not yet tested');
     cd '../native'
     if (~isempty(ver('MATLAB')))
         disp('compiling and linking under MATLAB ...');
@@ -45,7 +44,7 @@ if ismac
     cd '../native'
     if (~isempty(ver('MATLAB')))
         disp('compiling and linking under MATLAB ...');
-        mex -DBUILD_MEX -DBUILD_MATLAB -DBUILD_LAPACK_H -DBUILD_BLAS_H -DBUILD_WIN32_GETTIMEOFDAY ultimatekalmanmex.c ultimatekalman.c -lmwlapack -lmwblas
+        mex -DBUILD_MEX -DBUILD_MATLAB -DBUILD_LAPACK_H -DBUILD_BLAS_H ultimatekalmanmex.c ultimatekalman.c -lmwlapack -lmwblas
     end
     if (~isempty(ver('Octave')))
         disp('compiling and linking under Octave ...');
