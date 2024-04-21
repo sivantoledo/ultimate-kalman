@@ -29,6 +29,12 @@
 #define blas_int_t int
 #endif
 
+#ifdef BUILD_MKL_H
+#define HAS_BLAS_H
+#define HAS_LAPACK_H
+#include <mkl.h>
+#endif
+
 #ifdef BUILD_BLAS_H
 #define HAS_BLAS_H
 #include <blas.h>
@@ -834,7 +840,7 @@ matrix_t* cov_weigh(matrix_t* cov, char cov_type, matrix_t* A) {
 		}
 		break;
 	default:
-		assert( false );
+		assert( 0 );
 		WA = matrix_create_constant(matrix_rows(A), matrix_cols(A), NaN);
 		break;
 	}
@@ -1567,7 +1573,7 @@ matrix_t* kalman_perftest(kalman_t* kalman,
 /* MAIN                                                                       */
 /******************************************************************************/
 
-#if false
+#if 0
 
 int main(int argc, char *argv[]) {
   printf("hello world\n");

@@ -1,19 +1,14 @@
 setlocal
 
-::set ATLAS_DIST=C:\files\atlas\atlas-distribution
-::set ATLAS_JAVA=C:\files\atlas\atlas-java
-::set ATLAS_DEPS=C:\files\native\atlas-deps-native
-
-::set path=c:\programs\jdk-11.0.2\bin;%path%
-::set JAVA_HOME=c:\programs\jdk-11.0.2
-
-::ECHO building header files
-
-::javac -h dsp -d /tmp/junk -cp ^
-
 @ECHO ON
 
 call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
+call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" intel64
+
+::echo %MKLROOT%
+::echo %INCLUDE%
+
+:: possible mkl setvars args: ilp64
  
 @ECHO ON
 	
@@ -47,23 +42,22 @@ IF "%dll%"=="true" (
 
 IF "%test%"=="true" (
   ECHO generating test program
-  cl -I. ultimate-kalman.c /MT
+  cl ^
+  -Ferotation.exe ^
+  -I. ^
+  -DBUILD_WIN32_GETTIMEOFDAY ^
+  -DBUILD_MKL_H ^
+  rotation.c ^
+  ultimatekalman.c ^
+  mkl_rt.lib ^
+  /MT
+
+
+
   
-::  COPY jni-sdcard.dll %ATLAS_DIST%\windows
   ECHO generated test
 )
 
-
-::cl ^
-::  ...
-::  -Feserver-usrp.exe ^
-::    radio\server.c ^
-::  /MT ^
-::  /link ^
-::  /LIBPATH:"c:\Program Files (x86)\UHD\lib" uhd.lib ^  
-::)
-
-:done
 
 ECHO done
 
