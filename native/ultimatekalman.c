@@ -290,6 +290,22 @@ matrix_t* matrix_create_constant(int32_t rows, int32_t cols, double c) {
 void matrix_print(matrix_t* A, char* format) {
 	int32_t i,j;
 
+	printf("matrix_print %d %d\n",A->row_dim,A->col_dim);
+
+	if (format == NULL) format = "%f";
+
+	for (i=0; i<A->row_dim; i++) {
+		for (j=0; j<A->col_dim; j++) {
+			printf(format,matrix_get(A,i,j));
+			printf(" ");
+		}
+		printf("\n");
+	}
+}
+
+void matrix_print_debug(matrix_t* A, char* format) {
+	int32_t i,j;
+
 	if (debug) printf("matrix_print %d %d\n",A->row_dim,A->col_dim);
 
 	if (format == NULL) format = "%f";
