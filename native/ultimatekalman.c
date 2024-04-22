@@ -932,15 +932,6 @@ int64_t   kalman_latest(kalman_t* kalman) {
 }
 
 void kalman_evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, matrix_t* c_i, matrix_t* K_i, char K_type) {
-#ifdef BUILD_DEBUG_PRINTOUTS
-	printf("kalman_evolve n_i = %d\n",n_i);
-	printf("kalman_evolve H_i = %08x %d %d\n",(unsigned int) H_i,(int) matrix_rows(H_i),(int) matrix_cols(H_i));
-	printf("kalman_evolve F_i = %08x %d %d\n",(unsigned int) F_i,(int) matrix_rows(F_i),(int) matrix_cols(F_i));
-	printf("kalman_evolve i_i = %08x %d %d\n",(unsigned int) c_i,(int) matrix_rows(c_i),(int) matrix_cols(c_i));
-	printf("kalman_evolve K_i = %08x %d %d\n",(unsigned int) K_i,(int) matrix_rows(K_i),(int) matrix_cols(K_i));
-	printf("cov type %c",K_type);
-#endif
-
 	kalman->current = step_create();
 	kalman->current->dimension = n_i;
 
@@ -949,6 +940,15 @@ void kalman_evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, 
 		kalman->current->step = 0;
 		return;
 	}
+
+#ifdef BUILD_DEBUG_PRINTOUTS
+	printf("kalman_evolve n_i = %d\n",n_i);
+	printf("kalman_evolve H_i = %08x %d %d\n",(unsigned int) H_i,(int) matrix_rows(H_i),(int) matrix_cols(H_i));
+	printf("kalman_evolve F_i = %08x %d %d\n",(unsigned int) F_i,(int) matrix_rows(F_i),(int) matrix_cols(F_i));
+	printf("kalman_evolve i_i = %08x %d %d\n",(unsigned int) c_i,(int) matrix_rows(c_i),(int) matrix_cols(c_i));
+	printf("kalman_evolve K_i = %08x %d %d\n",(unsigned int) K_i,(int) matrix_rows(K_i),(int) matrix_cols(K_i));
+	printf("cov type %c\n",K_type);
+#endif
 
 	step_t* imo = farray_get_last( kalman->steps );
 	assert(imo != NULL);

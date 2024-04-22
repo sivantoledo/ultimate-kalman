@@ -115,14 +115,14 @@ int main(int argc, char* argv[]) {
 	printf("G = \n");
 	matrix_print(G, "%.6f");
 
-	char K_type = 'w';
+	char K_type = 'W';
 	kalman_matrix_t* K = matrix_create_constant(2,2,0.0);
 	for (i=0; i<2; i++) matrix_set(K, i,i, evolutionStd);
 	
 	printf("K = \n");
 	matrix_print(K, "%.3e");
 
-	char C_type = 'w';
+	char C_type = 'W';
 	kalman_matrix_t* C = matrix_create_constant(obs_dim,obs_dim,0.0);
 	for (i=0; i<obs_dim; i++) matrix_set(C, i,i, observationStd);
 	
@@ -169,8 +169,17 @@ int main(int argc, char* argv[]) {
 
 	kalman_matrix_t* zero = matrix_create_constant(2,1,0.0);
 
-	kalman_evolve(kalman, 2, H, F, zero, K, K_type);
+	// first step
+	//kalman_evolve(kalman, 2, H, F, zero, K, K_type);
+	kalman_evolve(kalman, 2, NULL, NULL, NULL, NULL, K_type);
+	kalman_matrix_t* o = matrix_create_sub(obs, 0, obs_dim, 0, 1);
+	printf("o = \n");
+	matrix_print(o,"%.3e");
+	kalman_observe(kalman, G, o, C, C_type);
+        matrix_free(o);
+	
 
+	printf("rotation done\n");
 	return 0;
 }
 
