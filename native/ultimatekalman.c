@@ -24,7 +24,7 @@
 #if defined(BUILD_MEX) && defined(BUILD_MATLAB)
 #define blas_int_t mwSignedIndex
 #else
-#define blas_int_t int
+#define blas_int_t int32_t
 #endif
 
 #ifdef BUILD_MKL_H
@@ -770,11 +770,12 @@ matrix_t* cov_weigh(matrix_t* cov, char cov_type, matrix_t* A) {
 	assert(A != NULL);
 	assert(cov != NULL);
 
-	//if (debug) printf("cov type %c\n",cov_type);
-	//if (debug) printf("cov ");
-	//if (debug) matrix_print(cov,"%.3e");
-	//if (debug) printf("A ");
-	//if (debug) matrix_print(A,"%.3e");
+#ifdef BUILD_DEBUG_PRINTOUTS
+	printf("cov(%c) ",cov_type);
+	matrix_print(cov,"%.3e");
+	printf("A ");
+	matrix_print(A,"%.3e");
+#endif
 
 	matrix_t* WA = NULL;
 
@@ -782,7 +783,6 @@ matrix_t* cov_weigh(matrix_t* cov, char cov_type, matrix_t* A) {
 
 	switch (cov_type) {
 	case 'W':
-
 		//if (debug) printf("cov W %d %d %d %d\n",matrix_cols(cov),matrix_rows(cov),matrix_cols(A),matrix_rows(A));
 
 		assert(matrix_cols(cov) == matrix_rows(A));
@@ -932,14 +932,18 @@ int64_t   kalman_latest(kalman_t* kalman) {
 }
 
 void kalman_evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, matrix_t* c_i, matrix_t* K_i, char K_type) {
+	fprintf(stderr,"xxx 0\n");
 	kalman->current = step_create();
 	kalman->current->dimension = n_i;
-
+fprintf(stderr,"xxx 1\n");
 	if (farray_size(kalman->steps)==0) {
+		fprintf(stderr,"xxx 2\n");
 		//if (debug) printf("kalman_evolve first step\n");
 		kalman->current->step = 0;
 		return;
 	}
+	fprintf(stderr,"xxx 3\n");
+	return;
 
 #ifdef BUILD_DEBUG_PRINTOUTS
 	printf("kalman_evolve n_i = %d\n",n_i);
@@ -1153,6 +1157,15 @@ void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 	matrix_t* W_i_o_i = NULL;
 
 	if (o_i != NULL) { // no observations
+#ifdef BUILD_DEBUG_PRINTOUTS
+		printf("C_i(%c) ",C_type);
+		matrix_print(C_i,"%.3e");
+		printf("G_i ");
+		matrix_print(G_i,"%.3e");
+		printf("o_i ");
+		matrix_print(o_i,"%.3e");
+#endif
+		printf("there are observations\n");
 #if 1
 		W_i_G_i = cov_weigh(C_i,C_type,G_i);
 		W_i_o_i = cov_weigh(C_i,C_type,o_i);
@@ -1168,7 +1181,7 @@ void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 		matrix_print(W_i_o_i,"%.3e");
 #endif
 	}
-
+	return;
 
 	//if (debug) printf("kalman_observe %08x %d %08x %d\n",G_i,G_i?matrix_rows(G_i):0, kalman->current->Rbar, kalman->current->Rbar?matrix_rows(kalman->current->Rbar):0);
 	//if (debug) printf("current ybar %08x Rbar %08x Woi %08x\n",kalman->current->Rbar, kalman->current->ybar, W_i_o_i);

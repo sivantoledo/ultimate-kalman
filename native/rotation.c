@@ -165,6 +165,7 @@ int main(int argc, char* argv[]) {
 	printf("obs = \n");
 	matrix_print(obs, "%.3f");
 	
+
 	kalman_t* kalman = kalman_create();
 
 	kalman_matrix_t* zero = matrix_create_constant(2,1,0.0);
@@ -176,6 +177,7 @@ int main(int argc, char* argv[]) {
 	printf("o = \n");
 	matrix_print(o,"%.3e");
 	kalman_observe(kalman, G, o, C, C_type);
+	return 0;
         matrix_free(o);
 	
 
