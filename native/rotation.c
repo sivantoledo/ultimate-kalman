@@ -35,7 +35,41 @@ double obsErrs_rowwise[] = {
 -1.428567988496096, 0.913205695955837,-1.576872295738796,-1.888336147279610, 1.116853507009928, 1.615888145666843,-0.102585012191329,-0.192732954692481, 0.160906008337421,-0.024849020282298,-1.001561909251739,-0.314462113181954,0.276865687293751, 0.175430340572582, 0.746792737753047, 1.648965874319728,
 -1.114618464565160, 0.976371425014641, 0.204080086636545, 0.736193913185726, 0.743379272133998,-1.666530392059792, 0.622727541956653, 0.794595441386172, 0.539084689771962,-2.548385761079745,-1.161623730001803, 1.066876935479899,1.748562141782206, 0.362976707912966, 0.842263598054067, 1.725578381396231
 };
-    
+
+/*
+ * C(i:i+m,j:j+n) += A * B(k:k+m,l:l+n)
+ */
+
+void matrix_multiply_accumulate(
+				kalman_matrix_t* C, int i, int j,
+				kalman_matrix_t* A, int p, int q,
+				kalman_matrix_t* B, int k, int l,
+				int Csub_rows, int Csub_cols, int Asub_cols
+				) {
+  int r,c,s;
+
+  //printf("A %d %d\n",matrix_rows(A), matrix_cols(A));
+  //printf("B %d %d\n",matrix_rows(B), matrix_cols(B));
+  //printf("C %d %d %d %d\n",matrix_rows(C), matrix_cols(C),i,j);
+
+  for (r=0; r<Csub_rows; r++) {
+    for (c=0; c<Csub_cols; c++) {
+  	  //printf("??? %d %d\n",i+r,j+c);
+      double x = matrix_get(C, i+r, j+c);
+      for (s=0; s<Asub_cols; s++) {
+    	  //printf("%d %d %d %d\n",r+p,s+q,k+s,l+c);
+    	  matrix_get(A,r+p,s+q);
+    	  //printf("%d %d %d %d\n",r+p,s+q,k+s,l+c);
+    	  matrix_get(B, k+s, l+c);
+    	  //printf("...\n");
+        x += matrix_get(A,r+p,s+q) * matrix_get(B, k+s, l+c);
+      }
+	  //printf("--- %d %d\n",i+r,j+c);
+      matrix_set(C, i+r, j+c, x);
+      //printf("===\n");
+    }
+  }
+}
 
 int main(int argc, char* argv[]) {
 
@@ -69,6 +103,7 @@ int main(int argc, char* argv[]) {
 	kalman_matrix_t* evolErrs = matrix_create_from_rowwise(evolErrs_rowwise, 2, 15);
 	kalman_matrix_t* obsErrs  = matrix_create_from_rowwise(obsErrs_rowwise , 2, 16);
 
+	kalman_matrix_t* H = matrix_create_identity(2, 2);
 	kalman_matrix_t* F = matrix_create_from_rowwise(F_rowwise, 2, 2);
 	kalman_matrix_t* G = matrix_create_from_rowwise(G_rowwise, 6, 2);
 	
@@ -101,14 +136,14 @@ int main(int argc, char* argv[]) {
 	matrix_set(states, 1, 0, 0.0);
 
 	for (i=1; i<k; i++) {
-	  matrix_multiply_accumulate(states,   i, 0,
+	  matrix_multiply_accumulate(states,   0, i,
 				     F,        0, 0,
-				     states, i-1, 0,
+				     states,   0, i-1,
 				     2, 1, matrix_cols(F));
 
-          matrix_multiply_accumulate(states,     i, 0,
+     matrix_multiply_accumulate(states,     0, i,
 				     K,          0, 0,
-				     evolErrs, i-1, 0,
+				     evolErrs,   0, i-1,
 				     2, 1, matrix_cols(K));
 	}
 
@@ -116,44 +151,27 @@ int main(int argc, char* argv[]) {
 	matrix_print(states, "%.3f");
 
 	for (i=0; i<k; i++) {
-	  matrix_multiply_accumulate(obs,      i, 0,
+	  matrix_multiply_accumulate(obs,      0, i,
 				     G,        0, 0,
-				     states,   i, 0,
+				     states,   0, i,
 				     2, 1, matrix_cols(G));
 
-	  matrix_multiply_accumulate(states,     i, 0,
+	  matrix_multiply_accumulate(obs,     0, i,
 				     C,          0, 0,
-				     obsErrs,    i, 0,
+				     obsErrs,    0, i,
 				     2, 1, matrix_cols(C));
 	}
 
 	printf("obs = \n");
 	matrix_print(obs, "%.3f");
 	
-	//K = CovarianceMatrix(evolutionStd^-1  *ones(2,1),'w');
-	//C = CovarianceMatrix(observationStd^-1*ones(obs_dim,1), 'w');
+	kalman_t* kalman = kalman_create();
 
+	kalman_matrix_t* zero = matrix_create_constant(2,1,0.0);
+
+	kalman_evolve(kalman, 2, H, F, zero, K, K_type);
 
 	return 0;
 }
 
-// C(i:i+m,j:j+n) += A * B(k:k+m,l:l+n)
-void matrix_multiply_accumulate(
-				kalman_matrix_t* C, int i, int j,
-				kalman_matrix_t* A, int p, int q,
-				kalman_matrix_t* B, int k, int l,
-				int Csub_rows, int Csub_cols, int Asub_cols 
-				) {
-  int r,c,s;
-
-  for (r=0; r<Csub_rows; r++) {
-    for (c=0; c<Csub_cols; c++) {
-      double x = matrix_get(C, i+r, j+c);
-      for (s=0; s<Asub_cols; s++) {
-        x += matrix_get(A,r+p,s+q) * matrix_get(B, k+s, j+l);
-      }
-      matrix_set(C, i+r, j+c, x);
-    }
-  }
-}
      
