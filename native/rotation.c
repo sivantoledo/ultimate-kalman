@@ -170,17 +170,56 @@ int main(int argc, char* argv[]) {
 
 	kalman_matrix_t* zero = matrix_create_constant(2,1,0.0);
 
+	/*************************************************************/
+	/* predict all the states from the first observation         */
+	/*************************************************************/
+	
 	// first step
-	//kalman_evolve(kalman, 2, H, F, zero, K, K_type);
 	kalman_evolve(kalman, 2, NULL, NULL, NULL, NULL, K_type);
 	kalman_matrix_t* o = matrix_create_sub(obs, 0, obs_dim, 0, 1);
 	printf("o = \n");
 	matrix_print(o,"%.3e");
 	kalman_observe(kalman, G, o, C, C_type);
-	return 0;
         matrix_free(o);
-	
+	kalman_estimate(kalman,0);
 
+	printf("earliest->latest %d->%d\n",(int) kalman_earliest(kalman),(int) kalman_latest(kalman));
+		
+	for (i=1; i<k; i++) {
+	  printf("prediction step %d\n",i);
+	  kalman_evolve(kalman, 2, H, F, zero, K, K_type);
+	  o = matrix_create_sub(obs, 0, obs_dim, i, 1);
+	  //printf("o = \n");
+	  //matrix_print(o,"%.3e");
+	  kalman_observe(kalman, G, o, C, C_type);
+	  matrix_free(o);
+	  kalman_estimate(kalman,i);
+	}
+	printf("earliest->latest %d->%d\n",(int) kalman_earliest(kalman),(int) kalman_latest(kalman));
+	  
+	/*************************************************************/
+	/* roll back to the second state and provide observations    */
+	/*************************************************************/
+
+	
+	kalman_rollback(kalman,1);
+	printf("earliest->latest %d->%d\n",(int) kalman_earliest(kalman),(int) kalman_latest(kalman));
+
+	o = matrix_create_sub(obs, 0, obs_dim, 1, 1);
+	kalman_observe(kalman, G, o, C, C_type);
+	matrix_free(o);
+
+	kalman_estimate(kalman,0);
+	kalman_estimate(kalman,1);
+	printf("earliest->latest %d->%d\n",(int) kalman_earliest(kalman),(int) kalman_latest(kalman));
+
+
+	/*************************************************************/
+	/* roll back to the second state and provide observations    */
+	/*************************************************************/
+
+
+	//kalman_free(kalman);
 	printf("rotation done\n");
 	return 0;
 }

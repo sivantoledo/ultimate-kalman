@@ -932,18 +932,14 @@ int64_t   kalman_latest(kalman_t* kalman) {
 }
 
 void kalman_evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, matrix_t* c_i, matrix_t* K_i, char K_type) {
-	fprintf(stderr,"xxx 0\n");
 	kalman->current = step_create();
 	kalman->current->dimension = n_i;
-fprintf(stderr,"xxx 1\n");
+
 	if (farray_size(kalman->steps)==0) {
-		fprintf(stderr,"xxx 2\n");
 		//if (debug) printf("kalman_evolve first step\n");
 		kalman->current->step = 0;
 		return;
 	}
-	fprintf(stderr,"xxx 3\n");
-	return;
 
 #ifdef BUILD_DEBUG_PRINTOUTS
 	printf("kalman_evolve n_i = %d\n",n_i);
@@ -1165,7 +1161,7 @@ void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 		printf("o_i ");
 		matrix_print(o_i,"%.3e");
 #endif
-		printf("there are observations\n");
+
 #if 1
 		W_i_G_i = cov_weigh(C_i,C_type,G_i);
 		W_i_o_i = cov_weigh(C_i,C_type,o_i);
@@ -1181,7 +1177,6 @@ void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 		matrix_print(W_i_o_i,"%.3e");
 #endif
 	}
-	return;
 
 	//if (debug) printf("kalman_observe %08x %d %08x %d\n",G_i,G_i?matrix_rows(G_i):0, kalman->current->Rbar, kalman->current->Rbar?matrix_rows(kalman->current->Rbar):0);
 	//if (debug) printf("current ybar %08x Rbar %08x Woi %08x\n",kalman->current->Rbar, kalman->current->ybar, W_i_o_i);
