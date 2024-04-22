@@ -3,7 +3,6 @@
  *
  * (C) Sivan Toledo, 2022
  */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -45,7 +44,8 @@
 #endif
 
 #ifndef HAS_LAPACK_H
-#warning "LAPACK subroutines defined in ultimatekalman.c, no header file"
+// Microsoft's cl does not support #warning
+//#warning "LAPACK subroutines defined in ultimatekalman.c, no header file"
 void
 #ifdef BUILD_BLAS_UNDERSCORE
      dormqr_
@@ -98,7 +98,8 @@ void
 #endif
 
 #ifndef HAS_BLAS_H
-#warning "BLAS subroutines defined in ultimatekalman.c, no header file"
+// Microsoft's cl does not support #warning
+//#warning "BLAS subroutines defined in ultimatekalman.c, no header file"
 void
 #ifdef BUILD_BLAS_UNDERSCORE
      dgemm_
@@ -137,7 +138,7 @@ static void mex_assert(int c, int line) {
 #include <assert.h>
 #endif
 
-static int debug = 0;
+//static int debug = 0;
 
 /******************************************************************************/
 /* UTILITIES                                                                  */
@@ -301,22 +302,6 @@ void matrix_print(matrix_t* A, char* format) {
 			printf(" ");
 		}
 		printf("\n");
-	}
-}
-
-void matrix_print_debug(matrix_t* A, char* format) {
-	int32_t i,j;
-
-	if (debug) printf("matrix_print %d %d\n",A->row_dim,A->col_dim);
-
-	if (format == NULL) format = "%f";
-
-	for (i=0; i<A->row_dim; i++) {
-		for (j=0; j<A->col_dim; j++) {
-			if (debug) printf(format,matrix_get(A,i,j));
-			if (debug) printf(" ");
-		}
-		if (debug) printf("\n");
 	}
 }
 
@@ -550,7 +535,9 @@ void matrix_mutate_trisolve(matrix_t* U, matrix_t* b) {
 	NRHS = matrix_cols(b);
 	LDB = matrix_ld(b);
 
-	if (debug) printf("dtrtrs N=%d NRHS=%d LDA=%d LDB=%d\n",N,NRHS,LDA,LDB);
+#ifdef BUILD_DEBUG_PRINTOUTS
+	printf("dtrtrs N=%d NRHS=%d LDA=%d LDB=%d\n",N,NRHS,LDA,LDB);
+#endif
 
 	//if (debug) matrix_print(kalman->current->Rdiag,NULL);
 	//if (debug) matrix_print(state,NULL);
@@ -566,9 +553,15 @@ void matrix_mutate_trisolve(matrix_t* U, matrix_t* b) {
     ,1,1,1
 #endif
 );
-	if (INFO != 0) printf("dormqr INFO=%d\n",INFO);
+	if (INFO != 0) {
+#ifdef BUILD_DEBUG_PRINTOUTS
+		printf("dormqr INFO=%d\n",INFO);
+#endif
+	}
 	assert(INFO==0);
-	if (debug) printf("dtrtr done\n");
+#ifdef BUILD_DEBUG_PRINTOUTS
+	printf("dtrtr done\n");
+#endif
 }
 
 matrix_t* matrix_create_trisolve(matrix_t* U, matrix_t* b) {
@@ -612,7 +605,6 @@ void matrix_mutate_gemm(double ALPHA, matrix_t* A, matrix_t* B, double BETA, mat
 			 );
 	//if (debug) printf("dtrtr done\n");
 }
-
 
 #ifdef BUILD_MEX
 matrix_t* matrix_create_from_mxarray(const mxArray* mx) {
@@ -940,12 +932,14 @@ int64_t   kalman_latest(kalman_t* kalman) {
 }
 
 void kalman_evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, matrix_t* c_i, matrix_t* K_i, char K_type) {
-	if (debug) printf("kalman_evolve n_i = %d\n",n_i);
-	if (debug) printf("kalman_evolve H_i = %08x %d %d\n",H_i,matrix_rows(H_i),matrix_cols(H_i));
-	if (debug) printf("kalman_evolve F_i = %08x %d %d\n",F_i,matrix_rows(F_i),matrix_cols(F_i));
-	if (debug) printf("kalman_evolve i_i = %08x %d %d\n",c_i,matrix_rows(c_i),matrix_cols(c_i));
-	if (debug) printf("kalman_evolve K_i = %08x %d %d\n",K_i,matrix_rows(K_i),matrix_cols(K_i));
-	if (debug) printf("cov type %c",K_type);
+#ifdef BUILD_DEBUG_PRINTOUTS
+	printf("kalman_evolve n_i = %d\n",n_i);
+	printf("kalman_evolve H_i = %08x %d %d\n",(unsigned int) H_i,(int) matrix_rows(H_i),(int) matrix_cols(H_i));
+	printf("kalman_evolve F_i = %08x %d %d\n",(unsigned int) F_i,(int) matrix_rows(F_i),(int) matrix_cols(F_i));
+	printf("kalman_evolve i_i = %08x %d %d\n",(unsigned int) c_i,(int) matrix_rows(c_i),(int) matrix_cols(c_i));
+	printf("kalman_evolve K_i = %08x %d %d\n",(unsigned int) K_i,(int) matrix_rows(K_i),(int) matrix_cols(K_i));
+	printf("cov type %c",K_type);
+#endif
 
 	kalman->current = step_create();
 	kalman->current->dimension = n_i;
@@ -982,14 +976,15 @@ void kalman_evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, 
 
 	matrix_mutate_scale(V_i_F_i,-1.0);
 
-	if (debug) printf("evolve!\n");
-
-	if (debug) printf("V_i_H_i ");
-	if (debug) matrix_print(V_i_H_i,"%.3e");
-	if (debug) printf("V_i_F_i ");
-	if (debug) matrix_print(V_i_F_i,"%.3e");
-	if (debug) printf("V_i_c_i ");
-	if (debug) matrix_print(V_i_c_i,"%.3e");
+#ifdef BUILD_DEBUG_PRINTOUTS
+	printf("evolve!\n");
+	printf("V_i_H_i ");
+	matrix_print(V_i_H_i,"%.3e");
+	printf("V_i_F_i ");
+	matrix_print(V_i_F_i,"%.3e");
+	printf("V_i_c_i ");
+	matrix_print(V_i_c_i,"%.3e");
+#endif
 
 	matrix_t* A;
 	matrix_t* B;
@@ -1006,12 +1001,14 @@ void kalman_evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, 
 		y = matrix_create_copy( V_i_c_i );
 	}
 
-	if (debug) printf("A ");
-	if (debug) matrix_print(A,"%.3e");
-	if (debug) printf("B ");
-	if (debug) matrix_print(B,"%.3e");
-	if (debug) printf("y ");
-	if (debug) matrix_print(y,"%.3e");
+#ifdef BUILD_DEBUG_PRINTOUTS
+	printf("A ");
+	matrix_print(A,"%.3e");
+	printf("B ");
+	matrix_print(B,"%.3e");
+	printf("y ");
+	matrix_print(y,"%.3e");
+#endif
 
 	/*
 	 * QR factorization
@@ -1100,10 +1097,12 @@ void kalman_evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, 
 
 	int32_t n_imo = imo->dimension;
 
-	if (debug) printf("B ");
-	if (debug) matrix_print(B,"%.3e");
-	if (debug) printf("y ");
-	if (debug) matrix_print(y,"%.3e");
+#ifdef BUILD_DEBUG_PRINTOUTS
+	printf("B ");
+	matrix_print(B,"%.3e");
+	printf("y ");
+	matrix_print(y,"%.3e");
+#endif
 
 	//printf("%d: A %d %d B %d %d\n",kalman->current->step,matrix_rows(A),matrix_cols(A),matrix_rows(B),matrix_cols(B));
 
@@ -1138,12 +1137,17 @@ void kalman_evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, 
 
 void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_i, char C_type) {
 
-	if (debug) printf("observe!\n");
+#ifdef BUILD_DEBUG_PRINTOUTS
+	printf("observe!\n");
+#endif
+
 	assert(kalman != NULL);
 	assert(kalman->current != NULL);
 	int32_t n_i = kalman->current->dimension;
 
-	if (debug) printf("observe %d\n",kalman->current->step,n_i);
+#ifdef BUILD_DEBUG_PRINTOUTS
+	printf("observe %d\n",(int) kalman->current->step);
+#endif
 
 	matrix_t* W_i_G_i = NULL;
 	matrix_t* W_i_o_i = NULL;
@@ -1157,10 +1161,12 @@ void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 		W_i_o_i = matrix_create_copy(o_i);
 #endif
 
-		if (debug) printf("W_i_G_i ");
-		if (debug) matrix_print(W_i_G_i,"%.3e");
-		if (debug) printf("W_i_o_i ");
-		if (debug) matrix_print(W_i_o_i,"%.3e");
+#ifdef BUILD_DEBUG_PRINTOUTS
+		printf("W_i_G_i ");
+		matrix_print(W_i_G_i,"%.3e");
+		printf("W_i_o_i ");
+		matrix_print(W_i_o_i,"%.3e");
+#endif
 	}
 
 
@@ -1171,10 +1177,12 @@ void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 	matrix_t* y = matrix_create_vconcat(kalman->current->ybar, W_i_o_i);
 
 	if ( A != NULL ) { // we got some rows from at least one of the two blocks
-		if (debug) printf("A ");
-		if (debug) matrix_print(A,"%.3e");
-		if (debug) printf("y ");
-		if (debug) matrix_print(y,"%.3e");
+#ifdef BUILD_DEBUG_PRINTOUTS
+		printf("A ");
+		matrix_print(A,"%.3e");
+		printf("y ");
+		matrix_print(y,"%.3e");
+#endif
 
 		if (matrix_rows(A) >= matrix_cols(A)) {
 		//printf("%d: A %d %d obs? %d Rbar? %d\n",kalman->current->step,matrix_rows(A),matrix_cols(A),o_i!=NULL, kalman->current->Rbar!=NULL);
@@ -1252,18 +1260,22 @@ void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 
 		//if (debug) printf("**** %d %d %d %d\n",matrix_rows(A),matrix_ld(A),matrix_rows(y),matrix_ld(y));
 
-		if (debug) printf("A ");
-		if (debug) matrix_print(A,"%.3e");
-		if (debug) printf("y ");
-		if (debug) matrix_print(y,"%.3e");
+#ifdef BUILD_DEBUG_PRINTOUTS
+		printf("A ");
+		matrix_print(A,"%.3e");
+		printf("y ");
+		matrix_print(y,"%.3e");
+#endif
 
 		matrix_mutate_chop(A,MIN(matrix_rows(A),n_i),matrix_cols(A));
 		matrix_mutate_chop(y,MIN(matrix_rows(y),n_i),matrix_cols(y));
 
 		//if (debug) printf("**** %d %d %d %d\n",matrix_rows(A),matrix_ld(A),matrix_rows(y),matrix_ld(y));
 
-		if (debug) printf("A ");
-		if (debug) matrix_print(A,"%.3e");
+#ifdef BUILD_DEBUG_PRINTOUTS
+		printf("A ");
+		matrix_print(A,"%.3e");
+#endif
 
 		kalman->current->Rdiag  = A;
 		kalman->current->y      = y;
@@ -1322,11 +1334,15 @@ void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 	farray_append(kalman->steps,kalman->current);
 	kalman->current = NULL;
 
-	if (debug) printf("kalman_observe done\n");
+#ifdef BUILD_DEBUG_PRINTOUTS
+	printf("kalman_observe done\n");
+#endif
 }
 
 matrix_t* kalman_estimate(kalman_t* kalman, int64_t si) {
-	if (debug) printf("kalman_estimate\n");
+#ifdef BUILD_DEBUG_PRINTOUTS
+	printf("kalman_estimate\n");
+#endif
 
 	if (farray_size(kalman->steps) == 0) return NULL;
 
@@ -1353,9 +1369,10 @@ matrix_t* kalman_estimate(kalman_t* kalman, int64_t si) {
 		NRHS = matrix_cols(state);
 		LDB = matrix_ld(state);
 
-		if (debug) printf("dtrtrs N=%d NRHS=%d LDA=%d LDB=%d\n",N,NRHS,LDA,LDB);
-		if (debug) printf("dtrtrs A %08x state %08x\n",step->Rdiag->elements, state->elements);
-
+#ifdef BUILD_DEBUG_PRINTOUTS
+		printf("dtrtrs N=%d NRHS=%d LDA=%d LDB=%d\n",N,NRHS,LDA,LDB);
+		printf("dtrtrs A %08x state %08x\n",step->Rdiag->elements, state->elements);
+#endif
 		//if (debug) matrix_print(step->Rdiag,NULL);
 		//if (debug) matrix_print(kalman->current->state,NULL);
 
@@ -1370,7 +1387,11 @@ matrix_t* kalman_estimate(kalman_t* kalman, int64_t si) {
     ,1,1,1
 #endif
     );
-		if (INFO != 0) if (debug) printf("dormqr INFO=%d\n",INFO);
+		if (INFO != 0) {
+#ifdef BUILD_DEBUG_PRINTOUTS
+			printf("dormqr INFO=%d\n",INFO);
+#endif
+			}
 		assert(INFO==0);
 	} else {
 		state = matrix_create_constant(n_i,1,NaN);
@@ -1443,7 +1464,9 @@ void kalman_smooth(kalman_t* kalman) {
 matrix_t* kalman_covariance(kalman_t* kalman, int64_t si) {
 	//int32_t i,j;
 
-	if (debug) printf("kalman_covariance\n");
+#ifdef BUILD_DEBUG_PRINTOUTS
+	printf("kalman_covariance\n");
+#endif
 
 	if (farray_size(kalman->steps) == 0) return NULL;
 
@@ -1474,12 +1497,17 @@ matrix_t* kalman_covariance(kalman_t* kalman, int64_t si) {
 
 
 void kalman_forget(kalman_t* kalman, int64_t si) {
-	if (debug) printf("forget %d\n",si);
+#ifdef BUILD_DEBUG_PRINTOUTS
+	printf("forget %d\n",(int) si);
+#endif
+
 	if (farray_size(kalman->steps) == 0) return;
 
 	if (si < 0) si = farray_last_index(kalman->steps) - 1;
 
-	if (debug) printf("forget %d now %d to %d\n",si,farray_first_index(kalman->steps),farray_last_index(kalman->steps));
+#ifdef BUILD_DEBUG_PRINTOUTS
+	printf("forget %d now %d to %d\n",(int) si,(int) farray_first_index(kalman->steps),(int) farray_last_index(kalman->steps));
+#endif
 
 	if (si > farray_last_index (kalman->steps) - 1) return; // don't delete last step
 	if (si < farray_first_index(kalman->steps)    ) return; // nothing to delete
@@ -1488,9 +1516,13 @@ void kalman_forget(kalman_t* kalman, int64_t si) {
 	while (farray_first_index(kalman->steps) <= si) {
 		step_t* step = farray_drop_first(kalman->steps);
 		step_free(step);
-		if (debug) printf("forget new first %d\n",farray_first_index(kalman->steps));
+#ifdef BUILD_DEBUG_PRINTOUTS
+		printf("forget new first %d\n",(int) farray_first_index(kalman->steps));
+#endif
 	}
-	if (debug) printf("forget %d done\n",si);
+#ifdef BUILD_DEBUG_PRINTOUTS
+	printf("forget %d done\n",(int) si);
+#endif
 }
 
 void kalman_rollback(kalman_t* kalman, int64_t si) {
@@ -1665,4 +1697,3 @@ int main(int argc, char *argv[]) {
 /******************************************************************************/
 /* END OF FILE                                                                */
 /******************************************************************************/
-
