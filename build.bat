@@ -16,7 +16,6 @@ cd bin
 jar cvfm ..\ultimatekalman.jar ..\MANIFEST.TXT sivantoledo\* 
 cd ..
 
-goto :eof
 
 
 
