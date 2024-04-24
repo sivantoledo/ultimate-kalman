@@ -70,6 +70,12 @@ mxArray*  matrix_copy_to_mxarray    (kalman_matrix_t* A);
 
 void matrix_print(kalman_matrix_t* A, char* format);
 
+/*
+ * Intended mostly for testing that the BLAS library is working and linked correctly
+ */
+void matrix_mutate_gemm(double ALPHA, kalman_matrix_t* A, kalman_matrix_t* B, double BETA, kalman_matrix_t* C);
+
+
 //kalman_matrix_t* matrix_create_vconcat(kalman_matrix_t* A, kalman_matrix_t* B);
 
 /******************************************************************************/

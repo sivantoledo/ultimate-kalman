@@ -21,16 +21,32 @@
 /* BLAS AND LAPACK DECLARATIONS                                               */
 /******************************************************************************/
 
-#if defined(BUILD_MEX) && defined(BUILD_MATLAB)
+#ifdef BUILD_MEX
 #define blas_int_t mwSignedIndex
+#define HAS_BLAS_INT
 #else
 #define blas_int_t int32_t
 #endif
 
-#ifdef BUILD_MKL_H
+#ifdef BUILD_BLAS_INT
+#define blas_int_t BUILD_BLAS_INT
+#define HAS_BLAS_INT
+#endif
+
+#ifdef BUILD_MKL
 #define HAS_BLAS_H
 #define HAS_LAPACK_H
+#define blas_int_t MKL_INT
+#define HAS_BLAS_INT
+#ifdef BUILD_BLAS_UNDERSCORE
+#undef BUILD_BLAS_UNDERSCORE
+#endif
 #include <mkl.h>
+#endif
+
+#ifndef HAS_BLAS_INT
+#define blas_int_t int32_t
+#define HAS_BLAS_INT
 #endif
 
 #ifdef BUILD_BLAS_H
@@ -121,6 +137,8 @@ void
 
 #define ULTIMATEKALMAN_C
 #include "ultimatekalman.h"
+
+
 
 #ifdef BUILD_MEX
 #include "mex.h"
@@ -438,6 +456,7 @@ matrix_t* matrix_create_mutate_qr(matrix_t* A) {
 
 	LWORK = -1; // tell lapack to compute the size of the work area required
 	//if (debug) printf("dgeqrf: M=%d N=%d LDA=%d LWORK=%d\n",M,N,LDA,LWORK);
+
 #ifdef BUILD_BLAS_UNDERSCORE
   dgeqrf_
 #else
@@ -458,7 +477,6 @@ matrix_t* matrix_create_mutate_qr(matrix_t* A) {
 	      (&M, &N, A->elements, &LDA, TAU->elements, WORK->elements, &LWORK, &INFO);
 	if (INFO != 0) printf("dgeqrf INFO=%d\n",INFO);
 	assert(INFO==0);
-
 	matrix_free(WORK);
 
 	return TAU;
