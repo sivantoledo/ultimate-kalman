@@ -1286,6 +1286,50 @@ MATLAB
 
 \end_inset
 
+ implementation resides in the 
+\family typewriter
+matlab
+\family default
+ directory of the distribution archive.
+ Add it to your 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ search path using 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ 
+\family typewriter
+addpath
+\family default
+ command.
+ 
+\end_layout
+
+\begin_layout Standard
+The 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
  implementation is object oriented and is implemented as a handle (reference)
  class.
  The constructor takes no arguments.
@@ -1693,6 +1737,170 @@ smooth
  is called.
 \end_layout
 
+\begin_layout Standard
+To use the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+ implementations from within 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+, create an object of one of the adapter classes, not an object of the 
+\family typewriter
+UltimateKalman
+\family default
+ class:
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+kalman = UltimateKalmanNative()
+\end_layout
+
+\begin_layout Plain Layout
+
+kalman = UltimateKalmanJava()
+\end_layout
+
+\end_inset
+
+To use the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ implementation, you will first need to compile the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ code into a 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+-callable dynamically-linked library that 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ uses through an interface called the 
+\family typewriter
+mex
+\family default
+ interface.
+ To perform this step, run the 
+\family typewriter
+compile.m
+\family default
+ script in the 
+\family typewriter
+matlab
+\family default
+ directory.
+ To use the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+ implementation, build the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+ library using the instructions in the next section, and add both the resulting
+ library (a 
+\family typewriter
+jar
+\family default
+ file) and the library containing the Apache Commons Math library to the
+ 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ search path using 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ 
+\family typewriter
+addpath
+\family default
+ command.
+ The script 
+\family typewriter
+replication.m
+\family default
+ adds these libraries to the path and can serve as an example.
+\end_layout
+
 \begin_layout Section
 The Java programming interface
 \end_layout
@@ -1709,6 +1917,13 @@ Java
 \end_inset
 
  implementation is nearly identical.
+ The implementing class is 
+\family typewriter
+sivantoledo\SpecialChar allowbreak
+.kalman\SpecialChar allowbreak
+.UltimateKalman
+\family default
+.
  It also uses overloaded methods to express default values.
  It differs from the 
 \begin_inset Flex Proglang
@@ -1731,6 +1946,75 @@ estimate
 covariance
 \family default
 .
+\end_layout
+
+\begin_layout Standard
+The 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+ implementation resides under the 
+\family typewriter
+src
+\family default
+ directory of the distribution archive.
+ To use it, you first need to compile the source code and to assemble the
+ compiled code into a library (a 
+\family typewriter
+jar
+\family default
+ file).
+ The scripts 
+\family typewriter
+build.bat
+\family default
+ and 
+\family typewriter
+build.sh
+\family default
+, both in the top directory of the distribution archive, perform these steps
+ under Windows (
+\family typewriter
+build.bat
+\family default
+) and Linux and MacOS (
+\family typewriter
+build.sh
+\family default
+).
+ To run the scripts, your computer must have a 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+ development kit (JDK) installed.
+ We used successfully releases of OpenJDK on both Windows and Linux.
+ The library is build so that it can be used with any version of 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+ starting with version
+\begin_inset space ~
+\end_inset
+
+8 (sometimes also referred to as 1.8).
 \end_layout
 
 \begin_layout Section
@@ -2173,6 +2457,44 @@ C++
 \end_inset
 
  programs.
+\end_layout
+
+\begin_layout Standard
+These 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ programs, the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ implementation of 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+, and the build scripts are all under the 
+\family typewriter
+native
+\family default
+ directory of the distribution archive.
 \end_layout
 
 \begin_layout Standard
