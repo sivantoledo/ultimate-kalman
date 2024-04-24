@@ -30,17 +30,12 @@ SET BLAS_LAPACK_FLAGS=-DBUILD_MKL
 SET BLAS_LAPACK_LIBS=mkl_intel_lp64_dll.lib mkl_intel_thread_dll.lib mkl_core_dll.lib libiomp5md.lib
 REM define MKL_ILP64 for 64-bit integers
 
-
-REM mkl_rt.lib 
-REM liblapack.lib libblas.lib
-
-set path=.;%path%
-
 REM -DBUILD_DEBUG_PRINTOUTS
 REM -DBUILD_BLAS_STRLEN_END
 REM -DBUILD_BLAS_UNDERSCORE
 
-REM echo %MKLROOT%
+REM echo show %path% to see which directories store the MKL dll's
+REM echo %path%
 
 ECHO generating test program %test%.exe
 
@@ -54,7 +49,7 @@ cl ^
   %test%.c ^
   %BLAS_LAPACK_LIBS% 
 
-ECHO generated tes
+ECHO generated test program
 
 DEL *.obj
   
