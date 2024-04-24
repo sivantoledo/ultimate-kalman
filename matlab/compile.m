@@ -3,7 +3,7 @@ if ispc
     cd '..\native'
     if (~isempty(ver('MATLAB')))
         disp('compiling and linking under MATLAB ...');
-        mex -v -DNDEBUG -DBUILD_MEX -DBUILD_MATLAB -DBUILD_LAPACK_H -DBUILD_BLAS_H -DBUILD_WIN32_GETTIMEOFDAY ultimatekalmanmex.c ultimatekalman.c -lmwlapack -lmwblas
+        mex -DNDEBUG -DBUILD_MEX -DBUILD_MATLAB -DBUILD_LAPACK_H -DBUILD_BLAS_H -DBUILD_WIN32_GETTIMEOFDAY ultimatekalmanmex.c ultimatekalman.c -lmwlapack -lmwblas
     end
     if (~isempty(ver('Octave')))
         disp('compiling and linking under Octave ...');
