@@ -1,0 +1,3539 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass article
+\begin_preamble
+% recommended but missing
+%\usepackage{orcidlink}
+%\usepackage{thumbpdf}
+
+
+ 
+\end_preamble
+\options format=acmsmall
+\use_default_options false
+\maintain_unincluded_children false
+\begin_local_layout
+InsetLayout Pkg 
+    LyXType          Flex
+    LabelString      Pkg
+    LatexType        none
+    Decoration       minimalist
+    LabelFont        
+        Color        blue
+    EndFont
+    MultiPar         false
+    OptionalArgs     0
+End
+
+InsetLayout Proglang 
+    LyXType          Flex
+    LabelString      Proglang
+    LatexType        none
+    Decoration       minimalist
+    LabelFont        
+        Color        green
+    EndFont
+    MultiPar         false
+    OptionalArgs     0
+End
+\end_local_layout
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "newcent" "default"
+\font_sans "default" "default"
+\font_typewriter "beramono" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 85 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 12
+\spacing single
+\use_hyperref false
+\papersize a4paper
+\use_geometry true
+\use_package amsmath 0
+\use_package amssymb 0
+\use_package cancel 0
+\use_package esint 0
+\use_package mathdots 0
+\use_package mathtools 0
+\use_package mhchem 0
+\use_package stackrel 0
+\use_package stmaryrd 0
+\use_package undertilde 0
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plainurl
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\use_minted 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\leftmargin 2.5cm
+\topmargin 2.5cm
+\rightmargin 2.5cm
+\bottommargin 2.5cm
+\headheight 2.5cm
+\headsep 2.5cm
+\footskip 2.5cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\listings_params "basicstyle={\ttfamily\small},breaklines=false,columns=flexible,keepspaces=true,moredelim={**[is][\bfseries]{~}{~}}"
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+User's Guide for UltimateKalman:
+\begin_inset Newline newline
+\end_inset
+
+a Library for Flexible Kalman Filtering and Smoothing Using Orthogonal Transform
+ations
+\end_layout
+
+\begin_layout Author
+Sivan Toledo
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\linearestimator}{F}
+{F}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\modelfun}{M}
+{M}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\penaltyfun}{\phi}
+{\phi}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\objectivefun}{\phi}
+{\phi}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\grad}{\nabla}
+{\nabla}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\hessian}[1][]{\nabla_{#1}^{2}}
+{\nabla_{#1}^{2}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\jacobian}{\mathrm{J}}
+{\mathrm{J}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\exact}[1]{#1}
+{#1}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\estimate}[1]{\hat{#1}}
+{\hat{#1}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\controlpoint}{\rho}
+{\rho}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\location}{\ell}
+{\ell}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\noise}{\epsilon}
+{\epsilon}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\observations}{b}
+{b}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\expectation}{\operatorname{E}}
+{\mathrm{E}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\iu}{\mathbf{i}}
+{\mathbf{i}}
+\end_inset
+
+
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+or use a dotless j?
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\vecone}{\mathbf{1}}
+{\mathbf{1}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\veczero}{\mathbf{0}}
+{\mathbf{0}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\covold}{\text{cov}}
+{\text{cov}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\nonjsscov}{\operatorname{cov}}
+{\text{cov}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\cov}{\operatorname{cov}}
+{\text{cov}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\var}{\text{var}}
+{\text{var}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\fim}{\mathcal{I}}
+{\mathcal{I}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\loglikelihood}{\mathcal{L}}
+{\mathcal{L}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\score}{\mathcal{S}}
+{\mathcal{S}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\duration}{\vartheta}
+{\vartheta}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\attenuation}{a}
+{a}
+\end_inset
+
+
+\begin_inset FormulaMacro
+\newcommand{\cmplxatt}{\alpha}
+{\alpha}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\initialphase}{\varphi}
+{\varphi}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\satclockerr}{\eta}
+{\eta}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\ionodelay}{\psi}
+{\psi}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\tropodelay}{\xi}
+{\xi}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\xcorr}{\operatorname{xcorr}}
+{\text{xcorr}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\diag}{\operatorname{diag}}
+{\text{diag}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\rank}{\operatorname{rank}}
+{\text{rank}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\erf}{\operatorname{erf}}
+{\text{erf}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\erfc}{\operatorname{erfc}}
+{\text{erfc}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\range}{\operatorname{range}}
+{\text{range}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\trace}{\operatorname{trace}}
+{\text{trace}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\ops}{\operatorname{ops}}
+{\text{ops}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\prob}{\operatorname{Prob}}
+{\text{Prob}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\real}{\text{Re}}
+{\text{Re}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\imag}{\text{Im}}
+{\text{Im}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\square}{\text{\blacksquare}}
+{\text{\blacksquare}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset FormulaMacro
+\newcommand{\irange}{\boldsymbol{:}}
+{\boldsymbol{:}}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+ is a library that implements efficient Kalman filtering and smoothing algorithm
+s using orthogonal transformations.
+ The algorithms are based on an algorithm by Paige and Saunders
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "PaigeSaunders:1977:Kalman"
+literal "false"
+
+\end_inset
+
+, which to the best of our knowledge, has not been implemented before.
+ This guide is part of an Algorithm-type article in the journal ACM Transactions
+ on Mathematical Software.
+ The algorithms are described in that article.
+ This user guide only explains how to use the software library.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+ is currently available in 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+, 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+, and 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+.
+ Each implementation is separate and does not rely on the others.
+ The implementation includes 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ adapter classes that allow invocation of the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+ implementations from 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+.
+ This allows a single set of test functions to test all three implementations.
+ 
+\end_layout
+
+\begin_layout Standard
+The programming interfaces of all three implementations are similar.
+ They offer exactly the same functionality using the same abstractions,
+ and each employs good programming practices of the respected language.
+ For example, the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+ implementations use overloading (using the same method name more than once,
+ with different argument lists).
+ Another example is a method that returns two values in the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ implementation, but only one in the others; the second value is returned
+ by a separate method or function in the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ implementations.
+ The only differences are ones that are unavoidable due to the constraints
+ of each programming language.
+\end_layout
+
+\begin_layout Standard
+The 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ implementation does not rely on any 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ toolbox, only on functionality that is part of the core product.
+ The implementation also works under 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+GNU Octave
+\end_layout
+
+\end_inset
+
+.
+ The 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ implementation relies on basic matrix and vector operations from the 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+BLAS
+\end_layout
+
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "BLAS,BLAS3ALG"
+literal "false"
+
+\end_inset
+
+ and on the QR and Cholesky factorizations from 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+LAPACK
+\end_layout
+
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "LAPACK-UG"
+literal "false"
+
+\end_inset
+
+.
+ The 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+ implementation uses the Apache Commons Math library for both basic matrix-vecto
+r operations and for the QR and Cholesky factorizations.
+ The Cholesky factorization is used only to factor covariance matrices that
+ are specified explicitly, as opposed to being specified by inverse factors
+ or triangular factors.
+\end_layout
+
+\begin_layout Standard
+We first describe how the different implementations represent matrices,
+ vectors, and covariance matrices.
+ Then we describe in detail the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ programming interface and implementation and then comment on the differences
+ between them and those of the other two implementations.
+ The guide ends with a discussion of the data structures that are used to
+ represent the step sequence and a presentation of a mechanism for measuring
+ the performance of the implementations.
+\end_layout
+
+\begin_layout Section
+The representation of vectors and matrices
+\end_layout
+
+\begin_layout Standard
+The 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ implementation uses native 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ matrices and vectors.
+ The 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+ implementation uses the types 
+\family typewriter
+RealMatrix
+\family default
+ and 
+\family typewriter
+RealVector
+\family default
+ from the 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+Apache Commons Math
+\end_layout
+
+\end_inset
+
+ library
+\begin_inset space ~
+\end_inset
+
+(both are interface types with multiple implementations).
+ 
+\end_layout
+
+\begin_layout Standard
+The 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ implementation defines a type called 
+\family typewriter
+matrix_t
+\family default
+ to represent matrices and vectors.
+ The implementation defines functions that implement basic operations of
+ matrices and vectors of this type.
+ The type is implemented using a structure that contains a pointer to an
+ array of double-precision elements, which are stored columnwise as in the
+ 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+BLAS
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+LAPACK
+\end_layout
+
+\end_inset
+
+, and integers that describe the number of rows and columns in the matrix
+ and the stride along rows (the so-called leading dimension in the 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+BLAS
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+LAPACK
+\end_layout
+
+\end_inset
+
+ interfaces).
+ To avoid name-space pollution, in client code this type is called 
+\family typewriter
+kalman_matrix_t
+\family default
+.
+\end_layout
+
+\begin_layout Section
+The representation of covariance matrices
+\end_layout
+
+\begin_layout Standard
+Like all Kalman filters, 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+ consumes covariance matrices that describe the distribution of the error
+ terms and produces covariance matrices that describe the uncertainty in
+ the state estimates 
+\begin_inset Formula $\estimate u_{i}$
+\end_inset
+
+.
+ The input covariance matrices are not used explicitly; instead, the inverse
+ factor 
+\begin_inset Formula $W$
+\end_inset
+
+ of a covariance matrix 
+\begin_inset Formula $C=(W^{T}W)^{-1}$
+\end_inset
+
+ is multiplied, not necessarily explicitly, by matrices or by a vector.
+ 
+\end_layout
+
+\begin_layout Standard
+Therefore, the programming interface of 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+ expects input covariance matrices to be represented as objects belonging
+ to a type with a method 
+\family typewriter
+weigh
+\family default
+ that multiplies the factor 
+\begin_inset Formula $W$
+\end_inset
+
+ by a matrix 
+\begin_inset Formula $A$
+\end_inset
+
+ or a vector 
+\begin_inset Formula $v$
+\end_inset
+
+.
+ In the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+ implementations, this type is called 
+\family typewriter
+CovarianceMatrix
+\family default
+.
+ The constructors of these classes accept many representations of a covariance
+ matrix:
+\end_layout
+
+\begin_layout Itemize
+An explicit covariance matrix 
+\begin_inset Formula $C$
+\end_inset
+
+; the constructor computes an upper triangular Cholesky factor 
+\begin_inset Formula $U$
+\end_inset
+
+ of 
+\begin_inset Formula $C=U^{T}U$
+\end_inset
+
+ and implements 
+\family typewriter
+X=C.weigh(A)
+\family default
+ by solving 
+\begin_inset Formula $UX=A$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+An inverse factor 
+\begin_inset Formula $W$
+\end_inset
+
+ such that 
+\begin_inset Formula $W^{T}W=C^{-1}$
+\end_inset
+
+; this factor is stored and multiplied by the argument of 
+\family typewriter
+weigh
+\family default
+.
+\end_layout
+
+\begin_layout Itemize
+An inverse covariance matrix 
+\begin_inset Formula $C^{-1}$
+\end_inset
+
+; the constructor computes its Cholesky factorization and stores the lower-trian
+gular factor as 
+\begin_inset Formula $W$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+A diagonal covariance matrix represented by a vector 
+\begin_inset Formula $w$
+\end_inset
+
+ such that 
+\begin_inset Formula $W=\text{diag}(w)$
+\end_inset
+
+ (the elements of 
+\begin_inset Formula $w$
+\end_inset
+
+ are inverses of standard deviations).
+\end_layout
+
+\begin_layout Itemize
+A few other, less important, variants.
+\end_layout
+
+\begin_layout Standard
+In the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ implementation, the way that the argument to the constructor represents
+ 
+\begin_inset Formula $C$
+\end_inset
+
+ is defined by a single-character argument (with values 
+\family typewriter
+C
+\family default
+, 
+\family typewriter
+W
+\family default
+, 
+\family typewriter
+I
+\family default
+, and 
+\family typewriter
+w
+\family default
+, respectively).
+ In the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+ implementation, 
+\family typewriter
+CovarianceMatrix
+\family default
+ is an interface with two implementing classes, 
+\family typewriter
+DiagonalCovarianceMatrix
+\family default
+ and 
+\family typewriter
+RealCovarianceMatrix
+\family default
+; the way that the numeric argument represents 
+\begin_inset Formula $C$
+\end_inset
+
+ is specified using 
+\family typewriter
+enum
+\family default
+ constants.
+\end_layout
+
+\begin_layout Standard
+Covariance input matrices are passed to the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ implementation in a similar manner, but without a class; each input covariance
+ matrix is represented using two arguments, a matrix and a single character
+ that defines how the matrix is related to 
+\begin_inset Formula $C$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+ always returns the covariance matrix of 
+\begin_inset Formula $\estimate u_{i}$
+\end_inset
+
+ as an upper-triangular inverse factor 
+\begin_inset Formula $W$
+\end_inset
+
+.
+ The 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+ implementations return covariance matrices as objects of the 
+\family typewriter
+CovarianceMatrix
+\family default
+ type (always with an inverse-factor representation); the C implementation
+ simply returns the inverse factor as a matrix.
+\end_layout
+
+\begin_layout Section
+The MATLAB programming interface
+\end_layout
+
+\begin_layout Standard
+The 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ implementation is object oriented and is implemented as a handle (reference)
+ class.
+ The constructor takes no arguments.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+kalman = UltimateKalman()
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The (overloaded) methods that advance the filter through a sequence of steps
+ are 
+\family typewriter
+evolve
+\family default
+ and 
+\family typewriter
+observe
+\family default
+.
+ Each of them must be called exactly once at each step, in this order.
+ The 
+\family typewriter
+evolve
+\family default
+ method declares the dimension of the state of the next step and provides
+ all the known quantities of the evolution equation
+\begin_inset space ~
+\end_inset
+
+(
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:kalman-evolution-linear"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+), 
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+kalman.evolve(n_i, H_i, F_i, c_i, K_i)
+\end_layout
+
+\end_inset
+
+where 
+\family typewriter
+n_i
+\family default
+ is an integer, the dimension of the state, 
+\family typewriter
+H_i
+\family default
+ and 
+\family typewriter
+F_i
+\family default
+ are matrices, 
+\family typewriter
+c_i
+\family default
+ is a vector, and 
+\family typewriter
+K_i
+\family default
+ is a 
+\family typewriter
+CovarianceMatrix
+\family default
+ object.
+ The number of rows in
+\family typewriter
+ H_i
+\family default
+, 
+\family typewriter
+F_i
+\family default
+, and 
+\family typewriter
+c_i
+\family default
+ must be the same and must be equal to the order of 
+\family typewriter
+K_i
+\family default
+; this is the number 
+\begin_inset Formula $\ell_{i}$
+\end_inset
+
+ of scalar evolution equations.
+ The number of columns in 
+\family typewriter
+H_i
+\family default
+ must be 
+\family typewriter
+n_i
+\family default
+ and the number of columns in 
+\family typewriter
+F_i
+\family default
+ must be equal to the dimension of the previous step.
+ A simplified overloaded version defines 
+\family typewriter
+H_i
+\family default
+ internally as an 
+\begin_inset Formula $n_{i}$
+\end_inset
+
+-by-
+\begin_inset Formula $n_{i-1}$
+\end_inset
+
+ identity matrix, possibly padded with zero columns
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+kalman.evolve(n_i, F_i, c_i, K_i)
+\end_layout
+
+\end_inset
+
+If 
+\begin_inset Formula $n_{i}>\ell_{i}$
+\end_inset
+
+, this overloaded version adds the new parameters to the end of the state
+ vector.
+\end_layout
+
+\begin_layout Standard
+If 
+\begin_inset Formula $n_{i}<\ell_{i}$
+\end_inset
+
+, the first version must be used; this forces the user to specify how parameters
+ in 
+\begin_inset Formula $u_{i-1}$
+\end_inset
+
+ are mapped to the parameters in 
+\begin_inset Formula $u_{i}$
+\end_inset
+
+.
+ The 
+\family typewriter
+evolve
+\family default
+ method must be called even in the first step; this design decision was
+ taken mostly to keep the implementation of all the steps in client code
+ uniform.
+ In the first step, there is no evolution equation, so the user can pass
+ empty matrices to the method, or call another simplified overloaded version:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+kalman.evolve(n_i)
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The 
+\family typewriter
+observe
+\family default
+ method comes in two overloaded versions.
+ One of them must be called to complete the definition of a step.
+ The first version describes the observation equation and the second tells
+ 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+ that there are no observations of this step.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+kalman.observe(G_i, o_i, C_i)
+\end_layout
+
+\begin_layout Plain Layout
+
+kalman.observe()
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Steps are named using zero-based integer indices; the first step that is
+ defined is step
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset Formula $i=0$
+\end_inset
+
+, the next is step
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset Formula $1$
+\end_inset
+
+, and so on.
+ The 
+\family typewriter
+estimate
+\family default
+ methods return the estimate of the state at step 
+\family typewriter
+i
+\family default
+ and optionally the covariance matrix of that estimate, or the estimate
+ and covariance of the latest step that is still in memory (normally the
+ last step that was observed):
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+[estimate, covariance] = kalman.estimate(i)
+\end_layout
+
+\begin_layout Plain Layout
+
+[estimate, covariance] = kalman.estimate()
+\end_layout
+
+\end_inset
+
+If a step is not observable, 
+\family typewriter
+estimate
+\family default
+ returns a vector of 
+\begin_inset Formula $n_{i}$
+\end_inset
+
+ 
+\family typewriter
+NaN
+\family default
+s (not-a-number, an IEEE-754 floating point representation of an unknown
+ quantity).
+ 
+\end_layout
+
+\begin_layout Standard
+The 
+\family typewriter
+forget
+\family default
+ methods delete from memory the representation of all the steps up to and
+ including 
+\begin_inset Formula $i$
+\end_inset
+
+, or all the steps except for the latest one that is still in memory.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+kalman.forget(i)
+\end_layout
+
+\begin_layout Plain Layout
+
+kalman.forget()
+\end_layout
+
+\end_inset
+
+The 
+\family typewriter
+rollback
+\family default
+ methods return the filter to its state just after the invocation of 
+\family typewriter
+evolve
+\family default
+ in step 
+\family typewriter
+i
+\family default
+, or just after the invocation of 
+\family typewriter
+evolve
+\family default
+ in the latest step still in memory.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+kalman.rollback(i)
+\end_layout
+
+\begin_layout Plain Layout
+
+kalman.rollback()
+\end_layout
+
+\end_inset
+
+The methods 
+\family typewriter
+earliest
+\family default
+ and 
+\family typewriter
+latest
+\family default
+ are queries that take no arguments and return the indices of the earliest
+ and latest steps that are still in memory.
+\end_layout
+
+\begin_layout Standard
+The 
+\family typewriter
+smooth
+\family default
+ method, which also takes no arguments, computes the smoothed estimates
+ of all the states still in memory, along with their covariance matrices.
+ After this method is called, 
+\family typewriter
+estimate
+\family default
+ returns the smoothed estimates.
+ A single step can be smoothed many times; each smoothed estimate will use
+ the information from all past steps and the information from future steps
+ that are in memory when 
+\family typewriter
+smooth
+\family default
+ is called.
+\end_layout
+
+\begin_layout Section
+The Java programming interface
+\end_layout
+
+\begin_layout Standard
+The programming interface to the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+ implementation is nearly identical.
+ It also uses overloaded methods to express default values.
+ It differs from the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ interface only in that the 
+\family typewriter
+estimate
+\family default
+ methods return only one value, the state estimate.
+ To obtain the matching covariance matrix, client code must call a separate
+ method, 
+\family typewriter
+covariance
+\family default
+.
+\end_layout
+
+\begin_layout Section
+The C programming interface
+\end_layout
+
+\begin_layout Standard
+In the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ interface, the filter is represented by a pointer to a structure of the
+ 
+\family typewriter
+kalman_t
+\family default
+ type; to client code, this structure is opaque (there is no need to directly
+ access its fields).
+ The filter is constructed by a call to 
+\family typewriter
+kalman_create
+\family default
+, which returns a pointer to 
+\family typewriter
+kalman_t
+\family default
+.
+ 
+\end_layout
+
+\begin_layout Standard
+In general, the memory management principle of the interface (and the internal
+ implementation) is that client code is responsible for freeing memory that
+ was allocated by a call to any function whose name includes the word 
+\family typewriter
+create
+\family default
+.
+ Therefore, when client code no longer needs a filter, it must call 
+\family typewriter
+kalman_free
+\family default
+ and pass the pointer as an argument.
+ 
+\end_layout
+
+\begin_layout Standard
+The functionality of the filter is exposed through functions that correspond
+ to methods in the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+ implementations.
+ These functions expect a pointer to 
+\family typewriter
+kalman_t
+\family default
+ as their first argument.
+ The functions are not overloaded because 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ does not support overloading.
+ Missing matrices and vectors (e.g., to 
+\family typewriter
+evolve
+\family default
+ and 
+\family typewriter
+observe
+\family default
+) are represented by a 
+\family typewriter
+NULL
+\family default
+ pointer and default step numbers (to 
+\family typewriter
+forget
+\family default
+ , 
+\family typewriter
+estimate
+\family default
+, and so on) by 
+\begin_inset Formula $-1$
+\end_inset
+
+.
+ Here is the declaration of some of the functions.
+ 
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+kalman_t*        kalman_create    ();
+\end_layout
+
+\begin_layout Plain Layout
+
+void             kalman_free      (kalman_t* kalman);
+\end_layout
+
+\begin_layout Plain Layout
+
+void             kalman_observe   (kalman_t* kalman,                   
+                                            
+\end_layout
+
+\begin_layout Plain Layout
+
+                                   kalman_matrix_t* G_i, kalman_matrix_t*
+ o_i,
+\end_layout
+
+\begin_layout Plain Layout
+
+                                   kalman_matrix_t* C_i, char C_i_type);
+\end_layout
+
+\begin_layout Plain Layout
+
+int64_t          kalman_earliest  (kalman_t* kalman);
+\end_layout
+
+\begin_layout Plain Layout
+
+void             kalman_smooth    (kalman_t* kalman);
+\end_layout
+
+\begin_layout Plain Layout
+
+kalman_matrix_t* kalman_estimate  (kalman_t* kalman, int64_t i);
+\end_layout
+
+\begin_layout Plain Layout
+
+kalman_matrix_t* kalman_covariance(kalman_t* kalman, int64_t i);
+\end_layout
+
+\begin_layout Plain Layout
+
+void             kalman_forget    (kalman_t* kalman, int64_t i);
+\end_layout
+
+\begin_layout Plain Layout
+
+...
+\end_layout
+
+\end_inset
+
+Note that input covariance matrices are represented by a 
+\family typewriter
+kalman_matrix_t
+\family default
+ and a representation code (a single character).
+ The output of 
+\family typewriter
+kalman_covariance
+\family default
+ is a matrix 
+\begin_inset Formula $W$
+\end_inset
+
+ such that 
+\begin_inset Formula $(W^{T}W)^{-1}$
+\end_inset
+
+ is the covariance matrix of the output of 
+\family typewriter
+kalman_estimate
+\family default
+ on the same step.
+\end_layout
+
+\begin_layout Standard
+A small set of helper functions allows client code to construct input matrices
+ in the required format, to set their elements, and to read and use matrices
+ returned by 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+.
+ Here are the declarations of some of them.
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+kalman_matrix_t* matrix_create(int32_t rows, int32_t cols);
+\end_layout
+
+\begin_layout Plain Layout
+
+void             matrix_free(kalman_matrix_t* A);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+void   matrix_set(kalman_matrix_t* A, int32_t i, int32_t j, double v);
+\end_layout
+
+\begin_layout Plain Layout
+
+double matrix_get(kalman_matrix_t* A, int32_t i, int32_t j);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+int32_t matrix_rows(kalman_matrix_t* A);
+\end_layout
+
+\begin_layout Plain Layout
+
+int32_t matrix_cols(kalman_matrix_t* A);
+\end_layout
+
+\begin_layout Plain Layout
+
+...
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Client code is responsible for freeing matrices returned by 
+\family typewriter
+kalman_estimate
+\family default
+ and 
+\family typewriter
+kal\SpecialChar softhyphen
+man_\SpecialChar softhyphen
+covariance
+\family default
+ by calling 
+\family typewriter
+matrix_free
+\family default
+ when they are no longer needed.
+\end_layout
+
+\begin_layout Subsection*
+Building and Running the Code Outside Matlab
+\end_layout
+
+\begin_layout Standard
+To help you integrate 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+ into your own native code in 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C++
+\end_layout
+
+\end_inset
+
+, the software includes two 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ programs that call 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+ and Windows and Linux scripts that builds executable versions of the two
+ programs.
+ The scripts compile one of the programs along with 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+, link it with 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+BLAS
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+LAPACK
+\end_layout
+
+\end_inset
+
+ libraries, and run it.
+ You should be able to use these scripts as examples of how to compile and
+ link 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+.
+ In particular, the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ implementation of 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+ consists of a single 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ source file, so it is not necessary to build it into a library; the source
+ code or a single object file can be used directly in your 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C++
+\end_layout
+
+\end_inset
+
+ programs.
+\end_layout
+
+\begin_layout Standard
+The two sample programs are 
+\family typewriter
+rotation.c
+\family default
+, a 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ implementation of one of the example 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ programs, and 
+\family typewriter
+blastest.c
+\family default
+, a small program intended only to test the interface to the 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+BLAS
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+LAPACK
+\end_layout
+
+\end_inset
+
+ libraries.
+\end_layout
+
+\begin_layout Standard
+The Windows script, 
+\family typewriter
+build.bat
+\family default
+, uses the Microsoft 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ command-line compiler (
+\family typewriter
+cl
+\family default
+) that comes with Microsoft's Visual Studio Community 2022
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "VSCommunity"
+literal "false"
+
+\end_inset
+
+, a free integrated development environment, and the 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+BLAS
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+LAPACK
+\end_layout
+
+\end_inset
+
+ libraries that are part of Intel's free oneAPI Math Kernel Library (
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+MKL
+\end_layout
+
+\end_inset
+
+)
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "MKL"
+literal "false"
+
+\end_inset
+
+.
+ The script takes one argument, the name of the program that you want to
+ build and run, 
+\family typewriter
+blastest
+\family default
+ or 
+\family typewriter
+rotation
+\family default
+.
+ Here what you should expect to see on the console when you build and run
+ 
+\family typewriter
+blastest
+\family default
+ (ellipsis stand for deleted output that is not particularly interesting;
+ the output of the 
+\family typewriter
+blastest
+\family default
+ program is shown in bold):
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+C:
+\backslash
+Users
+\backslash
+stoledo
+\backslash
+github
+\backslash
+ultimate-kalman
+\backslash
+native>build.bat blastest
+\end_layout
+
+\begin_layout Plain Layout
+
+...
+\end_layout
+
+\begin_layout Plain Layout
+
+**********************************************************************
+\end_layout
+
+\begin_layout Plain Layout
+
+** Visual Studio 2022 Developer Command Prompt v17.9.2
+\end_layout
+
+\begin_layout Plain Layout
+
+** Copyright (c) 2022 Microsoft Corporation
+\end_layout
+
+\begin_layout Plain Layout
+
+**********************************************************************
+\end_layout
+
+\begin_layout Plain Layout
+
+[vcvarsall.bat] Environment initialized for: 'x64'
+\end_layout
+
+\begin_layout Plain Layout
+
+:: initializing oneAPI environment...
+\end_layout
+
+\begin_layout Plain Layout
+
+   Initializing Visual Studio command-line environment...
+\end_layout
+
+\begin_layout Plain Layout
+
+   Visual Studio version 17.9.2 environment configured.
+\end_layout
+
+\begin_layout Plain Layout
+
+   "C:
+\backslash
+Program Files
+\backslash
+Microsoft Visual Studio
+\backslash
+2022
+\backslash
+Community
+\backslash
+"
+\end_layout
+
+\begin_layout Plain Layout
+
+:  compiler -- latest
+\end_layout
+
+\begin_layout Plain Layout
+
+:  mkl -- latest
+\end_layout
+
+\begin_layout Plain Layout
+
+:  tbb -- latest
+\end_layout
+
+\begin_layout Plain Layout
+
+:: oneAPI environment initialized ::
+\end_layout
+
+\begin_layout Plain Layout
+
+generating test program blastest.exe
+\end_layout
+
+\begin_layout Plain Layout
+
+ultimatekalman.c
+\end_layout
+
+\begin_layout Plain Layout
+
+ultimatekalman.c(39): warning C4005: 'blas_int_t': macro redefinition
+\end_layout
+
+\begin_layout Plain Layout
+
+ultimatekalman.c(28): note: see previous definition of 'blas_int_t'
+\end_layout
+
+\begin_layout Plain Layout
+
+blastest.c
+\end_layout
+
+\begin_layout Plain Layout
+
+Generating Code...
+\end_layout
+
+\begin_layout Plain Layout
+
+generated test program
+\end_layout
+
+\begin_layout Plain Layout
+
+~BLAS test starting~
+\end_layout
+
+\begin_layout Plain Layout
+
+~A = matrix_print 2 3~
+\end_layout
+
+\begin_layout Plain Layout
+
+~1 2 3~
+\end_layout
+
+\begin_layout Plain Layout
+
+~4 5 6~
+\end_layout
+
+\begin_layout Plain Layout
+
+~B = matrix_print 3 2~
+\end_layout
+
+\begin_layout Plain Layout
+
+~7 8~
+\end_layout
+
+\begin_layout Plain Layout
+
+~9 10~
+\end_layout
+
+\begin_layout Plain Layout
+
+~12 13~
+\end_layout
+
+\begin_layout Plain Layout
+
+~C = matrix_print 2 2~
+\end_layout
+
+\begin_layout Plain Layout
+
+~125 137~
+\end_layout
+
+\begin_layout Plain Layout
+
+~293 323~
+\end_layout
+
+\begin_layout Plain Layout
+
+~Result should be:~
+\end_layout
+
+\begin_layout Plain Layout
+
+~  125  137~
+\end_layout
+
+\begin_layout Plain Layout
+
+~  293  323~
+\end_layout
+
+\begin_layout Plain Layout
+
+~BLAS test done~
+\end_layout
+
+\begin_layout Plain Layout
+
+done running test
+\end_layout
+
+\begin_layout Plain Layout
+
+build script done
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+When you run the Windows executable program yourself, make sure that the
+ directory where the 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+MKL
+\end_layout
+
+\end_inset
+
+ dynamically-linked libraries (
+\family typewriter
+dll
+\family default
+ files) are stored is on your 
+\family typewriter
+path
+\family default
+.
+ The same is true, of course, for your own programs that use 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+.
+ The installation of 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+MKL
+\end_layout
+
+\end_inset
+
+ does not modify the path to include this library, but it does provide a
+ script that modifies the search path appropriately.
+ In the version of 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+MKL
+\end_layout
+
+\end_inset
+
+ that I used, this script is 
+\family typewriter
+c:
+\backslash
+Program Files (x86)
+\backslash
+Intel
+\backslash
+oneAPI
+\backslash
+setvars.bat
+\family default
+.
+ 
+\end_layout
+
+\begin_layout Standard
+Under Linux, the corresponding script is 
+\family typewriter
+build.sh
+\family default
+.
+ It also takes a single argument, 
+\family typewriter
+blastest
+\family default
+ or 
+\family typewriter
+rotation
+\family default
+.
+ The script provides with the software uses the 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+BLAS
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+LAPACK
+\end_layout
+
+\end_inset
+
+ libraries that are installed in the Ubuntu Linux distribution using the
+ commands
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+sudo apt install libblas-dev
+\end_layout
+
+\begin_layout Plain Layout
+
+sudo apt install liblapack-dev
+\end_layout
+
+\end_inset
+
+These software packages install the libraries in a directory that is already
+ on the search path, so no special configuration of the search path is required.
+ These particular implementations of the 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+BLAS
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+LAPACK
+\end_layout
+
+\end_inset
+
+ are not high-performance implementations, but since 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+ typically handles fairly small matrices, a high-performance library like
+ Intel's 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+MKL
+\end_layout
+
+\end_inset
+
+ may not provide performance benefits.
+ However, 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+MKL
+\end_layout
+
+\end_inset
+
+ is also available for Linux and you can certainly use it.
+\end_layout
+
+\begin_layout Standard
+To successfully link 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+ with other implementations of the 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+BLAS
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+LAPACK
+\end_layout
+
+\end_inset
+
+, you may need to set some preprocessor variables that control how 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+ calls these libraries.
+ Most of the variations are due to the fact that these libraries were originally
+ implemented in 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Fortran
+\end_layout
+
+\end_inset
+
+.
+ There are a few other preprocessor variables that control the behavior
+ of 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+.
+ All of these are listed and explained in Table
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:C-pre-variables"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Tabular
+<lyxtabular version="3" rows="10" columns="3">
+<features tabularvalignment="middle">
+<column alignment="left" valignment="top">
+<column alignment="left" valignment="top">
+<column alignment="left" valignment="top" width="40text%">
+<row>
+<cell alignment="left" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+variable name
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+requires a value?
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+explanation
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+BUILD_MKL
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+no
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+specifies that 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+MKL
+\end_layout
+
+\end_inset
+
+ is used; sets all the other 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+BLAS
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+LAPACK
+\end_layout
+
+\end_inset
+
+ variables (so you do not need to)
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+BUILD_BLAS_INT
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+yes
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ data type that specifies a row or column index or a dimension of a matrix;
+ usually either 
+\family typewriter
+int32_t
+\family default
+ or 
+\family typewriter
+int64_t
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+HAS_BLAS_H
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+no
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+specifies that the 
+\family typewriter
+blas.h
+\family default
+ header is available
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+HAS_LAPACK_H
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+no
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+specifies that the 
+\family typewriter
+lapack.h
+\family default
+ header is available
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+BUILD_BLAS_UNDERSCORE
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+no
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+add an underscore to names of 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+BLAS
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+LAPACK
+\end_layout
+
+\end_inset
+
+ functions
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+BUILD_BLAS_STRLEN_END
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+no
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+add string-length arguments to calls to the 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+BLAS
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+LAPACK
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+BUILD_DEBUG_PRINTOUTS
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+no
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+generates run-time debug printouts
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+NDEBUG
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+no
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+suppresses run-time assertion checking
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+BUILD_WIN32_GETTIMEOFDAY
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+no
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+required under Windows; do not use under Linux or MacOS
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:C-pre-variables"
+
+\end_inset
+
+Preprocessor variables that control how 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+ calls the 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+BLAS
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+LAPACK
+\end_layout
+
+\end_inset
+
+, as well as several other aspects of its behavior.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Data Structures for the Step Sequence
+\end_layout
+
+\begin_layout Standard
+The 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+ implementation uses an 
+\family typewriter
+ArrayList
+\family default
+ data structure to represent the sequence of steps that have not been forgotten
+ or rolled back, along with an integer that specifies the step number of
+ the first step in the 
+\family typewriter
+ArrayList
+\family default
+.
+ The data structure allows 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+ to add steps, to trim the sequence from both sides, and to access a particular
+ step, all in constant time or amortized constant time.
+\end_layout
+
+\begin_layout Standard
+The 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ implementation uses a specialized data structure with similar capabilities.
+ This data structure, called in the code 
+\family typewriter
+farray_t
+\family default
+, is part of 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+.
+ The sequence is stored in an array.
+ When necessary, the size of the array is doubled.
+ The active part of the array is not necessarily in the beginning, if steps
+ have been forgotten.
+ When a step is added and there is no room at the end of the physical array,
+ then either the array is reallocated at double its current size, or the
+ active part is shifted to the beginning.
+ This allows the data structure to support appending, trimming from both
+ sides, and direct access to a step with a given index, again in constant
+ or amortized constant time.
+\end_layout
+
+\begin_layout Standard
+The 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+ implementation stores the steps in a cell array.
+ The implementation is simple, but not as efficient as the data structure
+ that is used by the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ version.
+\end_layout
+
+\begin_layout Section
+Support for Performance Testing
+\end_layout
+
+\begin_layout Standard
+All the implementations include a method, called 
+\family typewriter
+perftest
+\family default
+, designed for testing the performance of the filter.
+ This method accepts as arguments all the matrices and vectors that are
+ part of the evolution and observation equations, a step count, and an integer
+ 
+\begin_inset Formula $d$
+\end_inset
+
+ that tells the method how often to take a wall-clock timestamp.
+ The method assumes that the filter has not been used yet and executes the
+ filter for the given number of steps.
+ In each step, the state is evolved and observed, the state estimate is
+ requested, and the previous step (if there was one) is forgotten.
+ The same fixed matrices and vectors are used in all steps.
+\end_layout
+
+\begin_layout Standard
+This method allows us to measure the performance of all the implementations
+ without the overheads associated with calling 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+ from 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+.
+ That is, the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ functions are called in a loop from 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+, the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+ methods are called from 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+, and the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ methods from 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+The method takes a timestamp every 
+\begin_inset Formula $d$
+\end_inset
+
+ steps and returns a vector with the average wall-clock running time per
+ step in each nonoverlapping group of 
+\begin_inset Formula $d$
+\end_inset
+
+ steps.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset bibtex
+LatexCommand bibtex
+btprint "btPrintCited"
+bibfiles "kalman"
+options "plainurl"
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document
