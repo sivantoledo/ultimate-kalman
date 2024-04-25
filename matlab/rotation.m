@@ -44,6 +44,9 @@ for i=1:k
     obs(:,i) = G*states(:,i) + observationStd * randn(obs_dim,1);
 end
 
+states
+obs
+
 %[states' obs']
 
 kalman = kalman_factory();
@@ -97,6 +100,8 @@ smoothed = NaN * zeros(2,k);
 for i=1:k 
     smoothed(:,i) = kalman.estimate(i-1); % zero based step numbers
 end
+
+smoothed
 
 %close all; 
 figure;
