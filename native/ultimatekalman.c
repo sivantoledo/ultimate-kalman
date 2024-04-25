@@ -383,6 +383,24 @@ matrix_t* matrix_create_sub(matrix_t* A, int32_t first_row, int32_t rows, int32_
 	return C;
 }
 
+void matrix_mutate_copy_sub(matrix_t* C, int32_t first_row, int32_t first_col, matrix_t* A) {
+	if (A==NULL && C==NULL) return;
+	assert(A != NULL);
+	assert(C != NULL);
+	assert(matrix_rows(C) >= first_row + matrix_rows(A));
+	assert(matrix_cols(C) == first_col + matrix_cols(A));
+
+	int i,j;
+
+	int32_t rows  = (A->row_dim);
+	int32_t cols  = (A->col_dim);
+
+	for (i=0; i<rows; i++) {
+		for (j=0; j<cols; j++) {
+			matrix_set(C,first_row+i,first_col+j,matrix_get(A,i,j));
+		}
+	}
+}
 
 matrix_t* matrix_create_vconcat(matrix_t* A, matrix_t* B) {
 	int i,j;

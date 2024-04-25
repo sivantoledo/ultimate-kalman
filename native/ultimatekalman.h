@@ -40,6 +40,7 @@ kalman_matrix_t* matrix_create(int32_t rows, int32_t cols);
 kalman_matrix_t* matrix_create_constant(int32_t rows, int32_t cols, double c);
 kalman_matrix_t* matrix_create_copy(kalman_matrix_t* A);
 kalman_matrix_t* matrix_create_sub(kalman_matrix_t* A, int32_t first_row, int32_t rows, int32_t first_col, int32_t cols);
+void             matrix_mutate_copy_sub(kalman_matrix_t* C, int32_t first_row, int32_t first_col, kalman_matrix_t* A);
 void             matrix_free(kalman_matrix_t* A);
 
 int32_t matrix_rows(kalman_matrix_t* A);
