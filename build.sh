@@ -15,6 +15,9 @@ cd bin
 jar cvfm ../ultimatekalman.jar ../MANIFEST.TXT sivantoledo/* 
 cd ..
 
+java -cp ultimatekalman.jar;commons-math3-3.6.1.jar;bin sivantoledo.kalman.tests.Rotation 
+
+
 
 
 
