@@ -1,0 +1,690 @@
+%% LyX 2.3.4.4 created this file.  For more info, see http://www.lyx.org/.
+%% Do not edit unless you really know what you are doing.
+\documentclass[12pt,english,format=acmsmall]{article}
+\usepackage{newcent}
+\usepackage[scaled=0.85]{beramono}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{inputenc}
+\usepackage[a4paper]{geometry}
+\geometry{verbose,tmargin=2.5cm,bmargin=2.5cm,lmargin=2.5cm,rmargin=2.5cm,headheight=2.5cm,headsep=2.5cm,footskip=2.5cm}
+\usepackage{babel}
+\usepackage{array}
+\usepackage{amstext}
+\usepackage{xargs}[2008/03/08]
+\usepackage[unicode=true,pdfusetitle,
+ bookmarks=true,bookmarksnumbered=false,bookmarksopen=false,
+ breaklinks=false,pdfborder={0 0 1},backref=false,colorlinks=false]
+ {hyperref}
+
+\makeatletter
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% LyX specific LaTeX commands.
+\newcommand*\LyXZeroWidthSpace{\hspace{0pt}}
+%% Because html converters don't know tabularnewline
+\providecommand{\tabularnewline}{\\}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
+% recommended but missing
+%\usepackage{orcidlink}
+%\usepackage{thumbpdf}
+
+
+ 
+
+\makeatother
+
+\usepackage{listings}
+\lstset{basicstyle={\ttfamily\small},
+breaklines=false,
+columns=flexible,
+keepspaces=true,
+moredelim={**[is][\bfseries]{~}{~}}}
+\renewcommand{\lstlistingname}{Listing}
+
+\begin{document}
+\title{User's Guide for UltimateKalman:\\
+a Library for Flexible Kalman Filtering and Smoothing Using Orthogonal
+Transformations}
+\author{Sivan Toledo}
+
+\maketitle
+\global\long\def\linearestimator{F}%
+
+\global\long\def\modelfun{M}%
+
+\global\long\def\penaltyfun{\phi}%
+
+\global\long\def\objectivefun{\phi}%
+
+\global\long\def\grad{\nabla}%
+
+\newcommandx\hessian[1][usedefault, addprefix=\global, 1=]{\nabla_{#1}^{2}}%
+
+\global\long\def\jacobian{\mathrm{J}}%
+
+\global\long\def\exact#1{#1}%
+
+\global\long\def\estimate#1{\hat{#1}}%
+
+\global\long\def\controlpoint{\rho}%
+
+\global\long\def\location{\ell}%
+
+\global\long\def\noise{\epsilon}%
+
+\global\long\def\observations{b}%
+
+\global\long\def\expectation{\operatorname{E}}%
+
+\global\long\def\iu{\mathbf{i}}%
+
+\global\long\def\vecone{\mathbf{1}}%
+
+\global\long\def\veczero{\mathbf{0}}%
+
+\global\long\def\covold{\text{cov}}%
+
+\global\long\def\nonjsscov{\operatorname{cov}}%
+
+\global\long\def\cov{\operatorname{cov}}%
+
+\global\long\def\var{\text{var}}%
+
+\global\long\def\fim{\mathcal{I}}%
+
+\global\long\def\loglikelihood{\mathcal{L}}%
+
+\global\long\def\score{\mathcal{S}}%
+
+\global\long\def\duration{\vartheta}%
+
+\global\long\def\attenuation{a}%
+\global\long\def\cmplxatt{\alpha}%
+
+\global\long\def\initialphase{\varphi}%
+
+\global\long\def\satclockerr{\eta}%
+
+\global\long\def\ionodelay{\psi}%
+
+\global\long\def\tropodelay{\xi}%
+
+\global\long\def\xcorr{\operatorname{xcorr}}%
+
+\global\long\def\diag{\operatorname{diag}}%
+
+\global\long\def\rank{\operatorname{rank}}%
+
+\global\long\def\erf{\operatorname{erf}}%
+
+\global\long\def\erfc{\operatorname{erfc}}%
+
+\global\long\def\range{\operatorname{range}}%
+
+\global\long\def\trace{\operatorname{trace}}%
+
+\global\long\def\ops{\operatorname{ops}}%
+
+\global\long\def\prob{\operatorname{Prob}}%
+
+\global\long\def\real{\text{Re}}%
+
+\global\long\def\imag{\text{Im}}%
+
+\global\long\def\square{\text{\ensuremath{\blacksquare}}}%
+
+\global\long\def\irange{\boldsymbol{:}}%
+
+UltimateKalman is a library that implements efficient Kalman filtering
+and smoothing algorithms using orthogonal transformations. The algorithms
+are based on an algorithm by Paige and Saunders~\cite{PaigeSaunders:1977:Kalman},
+which to the best of our knowledge, has not been implemented before.
+This guide is part of an Algorithm-type article in the journal ACM
+Transactions on Mathematical Software. The algorithms are described
+in that article. This user guide only explains how to use the software
+library.
+
+UltimateKalman is currently available in MATLAB, C, and Java.
+Each implementation is separate and does not rely on the others. The
+implementation includes MATLAB adapter classes that allow invocation
+of the C and Java implementations from MATLAB. This allows a single
+set of test functions to test all three implementations. 
+
+The programming interfaces of all three implementations are similar.
+They offer exactly the same functionality using the same abstractions,
+and each employs good programming practices of the respected language.
+For example, the MATLAB and Java implementations use overloading
+(using the same method name more than once, with different argument
+lists). Another example is a method that returns two values in the
+MATLAB implementation, but only one in the others; the second value
+is returned by a separate method or function in the Java and C implementations.
+The only differences are ones that are unavoidable due to the constraints
+of each programming language.
+
+The MATLAB implementation does not rely on any MATLAB toolbox, only
+on functionality that is part of the core product. The implementation
+also works under GNU Octave. The C implementation relies on basic
+matrix and vector operations from the BLAS~\cite{BLAS,BLAS3ALG}
+and on the QR and Cholesky factorizations from LAPACK~\cite{LAPACK-UG}.
+The Java implementation uses the Apache Commons Math library for
+both basic matrix-vector operations and for the QR and Cholesky factorizations.
+The Cholesky factorization is used only to factor covariance matrices
+that are specified explicitly, as opposed to being specified by inverse
+factors or triangular factors.
+
+We first describe how the different implementations represent matrices,
+vectors, and covariance matrices. Then we describe in detail the MATLAB
+programming interface and implementation and then comment on the differences
+between them and those of the other two implementations. The guide
+ends with a discussion of the data structures that are used to represent
+the step sequence and a presentation of a mechanism for measuring
+the performance of the implementations.
+
+\section{\label{sec:matrices-and-vectors}The representation of vectors and
+matrices}
+
+The MATLAB implementation uses native MATLAB matrices and vectors.
+The Java implementation uses the types \texttt{RealMatrix} and \texttt{RealVector}
+from the Apache Commons Math library~(both are interface types with
+multiple implementations). 
+
+The C implementation defines a type called \texttt{matrix\_t} to
+represent matrices and vectors. The implementation defines functions
+that implement basic operations of matrices and vectors of this type.
+The type is implemented using a structure that contains a pointer
+to an array of double-precision elements, which are stored columnwise
+as in the BLAS and LAPACK, and integers that describe the number
+of rows and columns in the matrix and the stride along rows (the so-called
+leading dimension in the BLAS and LAPACK interfaces). To avoid name-space
+pollution, in client code this type is called \texttt{kalman\_matrix\_t}.
+
+\section{\label{sec:covariance-matrices}The representation of covariance
+matrices}
+
+Like all Kalman filters, UltimateKalman consumes covariance matrices
+that describe the distribution of the error terms and produces covariance
+matrices that describe the uncertainty in the state estimates $\estimate u_{i}$.
+The input covariance matrices are not used explicitly; instead, the
+inverse factor $W$ of a covariance matrix $C=(W^{T}W)^{-1}$ is multiplied,
+not necessarily explicitly, by matrices or by a vector. 
+
+Therefore, the programming interface of UltimateKalman expects input
+covariance matrices to be represented as objects belonging to a type
+with a method \texttt{weigh} that multiplies the factor $W$ by a
+matrix $A$ or a vector $v$. In the MATLAB and Java implementations,
+this type is called \texttt{CovarianceMatrix}. The constructors of
+these classes accept many representations of a covariance matrix:
+\begin{itemize}
+\item An explicit covariance matrix $C$; the constructor computes an upper
+triangular Cholesky factor $U$ of $C=U^{T}U$ and implements \texttt{X=C.weigh(A)}
+by solving $UX=A$.
+\item An inverse factor $W$ such that $W^{T}W=C^{-1}$; this factor is
+stored and multiplied by the argument of \texttt{weigh}.
+\item An inverse covariance matrix $C^{-1}$; the constructor computes its
+Cholesky factorization and stores the lower-triangular factor as $W$.
+\item A diagonal covariance matrix represented by a vector $w$ such that
+$W=\text{diag}(w)$ (the elements of $w$ are inverses of standard
+deviations).
+\item A few other, less important, variants.
+\end{itemize}
+In the MATLAB implementation, the way that the argument to the constructor
+represents $C$ is defined by a single-character argument (with values
+\texttt{C}, \texttt{W}, \texttt{I}, and \texttt{w}, respectively).
+In the Java implementation, \texttt{CovarianceMatrix} is an interface
+with two implementing classes, \texttt{DiagonalCovarianceMatrix} and
+\texttt{RealCovarianceMatrix}; the way that the numeric argument represents
+$C$ is specified using \texttt{enum} constants defined in the implementation
+classes:
+\begin{lstlisting}
+RealCovarianceMatrix.Representation.COVARIANCE_MATRIX
+RealCovarianceMatrix.Representation.FACTOR
+RealCovarianceMatrix.Representation.INVERSE_FACTOR
+DiagonalCovarianceMatrix.Representation.COVARIANCE_MATRIX
+DiagonalCovarianceMatrix.Representation.DIAGONAL_VARIANCES
+DiagonalCovarianceMatrix.Representation.DIAGONAL_STANDARD_DEVIATIONS
+DiagonalCovarianceMatrix.Representation.DIAGONAL_INVERSE_STANDARD_DEVIATIONS
+\end{lstlisting}
+The \texttt{RealCovarianceMatrix} class has a single constructor that
+takes a \texttt{RealMatrix} and a representation constant. The \texttt{DiagonalCovarianceMatrix}
+class several constructors that take either a \texttt{RealVector},
+an array of \texttt{double} values, or a single \texttt{double} and
+a dimension (the covariance matrix is then a scaled identity); all
+also take as a second argument a representation constant.
+
+Covariance input matrices are passed to the C implementation in a
+similar manner, but without a class; each input covariance matrix
+is represented using two arguments, a matrix and a single character
+(\texttt{C}, \texttt{W}, \texttt{I}, or \texttt{w}) that defines how
+the given matrix is related to $C$. 
+
+UltimateKalman always returns the covariance matrix of $\estimate u_{i}$
+as an upper-triangular inverse factor $W$. The MATLAB and Java
+implementations return covariance matrices as objects of the \texttt{CovarianceMatrix}
+type (always with an inverse-factor representation); the C implementation
+simply returns the inverse factor as a matrix.
+
+\section{\label{sec:matlab}The MATLAB programming interface}
+
+The MATLAB implementation resides in the \texttt{matlab} directory
+of the distribution archive. Add it to your MATLAB search path using
+MATLAB \texttt{addpath} command. 
+
+The MATLAB implementation is object oriented and is implemented as
+a handle (reference) class. The constructor takes no arguments.
+
+\begin{lstlisting}
+kalman = UltimateKalman()
+\end{lstlisting}
+
+The (overloaded) methods that advance the filter through a sequence
+of steps are \texttt{evolve} and \texttt{observe}. Each of them must
+be called exactly once at each step, in this order. The \texttt{evolve}
+method declares the dimension of the state of the next step and provides
+all the known quantities of the evolution equation, 
+
+\begin{lstlisting}
+kalman.evolve(n_i, H_i, F_i, c_i, K_i)
+\end{lstlisting}
+where \texttt{n\_i} is an integer, the dimension of the state, \texttt{H\_i}
+and \texttt{F\_i} are matrices, \texttt{c\_i} is a vector, and \texttt{K\_i}
+is a \texttt{CovarianceMatrix} object. The number of rows in\texttt{
+H\_i}, \texttt{F\_i}, and \texttt{c\_i} must be the same and must
+be equal to the order of \texttt{K\_i}; this is the number $\ell_{i}$
+of scalar evolution equations. The number of columns in \texttt{H\_i}
+must be \texttt{n\_i} and the number of columns in \texttt{F\_i} must
+be equal to the dimension of the previous step. A simplified overloaded
+version defines \texttt{H\_i} internally as an $n_{i}$-by-$n_{i-1}$
+identity matrix, possibly padded with zero columns
+
+\begin{lstlisting}
+kalman.evolve(n_i, F_i, c_i, K_i)
+\end{lstlisting}
+If $n_{i}>\ell_{i}$, this overloaded version adds the new parameters
+to the end of the state vector.
+
+If $n_{i}<\ell_{i}$, the first version must be used; this forces
+the user to specify how parameters in $u_{i-1}$ are mapped to the
+parameters in $u_{i}$. The \texttt{evolve} method must be called
+even in the first step; this design decision was taken mostly to keep
+the implementation of all the steps in client code uniform. In the
+first step, there is no evolution equation, so the user can pass empty
+matrices to the method, or call another simplified overloaded version:
+
+\begin{lstlisting}
+kalman.evolve(n_i)
+\end{lstlisting}
+
+The \texttt{observe} method comes in two overloaded versions. One
+of them must be called to complete the definition of a step. The first
+version describes the observation equation and the second tells UltimateKalman
+that there are no observations of this step.
+
+\begin{lstlisting}
+kalman.observe(G_i, o_i, C_i)
+kalman.observe()
+\end{lstlisting}
+
+Steps are named using zero-based integer indices; the first step that
+is defined is step~$i=0$, the next is step~$1$, and so on. The
+\texttt{estimate} methods return the estimate of the state at step
+\texttt{i} and optionally the covariance matrix of that estimate,
+or the estimate and covariance of the latest step that is still in
+memory (normally the last step that was observed):
+
+\begin{lstlisting}
+[estimate, covariance] = kalman.estimate(i)
+[estimate, covariance] = kalman.estimate()
+\end{lstlisting}
+If a step is not observable, \texttt{estimate} returns a vector of
+$n_{i}$ \texttt{NaN}s (not-a-number, an IEEE-754 floating point representation
+of an unknown quantity). 
+
+The \texttt{forget} methods delete from memory the representation
+of all the steps up to and including $i$, or all the steps except
+for the latest one that is still in memory.
+
+\begin{lstlisting}
+kalman.forget(i)
+kalman.forget()
+\end{lstlisting}
+The \texttt{rollback} methods return the filter to its state just
+after the invocation of \texttt{evolve} in step \texttt{i}, or just
+after the invocation of \texttt{evolve} in the latest step still in
+memory.
+
+\begin{lstlisting}
+kalman.rollback(i)
+kalman.rollback()
+\end{lstlisting}
+The methods \texttt{earliest} and \texttt{latest} are queries that
+take no arguments and return the indices of the earliest and latest
+steps that are still in memory.
+
+The \texttt{smooth} method, which also takes no arguments, computes
+the smoothed estimates of all the states still in memory, along with
+their covariance matrices. After this method is called, \texttt{estimate}
+returns the smoothed estimates. A single step can be smoothed many
+times; each smoothed estimate will use the information from all past
+steps and the information from future steps that are in memory when
+\texttt{smooth} is called.
+
+To use the C or Java implementations from within MATLAB, create
+an object of one of the adapter classes, not an object of the \texttt{UltimateKalman}
+class:
+\begin{lstlisting}
+kalman = UltimateKalmanNative()
+kalman = UltimateKalmanJava()
+\end{lstlisting}
+To use the C implementation, you will first need to compile the C
+code into a MATLAB-callable dynamically-linked library that MATLAB
+uses through an interface called the \texttt{mex} interface. To perform
+this step, run the \texttt{compile.m} script in the \texttt{matlab}
+directory. To use the Java implementation, build the Java library
+using the instructions in the next section, and add both the resulting
+library (a \texttt{jar} file) and the library containing the Apache
+Commons Math library to the MATLAB search path using MATLAB \texttt{addpath}
+command. The script \texttt{replication.m} adds these libraries to
+the path and can serve as an example.
+
+\section{\label{sec:java}The Java programming interface}
+
+The programming interface to the Java implementation is nearly identical.
+The implementing class is \texttt{sivantoledo\LyXZeroWidthSpace .kalman\LyXZeroWidthSpace .UltimateKalman}.
+It also uses overloaded methods to express default values. It differs
+from the MATLAB interface only in that the \texttt{estimate} methods
+return only one value, the state estimate. To obtain the matching
+covariance matrix, client code must call a separate method, \texttt{covariance}.
+
+The Java implementation resides under the \texttt{src} directory
+of the distribution archive. To use it, you first need to compile
+the source code and to assemble the compiled code into a library (a
+\texttt{jar} file). The scripts \texttt{build.bat} and \texttt{build.sh},
+both in the top directory of the distribution archive, perform these
+steps under Windows (\texttt{build.bat}) and Linux and MacOS (\texttt{build.sh}).
+To run the scripts, your computer must have a Java development kit
+(JDK) installed. We used successfully releases of OpenJDK on both
+Windows and Linux. The library is build so that it can be used with
+any version of Java starting with version~8 (sometimes also referred
+to as 1.8).
+
+The build scripts also compile and run a test program, \texttt{Rotation.java}.
+It performs the same computations and outputs the same values as the
+MATLAB example function \texttt{rotation.m} when executed with arguments
+\texttt{rotation(UltimateKalman,5,2)}. This program also serves as
+an example that shows how to write Java code that calls UltimateKalman.
+
+\section{\label{sec:c-lang}The C programming interface}
+
+In the C interface, the filter is represented by a pointer to a structure
+of the \texttt{kalman\_t} type; to client code, this structure is
+opaque (there is no need to directly access its fields). The filter
+is constructed by a call to \texttt{kalman\_create}, which returns
+a pointer to \texttt{kalman\_t}. 
+
+In general, the memory management principle of the interface (and
+the internal implementation) is that client code is responsible for
+freeing memory that was allocated by a call to any function whose
+name includes the word \texttt{create}. Therefore, when client code
+no longer needs a filter, it must call \texttt{kalman\_free} and pass
+the pointer as an argument. 
+
+The functionality of the filter is exposed through functions that
+correspond to methods in the MATLAB and Java implementations. These
+functions expect a pointer to \texttt{kalman\_t} as their first argument.
+The functions are not overloaded because C does not support overloading.
+Missing matrices and vectors (e.g., to \texttt{evolve} and \texttt{observe})
+are represented by a \texttt{NULL} pointer and default step numbers
+(to \texttt{forget} , \texttt{estimate}, and so on) by $-1$. Here
+is the declaration of some of the functions. 
+\begin{lstlisting}
+kalman_t*        kalman_create    ();
+void             kalman_free      (kalman_t* kalman);
+void             kalman_observe   (kalman_t* kalman,                                                               
+                                   kalman_matrix_t* G_i, kalman_matrix_t* o_i,
+                                   kalman_matrix_t* C_i, char C_i_type);
+int64_t          kalman_earliest  (kalman_t* kalman);
+void             kalman_smooth    (kalman_t* kalman);
+kalman_matrix_t* kalman_estimate  (kalman_t* kalman, int64_t i);
+kalman_matrix_t* kalman_covariance(kalman_t* kalman, int64_t i);
+void             kalman_forget    (kalman_t* kalman, int64_t i);
+...
+\end{lstlisting}
+Note that input covariance matrices are represented by a \texttt{kalman\_matrix\_t}
+and a representation code (a single character). The output of \texttt{kalman\_covariance}
+is a matrix $W$ such that $(W^{T}W)^{-1}$ is the covariance matrix
+of the output of \texttt{kalman\_estimate} on the same step.
+
+A small set of helper functions allows client code to construct input
+matrices in the required format, to set their elements, and to read
+and use matrices returned by UltimateKalman. Here are the declarations
+of some of them.
+\begin{lstlisting}
+kalman_matrix_t* matrix_create(int32_t rows, int32_t cols);
+void             matrix_free(kalman_matrix_t* A);
+
+void   matrix_set(kalman_matrix_t* A, int32_t i, int32_t j, double v);
+double matrix_get(kalman_matrix_t* A, int32_t i, int32_t j);
+
+int32_t matrix_rows(kalman_matrix_t* A);
+int32_t matrix_cols(kalman_matrix_t* A);
+...
+\end{lstlisting}
+
+Client code is responsible for freeing matrices returned by \texttt{kalman\_estimate}
+and \texttt{kal\-man\_\-covariance} by calling \texttt{matrix\_free}
+when they are no longer needed.
+
+\subsection*{Building and Running the Code Outside Matlab}
+
+To help you integrate UltimateKalman into your own native code in
+C or C++, the software includes two C programs that call UltimateKalman
+and Windows and Linux scripts that builds executable versions of the
+two programs. The scripts compile one of the programs along with UltimateKalman,
+link it with BLAS and LAPACK libraries, and run it. You should be
+able to use these scripts as examples of how to compile and link UltimateKalman.
+In particular, the C implementation of UltimateKalman consists of
+a single C source file, so it is not necessary to build it into a
+library; the source code or a single object file can be used directly
+in your C or C++ programs.
+
+These C programs, the C implementation of UltimateKalman, and the
+build scripts are all under the \texttt{native} directory of the distribution
+archive.
+
+The two sample programs are \texttt{rotation.c}, a C implementation
+of one of the example MATLAB programs, and \texttt{blastest.c}, a
+small program intended only to test the interface to the BLAS and
+LAPACK libraries. The program \texttt{rotation.c} performs the same
+computation that the expression \texttt{rotation(UltimateKalman,5,2)}
+performs in MATLAB and should output the same numerical results,
+just like \texttt{Rotation.java} in Java.
+
+The Windows script, \texttt{build.bat}, uses the Microsoft C command-line
+compiler (\texttt{cl}) that comes with Microsoft's Visual Studio Community
+2022~\cite{VSCommunity}, a free integrated development environment,
+and the BLAS and LAPACK libraries that are part of Intel's free
+oneAPI Math Kernel Library (MKL)~\cite{MKL}. The script takes one
+argument, the name of the program that you want to build and run,
+\texttt{blastest} or \texttt{rotation}. Here what you should expect
+to see on the console when you build and run \texttt{blastest} (ellipsis
+stand for deleted output that is not particularly interesting; the
+output of the \texttt{blastest} program is shown in bold):
+\begin{lstlisting}
+C:\Users\stoledo\github\ultimate-kalman\native>build.bat blastest
+...
+**********************************************************************
+** Visual Studio 2022 Developer Command Prompt v17.9.2
+** Copyright (c) 2022 Microsoft Corporation
+**********************************************************************
+[vcvarsall.bat] Environment initialized for: 'x64'
+:: initializing oneAPI environment...
+   Initializing Visual Studio command-line environment...
+   Visual Studio version 17.9.2 environment configured.
+   "C:\Program Files\Microsoft Visual Studio\2022\Community\"
+:  compiler -- latest
+:  mkl -- latest
+:  tbb -- latest
+:: oneAPI environment initialized ::
+generating test program blastest.exe
+ultimatekalman.c
+ultimatekalman.c(39): warning C4005: 'blas_int_t': macro redefinition
+ultimatekalman.c(28): note: see previous definition of 'blas_int_t'
+blastest.c
+Generating Code...
+generated test program
+~BLAS test starting~
+~A = matrix_print 2 3~
+~1 2 3~
+~4 5 6~
+~B = matrix_print 3 2~
+~7 8~
+~9 10~
+~12 13~
+~C = matrix_print 2 2~
+~125 137~
+~293 323~
+~Result should be:~
+~  125  137~
+~  293  323~
+~BLAS test done~
+done running test
+build script done
+\end{lstlisting}
+
+When you run the Windows executable program yourself, make sure that
+the directory where the MKL dynamically-linked libraries (\texttt{dll}
+files) are stored is on your \texttt{path}. The same is true, of course,
+for your own programs that use UltimateKalman. The installation of
+MKL does not modify the path to include this library, but it does
+provide a script that modifies the search path appropriately. In the
+version of MKL that I used, this script is \texttt{c:\textbackslash Program
+Files (x86)\textbackslash Intel\textbackslash oneAPI\textbackslash setvars.bat}. 
+
+Under Linux, the corresponding script is \texttt{build.sh}. It also
+takes a single argument, \texttt{blastest} or \texttt{rotation}. The
+script provides with the software uses the BLAS and LAPACK libraries
+that are installed in the Ubuntu Linux distribution using the commands
+\begin{lstlisting}
+sudo apt install libblas-dev
+sudo apt install liblapack-dev
+\end{lstlisting}
+These software packages install the libraries in a directory that
+is already on the search path, so no special configuration of the
+search path is required. These particular implementations of the BLAS
+and LAPACK are not high-performance implementations, but since UltimateKalman
+typically handles fairly small matrices, a high-performance library
+like Intel's MKL may not provide performance benefits. However, MKL
+is also available for Linux and you can certainly use it.
+
+To successfully link UltimateKalman with other implementations of
+the BLAS and LAPACK, you may need to set some preprocessor variables
+that control how UltimateKalman calls these libraries. Most of the
+variations are due to the fact that these libraries were originally
+implemented in Fortran. There are a few other preprocessor variables
+that control the behavior of UltimateKalman. All of these are listed
+and explained in Table~\ref{tab:C-pre-variables}.
+
+\begin{table}
+\begin{centering}
+\begin{tabular}{ll>{\raggedright}p{0.4\textwidth}}
+variable name & requires a value? & explanation\tabularnewline
+\hline 
+\texttt{BUILD\_MKL} & no & specifies that MKL is used; sets all the other BLAS and LAPACK
+variables (so you do not need to)\tabularnewline
+\texttt{BUILD\_BLAS\_INT} & yes & C data type that specifies a row or column index or a dimension of
+a matrix; usually either \texttt{int32\_t} or \texttt{int64\_t}\tabularnewline
+\texttt{HAS\_BLAS\_H} & no & specifies that the \texttt{blas.h} header is available\tabularnewline
+\texttt{HAS\_LAPACK\_H} & no & specifies that the \texttt{lapack.h} header is available\tabularnewline
+\texttt{BUILD\_BLAS\_UNDERSCORE} & no & add an underscore to names of BLAS and LAPACK functions\tabularnewline
+\texttt{BUILD\_BLAS\_STRLEN\_END} & no & add string-length arguments to calls to the BLAS and LAPACK\tabularnewline
+\texttt{BUILD\_DEBUG\_PRINTOUTS} & no & generates run-time debug printouts\tabularnewline
+\texttt{NDEBUG} & no & suppresses run-time assertion checking\tabularnewline
+\texttt{BUILD\_WIN32\_GETTIMEOFDAY} & no & required under Windows; do not use under Linux or MacOS\tabularnewline
+\end{tabular}
+\par\end{centering}
+\caption{\label{tab:C-pre-variables}Preprocessor variables that control how
+UltimateKalman calls the BLAS and LAPACK, as well as several other
+aspects of its behavior.}
+\end{table}
+
+
+\section{\label{sec:testing-and-examples}Testing and Code Examples }
+
+The software distribution of UltimateKalman includes five MATLAB
+functions that demonstrate how to use UltimateKalman:
+\begin{itemize}
+\item \texttt{rotation.m}, modeling a rotating point in the plane (this
+example is also implemented in C and Java, as described above).
+\item \texttt{constant.m}, modeling an fixed scalar or a scalar that increases
+linearly with time, and with observation covariance matrices that
+are identical in all steps except perhaps for one exceptional step.
+\item \texttt{add\_remove.m}, demonstrating how to use $H_{i}$ to add or
+remove parameters from a dynamic system.
+\item \texttt{projectile.m}, implementing the model and filter of a projectile
+described by Humpherys et al.~\cite{AFreshLook2012}.
+\item \texttt{clock\_offsets.m}, implementing clock-offset estimation in
+a distributed sensor system. This example demonstrates how to handle
+parameters that appear only in one step.
+\end{itemize}
+The mathematical details of these models are described in the article
+that describes UltimateKalman.
+
+The script \texttt{replication.m} runs all of these examples and optionally
+generates the graphs shown in the article. The script can run not
+only the MATLAB implementation, but also the C and Java implementations.
+
+\section{\label{sec:performance-testing}Support for Performance Testing}
+
+All the implementations include a method, called \texttt{perftest},
+designed for testing the performance of the filter. This method accepts
+as arguments all the matrices and vectors that are part of the evolution
+and observation equations, a step count, and an integer $d$ that
+tells the method how often to take a wall-clock timestamp. The method
+assumes that the filter has not been used yet and executes the filter
+for the given number of steps. In each step, the state is evolved
+and observed, the state estimate is requested, and the previous step
+(if there was one) is forgotten. The same fixed matrices and vectors
+are used in all steps.
+
+This method allows us to measure the performance of all the implementations
+without the overheads associated with calling C or Java from MATLAB.
+That is, the C functions are called in a loop from C, the Java
+methods are called from Java, and the MATLAB methods from MATLAB.
+
+The method takes a timestamp every $d$ steps and returns a vector
+with the average wall-clock running time per step in each nonoverlapping
+group of $d$ steps.
+
+\section{\label{sec:step-data-structure}Data Structures for the Step Sequence}
+
+The information in this section helps to understand the implementations,
+but is essentially irrelevant to users of UltimateKalman.
+
+The Java implementation uses an \texttt{ArrayList} data structure
+to represent the sequence of steps that have not been forgotten or
+rolled back, along with an integer that specifies the step number
+of the first step in the \texttt{ArrayList}. The data structure allows
+UltimateKalman to add steps, to trim the sequence from both sides,
+and to access a particular step, all in constant time or amortized
+constant time.
+
+The C implementation uses a specialized data structure with similar
+capabilities. This data structure, called in the code \texttt{farray\_t},
+is part of UltimateKalman. The sequence is stored in an array. When
+necessary, the size of the array is doubled. The active part of the
+array is not necessarily in the beginning, if steps have been forgotten.
+When a step is added and there is no room at the end of the physical
+array, then either the array is reallocated at double its current
+size, or the active part is shifted to the beginning. This allows
+the data structure to support appending, trimming from both sides,
+and direct access to a step with a given index, again in constant
+or amortized constant time.
+
+The Java implementation stores the steps in a cell array. The implementation
+is simple, but not as efficient as the data structure that is used
+by the C version.
+
+\bibliographystyle{plainurl}
+\bibliography{kalman}
+
+\end{document}

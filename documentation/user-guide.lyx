@@ -64,7 +64,16 @@ End
 \index_command default
 \paperfontsize 12
 \spacing single
-\use_hyperref false
+\use_hyperref true
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder false
+\pdf_colorlinks false
+\pdf_backref false
+\pdf_pdfusetitle true
 \papersize a4paper
 \use_geometry true
 \use_package amsmath 0
@@ -130,6 +139,16 @@ ations
 
 \begin_layout Author
 Sivan Toledo
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+export to pdflatex and run the build script
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -841,6 +860,12 @@ MATLAB
 \end_layout
 
 \begin_layout Section
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:matrices-and-vectors"
+
+\end_inset
+
 The representation of vectors and matrices
 \end_layout
 
@@ -972,6 +997,12 @@ kalman_matrix_t
 \end_layout
 
 \begin_layout Section
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:covariance-matrices"
+
+\end_inset
+
 The representation of covariance matrices
 \end_layout
 
@@ -1200,7 +1231,75 @@ RealCovarianceMatrix
 \family typewriter
 enum
 \family default
- constants.
+ constants defined in the implementation classes:
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+RealCovarianceMatrix.Representation.COVARIANCE_MATRIX
+\end_layout
+
+\begin_layout Plain Layout
+
+RealCovarianceMatrix.Representation.FACTOR
+\end_layout
+
+\begin_layout Plain Layout
+
+RealCovarianceMatrix.Representation.INVERSE_FACTOR
+\end_layout
+
+\begin_layout Plain Layout
+
+DiagonalCovarianceMatrix.Representation.COVARIANCE_MATRIX
+\end_layout
+
+\begin_layout Plain Layout
+
+DiagonalCovarianceMatrix.Representation.DIAGONAL_VARIANCES
+\end_layout
+
+\begin_layout Plain Layout
+
+DiagonalCovarianceMatrix.Representation.DIAGONAL_STANDARD_DEVIATIONS
+\end_layout
+
+\begin_layout Plain Layout
+
+DiagonalCovarianceMatrix.Representation.DIAGONAL_INVERSE_STANDARD_DEVIATIONS
+\end_layout
+
+\end_inset
+
+The 
+\family typewriter
+RealCovarianceMatrix
+\family default
+ class has a single constructor that takes a 
+\family typewriter
+RealMatrix
+\family default
+ and a representation constant.
+ The 
+\family typewriter
+DiagonalCovarianceMatrix
+\family default
+ class several constructors that take either a 
+\family typewriter
+RealVector
+\family default
+, an array of 
+\family typewriter
+double
+\family default
+ values, or a single 
+\family typewriter
+double
+\family default
+ and a dimension (the covariance matrix is then a scaled identity); all
+ also take as a second argument a representation constant.
 \end_layout
 
 \begin_layout Standard
@@ -1216,7 +1315,23 @@ C
 
  implementation in a similar manner, but without a class; each input covariance
  matrix is represented using two arguments, a matrix and a single character
- that defines how the matrix is related to 
+ (
+\family typewriter
+C
+\family default
+, 
+\family typewriter
+W
+\family default
+, 
+\family typewriter
+I
+\family default
+, or 
+\family typewriter
+w
+\family default
+) that defines how the given matrix is related to 
 \begin_inset Formula $C$
 \end_inset
 
@@ -1272,6 +1387,12 @@ CovarianceMatrix
 \end_layout
 
 \begin_layout Section
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:matlab"
+
+\end_inset
+
 The MATLAB programming interface
 \end_layout
 
@@ -1367,21 +1488,7 @@ observe
 evolve
 \family default
  method declares the dimension of the state of the next step and provides
- all the known quantities of the evolution equation
-\begin_inset space ~
-\end_inset
-
-(
-\begin_inset CommandInset ref
-LatexCommand ref
-reference "eq:kalman-evolution-linear"
-plural "false"
-caps "false"
-noprefix "false"
-
-\end_inset
-
-), 
+ all the known quantities of the evolution equation, 
 \end_layout
 
 \begin_layout Standard
@@ -1902,6 +2009,12 @@ replication.m
 \end_layout
 
 \begin_layout Section
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:java"
+
+\end_inset
+
 The Java programming interface
 \end_layout
 
@@ -2017,7 +2130,61 @@ Java
 8 (sometimes also referred to as 1.8).
 \end_layout
 
+\begin_layout Standard
+The build scripts also compile and run a test program, 
+\family typewriter
+Rotation.java
+\family default
+.
+ It performs the same computations and outputs the same values as the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ example function 
+\family typewriter
+rotation.m
+\family default
+ when executed with arguments 
+\family typewriter
+rotation(UltimateKalman,5,2)
+\family default
+.
+ This program also serves as an example that shows how to write 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+ code that calls 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
 \begin_layout Section
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:c-lang"
+
+\end_inset
+
 The C programming interface
 \end_layout
 
@@ -2547,6 +2714,39 @@ LAPACK
 \end_inset
 
  libraries.
+ The program 
+\family typewriter
+rotation.c
+\family default
+ performs the same computation that the expression 
+\family typewriter
+rotation(UltimateKalman,5,2)
+\family default
+ performs in 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ and should output the same numerical results, just like 
+\family typewriter
+Rotation.java
+\family default
+ in 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Standard
@@ -3608,32 +3808,17 @@ LAPACK
 \end_layout
 
 \begin_layout Section
-Data Structures for the Step Sequence
-\end_layout
-
-\begin_layout Standard
-The 
-\begin_inset Flex Proglang
-status open
-
-\begin_layout Plain Layout
-Java
-\end_layout
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:testing-and-examples"
 
 \end_inset
 
- implementation uses an 
-\family typewriter
-ArrayList
-\family default
- data structure to represent the sequence of steps that have not been forgotten
- or rolled back, along with an integer that specifies the step number of
- the first step in the 
-\family typewriter
-ArrayList
-\family default
-.
- The data structure allows 
+Testing and Code Examples 
+\end_layout
+
+\begin_layout Standard
+The software distribution of 
 \begin_inset Flex Pkg
 status open
 
@@ -3643,12 +3828,36 @@ UltimateKalman
 
 \end_inset
 
- to add steps, to trim the sequence from both sides, and to access a particular
- step, all in constant time or amortized constant time.
+ includes five 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
 \end_layout
 
-\begin_layout Standard
-The 
+\end_inset
+
+ functions that demonstrate how to use 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+:
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+rotation.m
+\family default
+, modeling a rotating point in the plane (this example is also implemented
+ in 
 \begin_inset Flex Proglang
 status open
 
@@ -3658,12 +3867,75 @@ C
 
 \end_inset
 
- implementation uses a specialized data structure with similar capabilities.
- This data structure, called in the code 
+ and 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+, as described above).
+\end_layout
+
+\begin_layout Itemize
+
 \family typewriter
-farray_t
+constant.m
 \family default
-, is part of 
+, modeling an fixed scalar or a scalar that increases linearly with time,
+ and with observation covariance matrices that are identical in all steps
+ except perhaps for one exceptional step.
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+add_remove.m
+\family default
+, demonstrating how to use 
+\begin_inset Formula $H_{i}$
+\end_inset
+
+ to add or remove parameters from a dynamic system.
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+projectile.m
+\family default
+, implementing the model and filter of a projectile described by Humpherys
+ et al.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "AFreshLook2012"
+literal "false"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+clock_offsets.m
+\family default
+, implementing clock-offset estimation in a distributed sensor system.
+ This example demonstrates how to handle parameters that appear only in
+ one step.
+\end_layout
+
+\begin_layout Standard
+The mathematical details of these models are described in the article that
+ describes 
 \begin_inset Flex Pkg
 status open
 
@@ -3674,32 +3946,26 @@ UltimateKalman
 \end_inset
 
 .
- The sequence is stored in an array.
- When necessary, the size of the array is doubled.
- The active part of the array is not necessarily in the beginning, if steps
- have been forgotten.
- When a step is added and there is no room at the end of the physical array,
- then either the array is reallocated at double its current size, or the
- active part is shifted to the beginning.
- This allows the data structure to support appending, trimming from both
- sides, and direct access to a step with a given index, again in constant
- or amortized constant time.
 \end_layout
 
 \begin_layout Standard
-The 
+The script 
+\family typewriter
+replication.m
+\family default
+ runs all of these examples and optionally generates the graphs shown in
+ the article.
+ The script can run not only the 
 \begin_inset Flex Proglang
 status open
 
 \begin_layout Plain Layout
-Java
+MATLAB
 \end_layout
 
 \end_inset
 
- implementation stores the steps in a cell array.
- The implementation is simple, but not as efficient as the data structure
- that is used by the 
+ implementation, but also the 
 \begin_inset Flex Proglang
 status open
 
@@ -3709,10 +3975,26 @@ C
 
 \end_inset
 
- version.
+ and 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+ implementations.
 \end_layout
 
 \begin_layout Section
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:performance-testing"
+
+\end_inset
+
 Support for Performance Testing
 \end_layout
 
@@ -3843,6 +4125,132 @@ The method takes a timestamp every
 \end_inset
 
  steps.
+\end_layout
+
+\begin_layout Section
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:step-data-structure"
+
+\end_inset
+
+Data Structures for the Step Sequence
+\end_layout
+
+\begin_layout Standard
+The information in this section helps to understand the implementations,
+ but is essentially irrelevant to users of 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+The 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+ implementation uses an 
+\family typewriter
+ArrayList
+\family default
+ data structure to represent the sequence of steps that have not been forgotten
+ or rolled back, along with an integer that specifies the step number of
+ the first step in the 
+\family typewriter
+ArrayList
+\family default
+.
+ The data structure allows 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+ to add steps, to trim the sequence from both sides, and to access a particular
+ step, all in constant time or amortized constant time.
+\end_layout
+
+\begin_layout Standard
+The 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ implementation uses a specialized data structure with similar capabilities.
+ This data structure, called in the code 
+\family typewriter
+farray_t
+\family default
+, is part of 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+.
+ The sequence is stored in an array.
+ When necessary, the size of the array is doubled.
+ The active part of the array is not necessarily in the beginning, if steps
+ have been forgotten.
+ When a step is added and there is no room at the end of the physical array,
+ then either the array is reallocated at double its current size, or the
+ active part is shifted to the beginning.
+ This allows the data structure to support appending, trimming from both
+ sides, and direct access to a step with a given index, again in constant
+ or amortized constant time.
+\end_layout
+
+\begin_layout Standard
+The 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+ implementation stores the steps in a cell array.
+ The implementation is simple, but not as efficient as the data structure
+ that is used by the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ version.
 \end_layout
 
 \begin_layout Standard
