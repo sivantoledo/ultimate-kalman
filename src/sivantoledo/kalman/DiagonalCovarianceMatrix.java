@@ -29,9 +29,9 @@ public class DiagonalCovarianceMatrix implements CovarianceMatrix {
     return new DiagonalCovarianceMatrix(weights, Representation.DIAGONAL_INVERSE_STANDARD_DEVIATIONS);
   }
   
-  public DiagonalCovarianceMatrix(RealVector variances) {
-    this(variances, DiagonalCovarianceMatrix.Representation.DIAGONAL_VARIANCES);
-  }
+  //public DiagonalCovarianceMatrix(RealVector variances) {
+  //  this(variances, DiagonalCovarianceMatrix.Representation.DIAGONAL_VARIANCES);
+  //}
 
   public DiagonalCovarianceMatrix(double[] v, DiagonalCovarianceMatrix.Representation rep) {
     this(MatrixUtils.createRealVector(v),rep);
