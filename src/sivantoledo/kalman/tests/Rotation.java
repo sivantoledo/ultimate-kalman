@@ -133,6 +133,7 @@ public class Rotation {
     
     CovarianceMatrix E = kalman.covariance(0);
     printMatrix(E.get(), "Covariance of smoothed estimate of state 0","%.2e");
+    printMatrix(E.weigh(MatrixUtils.createRealIdentityMatrix(2)),"W such that W^T*W=cov^-1","%.2e");
     System.out.printf("std deviation of first state coordinate %.2e (of first observation %.2e)\n",
                      Math.sqrt(E.get().getEntry(0, 0)), observationStdDev);
     

@@ -78,7 +78,7 @@ void matrix_mutate_scale_accumulate(
 				kalman_matrix_t* B, int k, int l,
 				int rows, int cols
 				) {
-  int r,c,s;
+  int r,c;
 
   for (r=0; r<rows; r++) {
     for (c=0; c<cols; c++) {
@@ -266,6 +266,7 @@ int main(int argc, char* argv[]) {
 	/* smoothing                                                 */
 	/*************************************************************/
 
+
 	kalman_smooth(kalman);
 
 	for (i=0; i<k; i++) {
@@ -273,6 +274,10 @@ int main(int argc, char* argv[]) {
 		matrix_mutate_copy_sub(smoothed, 0, i, e);
 		matrix_free(e);
 	}
+
+	kalman_matrix_t* W = kalman_covariance(kalman,0);
+	printf("covariance of smoothed estimate of state 0 (W such that W^T*W=cov^-1) = ");
+	matrix_print(W, "%.2e");
 
 	/*************************************************************/
 	/* release kalman object                                     */

@@ -96,12 +96,25 @@ end
 
 kalman.smooth();
 
+E = [];
+
 smoothed = NaN * zeros(2,k);
 for i=1:k 
-    smoothed(:,i) = kalman.estimate(i-1); % zero based step numbers
+    [est,cov] = kalman.estimate(i-1); % zero based step numbers
+    smoothed(:,i) =  est;
+    if i==1 
+        E = cov;
+    end
 end
 
 smoothed
+
+disp('covariance matrix of smoothed state 0:');
+Eexplicit = E.explicit()
+disp('W such that W^T*W = cov^-1:');
+W = E.weigh(eye(2))
+fprintf('std deviation of first state coordinate %.2e (of first observation %.2e)\n',...
+        sqrt(Eexplicit(1,1)),observationStd);
 
 %close all; 
 figure;
