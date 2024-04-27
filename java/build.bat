@@ -5,6 +5,7 @@ setlocal
 echo COMPLILING JAVA
 
 :: javac -cp commons-math3-3.6.1.jar -d bin -sourcepath src --target 1.8 --source 1.8 src\sivantoledo\kalman\*.java
+
 javac ^
   -cp commons-math3-3.6.1.jar ^
   -d bin ^
