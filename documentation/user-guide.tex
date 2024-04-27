@@ -6,7 +6,7 @@
 \usepackage[T1]{fontenc}
 \usepackage[latin9]{inputenc}
 \usepackage[a4paper]{geometry}
-\geometry{verbose,tmargin=2.5cm,bmargin=2.5cm,lmargin=2.5cm,rmargin=2.5cm,headheight=2.5cm,headsep=2.5cm,footskip=2.5cm}
+\geometry{verbose,tmargin=2.5cm,bmargin=2.5cm,lmargin=2.5cm,rmargin=2.5cm,footskip=1cm}
 \usepackage{babel}
 \usepackage{array}
 \usepackage{amstext}
@@ -179,6 +179,15 @@ between them and those of the other two implementations. The guide
 ends with a discussion of the data structures that are used to represent
 the step sequence and a presentation of a mechanism for measuring
 the performance of the implementations.
+
+The code has been tested with MATLAB R2021b (version 9.11) and with
+GNU OCTAVE 7.1.0, both running under Windows 11. The code has also
+been tested on Linux and on MacOS. Under Windows, MATLAB was configured
+to use Microsoft Visual C/C++ 2019 to compile C (mex) code. OCTAVE
+was configured to use mingw64 to compile C (mex) code. The code also
+compiles as a standalone C program under both GCC and Microsoft
+Visual C/C++ 2022, as well as under Java version 1.8 (also called
+version 8) and up.
 
 \section{\label{sec:matrices-and-vectors}The representation of vectors and
 matrices}
@@ -395,17 +404,19 @@ from the MATLAB interface only in that the \texttt{estimate} methods
 return only one value, the state estimate. To obtain the matching
 covariance matrix, client code must call a separate method, \texttt{covariance}.
 
-The Java implementation resides under the \texttt{src} directory
-of the distribution archive. To use it, you first need to compile
-the source code and to assemble the compiled code into a library (a
-\texttt{jar} file). The scripts \texttt{build.bat} and \texttt{build.sh},
-both in the top directory of the distribution archive, perform these
-steps under Windows (\texttt{build.bat}) and Linux and MacOS (\texttt{build.sh}).
-To run the scripts, your computer must have a Java development kit
-(JDK) installed. We used successfully releases of OpenJDK on both
-Windows and Linux. The library is build so that it can be used with
-any version of Java starting with version~8 (sometimes also referred
-to as 1.8).
+\subsection*{Building and Running the Java Code}
+
+The Java implementation resides under the \texttt{java} directory
+of the distribution archive. The sources are in the \texttt{src} subdirectory.
+To use it, you first need to compile the source code and to assemble
+the compiled code into a library (a \texttt{jar} file). The scripts
+\texttt{build.bat} and \texttt{build.sh}, both in the \texttt{java}
+directory, perform these steps under Windows (\texttt{build.bat})
+and Linux and MacOS (\texttt{build.sh}). To run the scripts, your
+computer must have a Java development kit (JDK) installed. We used
+successfully releases of OpenJDK on both Windows and Linux. The code
+is compiled so that the library can be used with any version of Java
+starting with version~8 (sometimes also referred to as 1.8).
 
 The build scripts also compile and run a test program, \texttt{Rotation.java}.
 It performs the same computations and outputs the same values as the
@@ -474,7 +485,7 @@ Client code is responsible for freeing matrices returned by \texttt{kalman\_esti
 and \texttt{kal\-man\_\-covariance} by calling \texttt{matrix\_free}
 when they are no longer needed.
 
-\subsection*{Building and Running the Code Outside Matlab}
+\subsection*{Building and Running the C Outside Matlab}
 
 To help you integrate UltimateKalman into your own native code in
 C or C++, the software includes two C programs that call UltimateKalman
@@ -632,6 +643,11 @@ that describes UltimateKalman.
 The script \texttt{replication.m} runs all of these examples and optionally
 generates the graphs shown in the article. The script can run not
 only the MATLAB implementation, but also the C and Java implementations.
+This script assumes that the corresponding libraries have already
+been built. The version of the C that MATLAB uses is built using
+the \texttt{compile.m} script, as explained in Section~\ref{sec:c-lang}
+above. The Java version should be built outside MATLAB, as explained
+in Section~\ref{sec:java}.
 
 \section{\label{sec:performance-testing}Support for Performance Testing}
 

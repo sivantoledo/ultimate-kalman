@@ -859,6 +859,84 @@ MATLAB
  the performance of the implementations.
 \end_layout
 
+\begin_layout Standard
+The code has been tested with 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ R2021b (version 9.11) and with GNU 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+OCTAVE
+\end_layout
+
+\end_inset
+
+ 7.1.0, both running under Windows 11.
+ The code has also been tested on Linux and on MacOS.
+ Under Windows, 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ was configured to use Microsoft Visual C/C++ 2019 to compile C (mex) code.
+ 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+OCTAVE
+\end_layout
+
+\end_inset
+
+ was configured to use mingw64 to compile C (mex) code.
+ The code also compiles as a standalone 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ program under both 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+GCC
+\end_layout
+
+\end_inset
+
+ and Microsoft Visual C/C++ 2022, as well as under 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+ version 1.8 (also called version 8) and up.
+\end_layout
+
 \begin_layout Section
 \begin_inset CommandInset label
 LatexCommand label
@@ -2061,6 +2139,10 @@ covariance
 .
 \end_layout
 
+\begin_layout Subsection*
+Building and Running the Java Code
+\end_layout
+
 \begin_layout Standard
 The 
 \begin_inset Flex Proglang
@@ -2074,9 +2156,14 @@ Java
 
  implementation resides under the 
 \family typewriter
-src
+java
 \family default
  directory of the distribution archive.
+ The sources are in the 
+\family typewriter
+src
+\family default
+ subdirectory.
  To use it, you first need to compile the source code and to assemble the
  compiled code into a library (a 
 \family typewriter
@@ -2091,8 +2178,11 @@ build.bat
 \family typewriter
 build.sh
 \family default
-, both in the top directory of the distribution archive, perform these steps
- under Windows (
+, both in the 
+\family typewriter
+java
+\family default
+ directory, perform these steps under Windows (
 \family typewriter
 build.bat
 \family default
@@ -2113,7 +2203,8 @@ Java
 
  development kit (JDK) installed.
  We used successfully releases of OpenJDK on both Windows and Linux.
- The library is build so that it can be used with any version of 
+ The code is compiled so that the library can be used with any version of
+ 
 \begin_inset Flex Proglang
 status open
 
@@ -2473,7 +2564,7 @@ matrix_free
 \end_layout
 
 \begin_layout Subsection*
-Building and Running the Code Outside Matlab
+Building and Running the C Outside Matlab
 \end_layout
 
 \begin_layout Standard
@@ -3986,6 +4077,82 @@ Java
 \end_inset
 
  implementations.
+ This script assumes that the corresponding libraries have already been
+ built.
+ The version of the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ that 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ uses is built using the 
+\family typewriter
+compile.m
+\family default
+ script, as explained in Section
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:c-lang"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ above.
+ The 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+ version should be built outside 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+, as explained in Section
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:java"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Section
