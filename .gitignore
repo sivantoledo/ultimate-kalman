@@ -1,18 +1,18 @@
-/bin/
 /java/bin
-documentation/*~
-documentation/*.log
-documentation/*.blg
-documentation/*.bbl
-documentation/*.out
-documentation/*.log
-documentation/*.aux
-native/*.exe
-native/*.obj
-native/*.o
-native/*.pdb
-native/*.mex*
-matlab/*.asv
-MANIFEST.TXT
+/java/MANIFEST.TXT
+/documentation/*~
+/documentation/#*#
+/documentation/*.log
+/documentation/*.blg
+/documentation/*.bbl
+/documentation/*.out
+/documentation/*.log
+/documentation/*.aux
+/native/*.exe
+/native/*.obj
+/native/*.o
+/native/*.pdb
+/native/*.mex*
+/matlab/*.asv
 
 
