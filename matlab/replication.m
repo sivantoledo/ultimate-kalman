@@ -24,8 +24,8 @@ end
 if (~isempty(ver('MATLAB')))
     disp('running under MATLAB, adding native and java support')
     addpath '..\native'
-    javaaddpath('../ultimatekalman.jar');
-    javaaddpath('../commons-math3-3.6.1.jar');
+    javaaddpath('../java/ultimatekalman.jar');
+    javaaddpath('../java/commons-math3-3.6.1.jar');
 end
 
 if (~isempty(ver('Octave')))
