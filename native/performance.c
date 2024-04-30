@@ -237,7 +237,12 @@ double perftest_smooth(
 
 int main(int argc, char* argv[]) {
 
-	printf("perftest starting (start with two arguments, dimension and count)\n");
+	printf("performance testing starting (start with two arguments, dimension and count)\n");
+
+	if (argc < 3) {
+		printf("usage: performance dimension count\n");
+		printf("       using defaults\n");
+	}
 
 	int n = 6;
 	int count = 100000;
@@ -245,7 +250,7 @@ int main(int argc, char* argv[]) {
 	if (argc >= 2) sscanf(argv[1],"%d",&n);
 	if (argc >= 3) sscanf(argv[2],"%d",&count);
 
-	printf("perftest smooth %d %d starting\n",n,count);
+	printf("performance testing smooth dimension=%d step count=%d, starting\n",n,count);
 
 	double t = 0.0;
 
@@ -265,10 +270,10 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 	
-	printf("perftest smooth %d %d took %.2e seconds\n",n,count,t);
-	printf("perftest breakdown %.2e %.2e %.2e %.2e (filter, smooth, read estimates, free)\n",times[0],times[1],times[2],times[3]);
+	printf("performance testing took %.2e seconds\n",n,count,t);
+	printf("performance testing breakdown %.2e %.2e %.2e %.2e (filter, smooth, read estimates, free)\n",times[0],times[1],times[2],times[3]);
 
-	printf("perftest done\n");
+	printf("performance testing done\n");
 	return 0;
 }
 
