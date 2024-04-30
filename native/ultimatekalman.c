@@ -388,7 +388,7 @@ void matrix_mutate_copy_sub(matrix_t* C, int32_t first_row, int32_t first_col, m
 	assert(A != NULL);
 	assert(C != NULL);
 	assert(matrix_rows(C) >= first_row + matrix_rows(A));
-	assert(matrix_cols(C) == first_col + matrix_cols(A));
+	assert(matrix_cols(C) >= first_col + matrix_cols(A));
 
 	int i,j;
 
