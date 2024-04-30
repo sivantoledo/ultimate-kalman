@@ -164,7 +164,10 @@ kalman_matrix_t* kalman_perftest(kalman_t* kalman,
 		                      kalman_matrix_t* H, kalman_matrix_t* F, kalman_matrix_t* c, kalman_matrix_t* K, char K_type,
 		                      kalman_matrix_t* G, kalman_matrix_t* o,              kalman_matrix_t* C, char C_type,
 									        int32_t count, int32_t decimation);
-
+kalman_matrix_t* kalman_perftest_smooth(kalman_t* kalman,
+		                      kalman_matrix_t* H, kalman_matrix_t* F, kalman_matrix_t* c, kalman_matrix_t* K, char K_type,
+		                      kalman_matrix_t* G, kalman_matrix_t* o,              kalman_matrix_t* C, char C_type,
+									        int32_t count);
 
 /******************************************************************************/
 /* END OF FILE                                                                */
