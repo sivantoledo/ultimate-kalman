@@ -579,10 +579,20 @@ literal "false"
 \end_inset
 
 , which to the best of our knowledge, has not been implemented before.
- This guide is part of an Algorithm-type article in the journal ACM Transactions
- on Mathematical Software.
- The algorithms are described in that article.
- This user guide only explains how to use the software library.
+ This guide is part of an article in the journal ACM Transactions on Mathematica
+l Software that describes 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+.
+ The algorithms are described in that article; this user guide focuses on
+ usage of the software library.
 \end_layout
 
 \begin_layout Standard
@@ -1070,6 +1080,29 @@ LAPACK
  To avoid name-space pollution, in client code this type is called 
 \family typewriter
 kalman_matrix_t
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+State vectors are not always observable.
+ This topic is explained in Section 
+\begin_inset space ~
+\end_inset
+
+3.2 in the companion article.
+ This situation usually arises when there are not enough observations to
+ estimate the state.
+ The function calls and methods that return estimates of state vectors and
+ the covariance matrices of the estimates return in such cases a vector
+ of 
+\family typewriter
+NaN
+\family default
+s (not-a-number, a floating point value that indicates that the value is
+ not available) and a diagonal matrix whose diagonal elements are 
+\family typewriter
+NaN
 \family default
 .
 \end_layout
@@ -2598,7 +2631,7 @@ C++
 
 \end_inset
 
-, the software includes two 
+, the software includes three 
 \begin_inset Flex Proglang
 status open
 
@@ -2618,7 +2651,7 @@ UltimateKalman
 
 \end_inset
 
- and Windows and Linux scripts that builds executable versions of the two
+ and Windows and Linux scripts that builds executable versions of the three
  programs.
  The scripts compile one of the programs along with 
 \begin_inset Flex Pkg
@@ -2714,7 +2747,7 @@ C++
 
 \end_inset
 
- programs.
+ programs or libraries.
 \end_layout
 
 \begin_layout Standard
@@ -2756,7 +2789,7 @@ native
 \end_layout
 
 \begin_layout Standard
-The two sample programs are 
+The three sample programs are 
 \family typewriter
 rotation.c
 \family default
@@ -2780,7 +2813,7 @@ MATLAB
 
 \end_inset
 
- programs, and 
+ programs, 
 \family typewriter
 blastest.c
 \family default
@@ -2804,7 +2837,21 @@ LAPACK
 
 \end_inset
 
- libraries.
+ libraries, and 
+\family typewriter
+performance.c
+\family default
+, a program designed to measure the running time of 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+.
  The program 
 \family typewriter
 rotation.c
@@ -2838,6 +2885,32 @@ Java
 \end_inset
 
 .
+ The program 
+\family typewriter
+performance.c
+\family default
+ implements a Kalman smoother on problems with 
+\begin_inset Formula $n_{i}=m_{i}=6$
+\end_inset
+
+ or 
+\begin_inset Formula $n_{i}=m_{i}=48$
+\end_inset
+
+ using orthonormal matrices for 
+\begin_inset Formula $F_{i}$
+\end_inset
+
+ and 
+\begin_inset Formula $G_{i}$
+\end_inset
+
+ and with 
+\begin_inset Formula $H_{i}=I$
+\end_inset
+
+.
+ It measures and reports the running time of the smoother.
 \end_layout
 
 \begin_layout Standard
