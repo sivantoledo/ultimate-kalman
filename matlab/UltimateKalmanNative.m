@@ -212,23 +212,6 @@ classdef UltimateKalmanNative < handle
             [K_rep,K_type] = rep(K);
             t = ultimatekalmanmex('perftest',kalman.handle,H,F,c,K_rep,double(K_type),G,o,C_rep,double(C_type),double(count),double(decimation));
         end
-
-        function t = perftest_smooth(kalman,H,F,c,K,G,o,C,count)
-            l = size(F,1);                                             % row dimension
-            n = size(G,2);
-            if size(H,1) ~= l                                          % this allows the user to pass [] for H
-                if l == n
-                    H = eye(l);
-                else
-                    H = [ eye(l) zeros(l,n - l)];
-                end
-            end
-
-            [C_rep,C_type] = rep(C);
-            [K_rep,K_type] = rep(K);
-            t = ultimatekalmanmex('perftest_smooth',kalman.handle,H,F,c,K_rep,double(K_type),G,o,C_rep,double(C_type),double(count));
-        end
-
-
+        
     end % methods
 end

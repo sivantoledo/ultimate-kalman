@@ -350,54 +350,6 @@ static void mexPerfTest(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs
 	//printf("free all\n");
 }
 
-static void mexPerfTestSmooth(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
-	argCheck("perftest_smooth",11,11,1,1,nlhs,plhs,nrhs,prhs);
-
-	int handle = (int) floor(mxGetScalar(prhs[1]));
-	void* kalman = handleGet(kalman_handles,handle);
-
-	//printf("evolve %d %d %08x\n",n_i,handle,kalman);
-
-	kalman_matrix_t* H = matrix_create_from_mxarray(prhs[2]);
-	kalman_matrix_t* F = matrix_create_from_mxarray(prhs[3]);
-	kalman_matrix_t* c = matrix_create_from_mxarray(prhs[4]);
-	kalman_matrix_t* K = matrix_create_from_mxarray(prhs[5]);
-	char K_type = (char) round(mxGetScalar(prhs[6]));
-
-	kalman_matrix_t* G = matrix_create_from_mxarray(prhs[7]);
-	kalman_matrix_t* o = matrix_create_from_mxarray(prhs[8]);
-	kalman_matrix_t* C = matrix_create_from_mxarray(prhs[9]);
-	char C_type = (char) round(mxGetScalar(prhs[10]));
-
-	int32_t count      = (int32_t) mxGetScalar(prhs[11]);
-
-	kalman_matrix_t* t = kalman_perftest_smooth(kalman,
-			                          H, F, c, K, K_type,
-																G, o, C, C_type,
-																count);
-
-	if (t == NULL) {
-		plhs[0] = mxCreateDoubleMatrix(0,0,mxREAL);
-	} else {
-		//printf("creating mex array %08x\n",t);
-		//printf("creating mex array %08x %d\n",t->row_dim);
-		plhs[0] = matrix_copy_to_mxarray(t);
-	  //printf("free 1\n");
-		matrix_free(t);
-		//printf("created mex array\n");
-	}
-
-	matrix_free(C);
-	matrix_free(o);
-	matrix_free(G);
-	matrix_free(K);
-	matrix_free(H);
-	matrix_free(F);
-	matrix_free(c);
-	//printf("free all\n");
-}
-
-
 /*******************************************************************/
 /* MEX FUNCTION                                                    */
 /*******************************************************************/
@@ -428,7 +380,6 @@ void mexFunction( int nlhs, mxArray *plhs[],
     else if (selector("covariance" ,nrhs,prhs)) { mexCovariance(nlhs,plhs,nrhs,prhs); return; }
     else if (selector("forget"     ,nrhs,prhs)) { mexForget    (nlhs,plhs,nrhs,prhs); return; }
     else if (selector("rollback"   ,nrhs,prhs)) { mexRollback  (nlhs,plhs,nrhs,prhs); return; }
-    else if (selector("perftest_smooth" ,nrhs,prhs)) { mexPerfTestSmooth  (nlhs,plhs,nrhs,prhs); return; }
     else if (selector("perftest"   ,nrhs,prhs)) { mexPerfTest  (nlhs,plhs,nrhs,prhs); return; }
     else mexErrMsgIdAndTxt("sivantoledo:UltimateKalman:invalidSelector","invalid selector");
 }

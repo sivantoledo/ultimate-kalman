@@ -1661,56 +1661,6 @@ matrix_t* kalman_perftest(kalman_t* kalman,
 	return t;
 }
 
-matrix_t* kalman_perftest_smooth(kalman_t* kalman,
-		                         matrix_t* H, matrix_t* F, matrix_t* c, matrix_t* K, char K_type,
-		                         matrix_t* G, matrix_t* o,              matrix_t* C, char C_type,
-							   	 int32_t count) {
-
-	matrix_t* t = matrix_create_constant(1, 1, NaN);
-	int32_t i,j,n;
-
-	//printf("perftest count %d decimation %d rows %d\n",count,decimation,matrix_rows(t));
-
-	//struct timeval begin, end;
-	gettimeofday(&begin, 0);
-
-	j = 0;
-	n = matrix_cols(G);
-
-	for (i=0; i<count; i++) {
-		//printf("perftest iter %d (j=%d)\n",i,j);
-		//if (debug) printf("perftest iter %d (j=%d)\n",i,j);
-		kalman_evolve(kalman,n,H,F,c,K,K_type);
-		kalman_observe(kalman,G,o,C,C_type);
-		matrix_t* e = kalman_estimate(kalman,-1);
-		matrix_free(e);
-		//kalman_forget(kalman,-1);
-
-	}
-
-	kalman_smooth(kalman);
-
-	// read the estimates, for a believable simulation
-
-	for (i=0; i<count; i++) {
-		matrix_t* e = kalman_estimate(kalman,i);
-		matrix_free(e);
-	}
-
-	// free most of the memory
-
-	kalman_forget(kalman,0);
-
-	gettimeofday(&end, 0);
-	long seconds      = end.tv_sec  - begin.tv_sec;
-	long microseconds = end.tv_usec - begin.tv_usec;
-	double elapsed    = seconds + microseconds*1e-6;
-
-	matrix_set(t,0,0,elapsed/count); // average per step
-
-	return t;
-}
-
 /******************************************************************************/
 /* MAIN                                                                       */
 /******************************************************************************/
