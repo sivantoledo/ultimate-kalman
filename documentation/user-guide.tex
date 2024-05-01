@@ -6,7 +6,7 @@
 \usepackage[T1]{fontenc}
 \usepackage[latin9]{inputenc}
 \usepackage[a4paper]{geometry}
-\geometry{verbose,tmargin=2.5cm,bmargin=2.5cm,lmargin=2.5cm,rmargin=2.5cm,footskip=1cm}
+\geometry{verbose,tmargin=2.5cm,bmargin=2.5cm,lmargin=2.5cm,rmargin=2.5cm,headheight=2.5cm,headsep=2.5cm,footskip=2.5cm}
 \usepackage{babel}
 \usepackage{array}
 \usepackage{amstext}
@@ -139,10 +139,10 @@ UltimateKalman is a library that implements efficient Kalman filtering
 and smoothing algorithms using orthogonal transformations. The algorithms
 are based on an algorithm by Paige and Saunders~\cite{PaigeSaunders:1977:Kalman},
 which to the best of our knowledge, has not been implemented before.
-This guide is part of an Algorithm-type article in the journal ACM
-Transactions on Mathematical Software. The algorithms are described
-in that article. This user guide only explains how to use the software
-library.
+This guide is part of an article in the journal ACM Transactions on
+Mathematical Software that describes UltimateKalman. The algorithms
+are described in that article; this user guide focuses on usage of
+the software library.
 
 UltimateKalman is currently available in MATLAB, C, and Java.
 Each implementation is separate and does not rely on the others. The
@@ -206,6 +206,15 @@ as in the BLAS and LAPACK, and integers that describe the number
 of rows and columns in the matrix and the stride along rows (the so-called
 leading dimension in the BLAS and LAPACK interfaces). To avoid name-space
 pollution, in client code this type is called \texttt{kalman\_matrix\_t}.
+
+State vectors are not always observable. This topic is explained in
+Section ~3.2 in the companion article. This situation usually arises
+when there are not enough observations to estimate the state. The
+function calls and methods that return estimates of state vectors
+and the covariance matrices of the estimates return in such cases
+a vector of \texttt{NaN}s (not-a-number, a floating point value that
+indicates that the value is not available) and a diagonal matrix whose
+diagonal elements are \texttt{NaN}.
 
 \section{\label{sec:covariance-matrices}The representation of covariance
 matrices}
@@ -488,27 +497,32 @@ when they are no longer needed.
 \subsection*{Building and Running the C Outside Matlab}
 
 To help you integrate UltimateKalman into your own native code in
-C or C++, the software includes two C programs that call UltimateKalman
+C or C++, the software includes three C programs that call UltimateKalman
 and Windows and Linux scripts that builds executable versions of the
-two programs. The scripts compile one of the programs along with UltimateKalman,
-link it with BLAS and LAPACK libraries, and run it. You should be
-able to use these scripts as examples of how to compile and link UltimateKalman.
-In particular, the C implementation of UltimateKalman consists of
-a single C source file, so it is not necessary to build it into a
-library; the source code or a single object file can be used directly
-in your C or C++ programs.
+three programs. The scripts compile one of the programs along with
+UltimateKalman, link it with BLAS and LAPACK libraries, and run
+it. You should be able to use these scripts as examples of how to
+compile and link UltimateKalman. In particular, the C implementation
+of UltimateKalman consists of a single C source file, so it is not
+necessary to build it into a library; the source code or a single
+object file can be used directly in your C or C++ programs or libraries.
 
 These C programs, the C implementation of UltimateKalman, and the
 build scripts are all under the \texttt{native} directory of the distribution
 archive.
 
-The two sample programs are \texttt{rotation.c}, a C implementation
-of one of the example MATLAB programs, and \texttt{blastest.c}, a
-small program intended only to test the interface to the BLAS and
-LAPACK libraries. The program \texttt{rotation.c} performs the same
-computation that the expression \texttt{rotation(UltimateKalman,5,2)}
+The three sample programs are \texttt{rotation.c}, a C implementation
+of one of the example MATLAB programs, \texttt{blastest.c}, a small
+program intended only to test the interface to the BLAS and LAPACK
+libraries, and \texttt{performance.c}, a program designed to measure
+the running time of UltimateKalman. The program \texttt{rotation.c}
+performs the same computation that the expression \texttt{rotation(UltimateKalman,5,2)}
 performs in MATLAB and should output the same numerical results,
-just like \texttt{Rotation.java} in Java.
+just like \texttt{Rotation.java} in Java. The program \texttt{performance.c}
+implements a Kalman smoother on problems with $n_{i}=m_{i}=6$ or
+$n_{i}=m_{i}=48$ using orthonormal matrices for $F_{i}$ and $G_{i}$
+and with $H_{i}=I$. It measures and reports the running time of the
+smoother.
 
 The Windows script, \texttt{build.bat}, uses the Microsoft C command-line
 compiler (\texttt{cl}) that comes with Microsoft's Visual Studio Community
