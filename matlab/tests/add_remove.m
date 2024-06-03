@@ -1,4 +1,12 @@
 function add_remove(kalman_factory,seed)
+% ADD_REMOVE a test function for UltimateKalman, demonstrating how to add
+%            and remove parameters from the state vector.
+%
+%    ADD_REMOVE(factory, seed) a test function for UltimateKalman
+%      factory: a handle to a function that returns UltimateKalman objects
+%      seed:    random-number generator seed
+%
+% copyright 2022-2024 Sivan Toledo
 
 if nargin<1
     seed = 1;

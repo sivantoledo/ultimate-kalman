@@ -1,7 +1,18 @@
 function constant(kalman_factory, seed, k, smooth, sloping, exception)
-% constant(seed, k, smooth, sloping, exception) a test function for UltimateKalman
+% CONSTANT a simple test function for UltimateKalman
 %
-% copyright 2022 Sivan Toledo
+%    CONSTANT(factory, seed, k, smooth, sloping, exception) a test function for UltimateKalman
+%      factory: a handle to a function that returns UltimateKalman objects
+%      seed:    random-number generator seed
+%      k:       number of steps to simulate and filter
+%      smooth:  boolean, whether to smooth or just filter
+%      sloping: boolean, whether the evolution rule should cause the target
+%               to rise (slope up) or stay constant; evolution is with
+%               noise either way
+%      exception: vector with step-number for exceptional step and standard
+%               deviation for this step (first and second positions)
+%
+% copyright 2022-2024 Sivan Toledo
 
 rng(seed);
 

@@ -6,7 +6,7 @@ function projectile(kalman_factory,seed,exp)
 %      seed:    random-number generator seed (default is 1)
 %      exp:     whether to export the graphs to PDF files (default is false)
 %
-% copyright 2022 Sivan Toledo
+% copyright 2022-2024 Sivan Toledo
 
 if nargin < 2
     seed = 1;

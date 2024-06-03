@@ -1,4 +1,16 @@
 function t = performance(kalmans, seed, sizes, count, decimation)
+% ROTATION a simple test function for UltimateKalman, tracking a rotating 
+%          point in the plane
+%
+%    ROTATION(factories, seed, obs_dim) a test function for UltimateKalman
+%      factories:  a cell array of functions that return UltimateKalman
+%                  objects
+%      seed:       random-number generator seed
+%      sizes:      state-vector dimensions to test the implemenations on 
+%      count:      how many time steps to simulate and filter
+%      decimation: number of time steps between timestamps
+%
+% copyright 2022-2024 Sivan Toledo
 
 if nargin < 1
     seed = 1;
