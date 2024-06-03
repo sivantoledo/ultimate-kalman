@@ -270,7 +270,7 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 	
-	printf("performance testing took %.2e seconds\n",n,count,t);
+	printf("performance testing took %.2e seconds\n",t);
 	printf("performance testing breakdown %.2e %.2e %.2e %.2e (filter, smooth, read estimates, free)\n",times[0],times[1],times[2],times[3]);
 
 	printf("performance testing done\n");
