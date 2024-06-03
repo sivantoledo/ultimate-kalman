@@ -25,18 +25,47 @@ end
 
 addpath '..';
 
-if (~isempty(ver('MATLAB')))
-    disp('running under MATLAB, adding native and java support')
-    addpath '..\..\native'
-    javaaddpath('../../java/ultimatekalman.jar');
-    javaaddpath('../../java/commons-math3-3.6.1.jar');
+%if (~isempty(ver('MATLAB')))
+%end
+%if (~isempty(ver('Octave')))
+%end
+
+if ( exp || strcmp(implementation,'C')==1 )
+    addpath '../../native'
 end
 
-if (~isempty(ver('Octave')))
-    disp('running under Octave, adding native and java support')
-    addpath '../../..\native'
-    javaaddpath('../../ultimatekalman.jar');
-    javaaddpath('../../commons-math3-3.6.1.jar');
+if ( exp || strcmp(implementation,'Java')==1 )
+    warning('off','MATLAB:javaclasspath:invalidFile');
+
+    lastwarn('');
+    try
+      javaaddpath('../../java/ultimatekalman.jar');
+    catch err % octave error handling
+      error('UltimateKalman Java library (jar file) is missing, build it first; see user guide for instructions');
+    end
+    [str,id] = lastwarn; % Matlab error handling
+    switch id
+        case 'MATLAB:javaclasspath:invalidFile'
+            error('UltimateKalman Java library (jar file) is missing, build it first; see user guide for instructions');
+    end
+
+    lastwarn('');
+    try
+      javaaddpath('../../java/commons-math3-3.6.1.jar');
+    catch err % octave error handling
+            error('Apache Commons Math Java library (jar file) is missing, install it first; see user guide for instructions');
+    end
+    [str,id] = lastwarn; % Matlab error handling
+    switch id
+        case 'MATLAB:javaclasspath:invalidFile'
+            error('Apache Commons Math Java library (jar file) is missing, install it first; see user guide for instructions');
+    end
+
+    warning('on','MATLAB:javaclasspath:invalidFile');
+end
+
+if exp
+    mkdir '../../outputs';
 end
 
 if perf
@@ -51,22 +80,22 @@ if exp; exportgraphics(gca,'../../outputs/perftest_imps_48.pdf'); end;
 end
 
 clock_offsets(@factory, 6)
-if exp; exportgraphics(gca,'..\..\outputs\clock_offsets.pdf'); end;
+if exp; exportgraphics(gca,'../../outputs/clock_offsets.pdf'); end;
 
 rotation(@factory, 5,2)
-if exp; exportgraphics(gca,'..\..\outputs\rotation2.pdf'); end;
+if exp; exportgraphics(gca,'../../outputs/rotation2.pdf'); end;
 rotation(@factory, 5,1)
-if exp; exportgraphics(gca,'..\..\outputs\rotation1.pdf'); end;
+if exp; exportgraphics(gca,'../../outputs/rotation1.pdf'); end;
 
 constant(@factory, 1,101,true,false,[NaN,1])
-if exp; exportgraphics(gca,'..\..\outputs\constant_smoothed.pdf'); end;
+if exp; exportgraphics(gca,'../../outputs/constant_smoothed.pdf'); end;
 constant(@factory, 1,101,false,false,[NaN,1])
-if exp; exportgraphics(gca,'..\..\outputs\constant_filtered.pdf'); end;
+if exp; exportgraphics(gca,'../../outputs/constant_filtered.pdf'); end;
 
 constant(@factory, 1,101,true,true,[50,0.25])
-if exp; exportgraphics(gca,'..\..\outputs\sloping_smoothed_exception.pdf'); end;
+if exp; exportgraphics(gca,'../../outputs/sloping_smoothed_exception.pdf'); end;
 constant(@factory, 1,101,false,true,[50,0.25])
-if exp; exportgraphics(gca,'..\..\outputs\sloping_filtered_exception.pdf'); end;
+if exp; exportgraphics(gca,'../../outputs/sloping_filtered_exception.pdf'); end;
 
 % projectile
 % this function saves the plots to pdf files, so no
