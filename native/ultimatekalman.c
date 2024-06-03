@@ -21,7 +21,7 @@
 /* BLAS AND LAPACK DECLARATIONS                                               */
 /******************************************************************************/
 
-#ifdef BUILD_MEX
+#if defined(BUILD_MEX) && defined(BUILD_MATLAB)
 #define blas_int_t mwSignedIndex
 #define HAS_BLAS_INT
 #else
