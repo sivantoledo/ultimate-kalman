@@ -1,8 +1,8 @@
 function t = performance(kalmans, seed, sizes, count, decimation)
-% ROTATION a simple test function for UltimateKalman, tracking a rotating 
-%          point in the plane
+% PERFORMANCE a function to test the performance of UltimateKalman
+%             implementations
 %
-%    ROTATION(factories, seed, obs_dim) a test function for UltimateKalman
+%    PERFORMANCE(factories, seed, sizes, count, decimation)
 %      factories:  a cell array of functions that return UltimateKalman
 %                  objects
 %      seed:       random-number generator seed

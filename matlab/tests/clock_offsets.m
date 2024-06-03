@@ -2,7 +2,7 @@ function clock_offsets(kalman_factory,seed)
 % CLOCK_OFFSETS a test function for UltimateKalman, demonstrating how to 
 %               track clock offsets in a distributed system. The example
 %               also shows how to model parameters that affect only a
-%               single time step.
+%               single time step
 %
 %    CLOCK_OFFSETS(factory, seed) a test function for UltimateKalman
 %      factory: a handle to a function that returns UltimateKalman objects

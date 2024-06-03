@@ -1,5 +1,7 @@
 function constant(kalman_factory, seed, k, smooth, sloping, exception)
-% CONSTANT a simple test function for UltimateKalman
+% CONSTANT a simple test function for UltimateKalman; simulates a scalar
+%          target whose dynamics are either staying constant or increasing
+%          at a fixed rate
 %
 %    CONSTANT(factory, seed, k, smooth, sloping, exception) a test function for UltimateKalman
 %      factory: a handle to a function that returns UltimateKalman objects

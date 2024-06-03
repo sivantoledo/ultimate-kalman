@@ -1,5 +1,5 @@
 function projectile(kalman_factory,seed,exp)
-% PROJECTILE projectile example for UltimateKalman
+% PROJECTILE a 2-dimensional projectile example for UltimateKalman
 %
 %    PROJECTILE(factory,seed,exp) 
 %      factory: a handle to a function that returns UltimateKalman objects

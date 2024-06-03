@@ -1,16 +1,18 @@
 function replication(implementation,exp,perf)
-% REPLICATION replication of testing of UltimateKalman
+% REPLICATION testing of an UltimateKalman implementation and optionally
+%             export graphs and test performance
 %
-%    REPLICATION(implementation,exp,perf) performs tests
-%      on a given implementation ('MATLAB', 'C', or 'Java')
-%      If exp==true, graphs are exported to PDF files.
-%      if perf==true, the function also runs performance tests.
-%      The defaults are 'MATLAB', no export, and no performance tests.
+%    REPLICATION(implementation,exp,perf) 
+%      implementation: a string that specifies the implementation to test;
+%                      valid values are 'MATLAB' (default), 'C', and 'Java'
+%      exp:            boolean, whether to export graphs (default is false)
+%      perf:           boolean, whether to test performance (default is
+%                      false)
 %
 % copyright 2022-2024 Sivan Toledo
 
 if nargin<1
-    implementation = 'MATLAB'; % matlab
+    implementation = 'MATLAB'; 
 end
 
 if nargin<2
