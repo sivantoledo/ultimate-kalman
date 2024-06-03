@@ -124,7 +124,7 @@ plot(filtered(1,:),filtered(2,:),'b-','LineWidth',1);
 plot(obs(1,:),obs(2,:),'r.');
 %plot(full(:,1),full(:,2),'m-','LineWidth',1);
 hold off;
-if exp; exportgraphics(gca,'../outputs/projectile.pdf'); end;
+if exp; exportgraphics(gca,'../../outputs/projectile.pdf'); end;
 
 figure
 axis square
@@ -137,7 +137,7 @@ plot(filtered(1,:),filtered(2,:),'b-','LineWidth',1);
 xlim([ min(obs(1,:)) max(obs(1,:)) ]);
 ylim([ min(obs(2,:)) max(obs(2,:)) ]);
 hold off;
-if exp; exportgraphics(gca,'../outputs/projectile_zoom.pdf'); end;
+if exp; exportgraphics(gca,'../../outputs/projectile_zoom.pdf'); end;
 
 
 
