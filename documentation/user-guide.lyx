@@ -2054,7 +2054,7 @@ mex
  interface.
  To perform this step, run the 
 \family typewriter
-compile.m
+UltimateKalman_build_mex.m
 \family default
  script in the 
 \family typewriter
@@ -2116,7 +2116,11 @@ addpath
 \family typewriter
 replication.m
 \family default
- adds these libraries to the path and can serve as an example.
+ in the 
+\family typewriter
+tests
+\family default
+ sub-directory adds these libraries to the path and can serve as an example.
 \end_layout
 
 \begin_layout Section
@@ -4110,6 +4114,15 @@ UltimateKalman
 \end_inset
 
 .
+ The functions are in the 
+\family typewriter
+tests
+\family default
+ sub-directory of the 
+\family typewriter
+matlab
+\family default
+ directory.
 \end_layout
 
 \begin_layout Standard
@@ -4117,8 +4130,12 @@ The script
 \family typewriter
 replication.m
 \family default
- runs all of these examples and optionally generates the graphs shown in
- the article.
+, also in the 
+\family typewriter
+tests
+\family default
+ sub-directory, runs all of these examples and optionally generates the
+ graphs shown in the article.
  The script can run not only the 
 \begin_inset Flex Proglang
 status open
@@ -4174,7 +4191,7 @@ MATLAB
 
  uses is built using the 
 \family typewriter
-compile.m
+UltimateKalman_build_mex.m
 \family default
  script, as explained in Section
 \begin_inset space ~
