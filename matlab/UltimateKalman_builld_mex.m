@@ -15,7 +15,7 @@ if ispc
             -DBUILD_BLAS_STRLEN_END ...
             ultimatekalmanmex.c ultimatekalman.c -llibopenblas -lliblapack
     end
-    disp('compiling and linking done; now testing');
+    disp('compiling and linking done');
     cd '..\matlab'
     addpath '..\native'
 end
@@ -36,7 +36,7 @@ if isunix
             -DBUILD_BLAS_STRLEN_END ...
             ultimatekalmanmex.c ultimatekalman.c -llibopenblas -lliblapack
     end
-    disp('compiling and linking done; now testing');
+    disp('compiling and linking done');
     cd '../matlab'
     addpath '../native'
 end
@@ -58,7 +58,7 @@ if ismac
             -DBUILD_BLAS_STRLEN_END ...
             ultimatekalmanmex.c ultimatekalman.c -llibopenblas -lliblapack
     end
-    disp('compiling and linking done; now testing');
+    disp('compiling and linking done');
     cd '../matlab'
     addpath '../native'
 end
