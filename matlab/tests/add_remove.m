@@ -8,10 +8,6 @@ function add_remove(kalman_factory,seed)
 %
 % copyright 2022-2024 Sivan Toledo
 
-if nargin<1
-    seed = 1;
-end
-
 rng(seed);
 
 n = 2;

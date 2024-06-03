@@ -12,10 +12,6 @@ function t = performance(kalmans, seed, sizes, count, decimation)
 %
 % copyright 2022-2024 Sivan Toledo
 
-if nargin < 1
-    seed = 1;
-end
-
 rng(seed);
 
 q = 1;

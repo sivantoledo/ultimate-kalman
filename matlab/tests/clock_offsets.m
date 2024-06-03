@@ -12,10 +12,6 @@ function clock_offsets(kalman_factory,seed)
 %
 % copyright 2022 Sivan Toledo
 
-if nargin < 1
-    seed = 4;
-end
-
 rng(seed);
 
 k = 251;

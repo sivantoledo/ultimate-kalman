@@ -3,18 +3,10 @@ function projectile(kalman_factory,seed,exp)
 %
 %    PROJECTILE(factory,seed,exp) 
 %      factory: a handle to a function that returns UltimateKalman objects
-%      seed:    random-number generator seed (default is 1)
-%      exp:     whether to export the graphs to PDF files (default is false)
+%      seed:    random-number generator seed 
+%      exp:     whether to export the graphs to PDF files 
 %
 % copyright 2022-2024 Sivan Toledo
-
-if nargin < 2
-    seed = 1;
-end
-
-if nargin < 3
-    exp = false;
-end
 
 rng(seed);
 

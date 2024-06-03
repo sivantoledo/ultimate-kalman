@@ -5,21 +5,11 @@ function rotation(kalman_factory,seed,obs_dim)
 %    ROTATION(factory, seed, obs_dim) a test function for UltimateKalman
 %      factory: a handle to a function that returns UltimateKalman objects
 %      seed:    random-number generator seed
-%      obs_dim: the number of observations per time step, between 1 and 6;
-%               the default is 2, and the first two observations are direct
-%               observations of the X and Y coordinates of the point;
-%               observations 3 through 6 are of linear combinations of the
-%               coordinates.
+%      obs_dim: the number of observations per time step, between 1 and 6
 %
 % copyright 2022-2024 Sivan Toledo
 
-if nargin<3
-    obs_dim = 2;
-end
-
-if nargin>=2
-    rng(seed);
-end
+rng(seed);
 
 alpha = 2*pi/16;
 
