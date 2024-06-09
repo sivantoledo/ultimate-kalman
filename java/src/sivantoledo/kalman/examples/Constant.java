@@ -1,4 +1,4 @@
-package sivantoledo.kalman.tests;
+package sivantoledo.kalman.examples;
 
 import java.io.FileNotFoundException;
 import java.util.Arrays;

@@ -1,4 +1,4 @@
-package sivantoledo.kalman.tests;
+package sivantoledo.kalman.examples;
 
 import java.util.Random;
 
