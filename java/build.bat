@@ -12,7 +12,7 @@ javac ^
   -sourcepath src ^
   --release 8 ^
   src\sivantoledo\kalman\*.java ^
-  src\sivantoledo\kalman\tests\Rotation.java 
+  src\sivantoledo\kalman\examples\Rotation.java 
 
 echo CREATING JAR
 
@@ -26,7 +26,7 @@ jar cvfm ..\ultimatekalman.jar ..\MANIFEST.TXT sivantoledo\*
 cd ..
 
 echo RUNNING JAVA TEST
-java -cp ultimatekalman.jar;commons-math3-3.6.1.jar;bin sivantoledo.kalman.tests.Rotation 
+java -cp ultimatekalman.jar;commons-math3-3.6.1.jar;bin sivantoledo.kalman.examples.Rotation 
 echo DONE RUNNING JAVA TEST
 
 
