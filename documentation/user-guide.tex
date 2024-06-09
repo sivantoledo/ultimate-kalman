@@ -6,7 +6,7 @@
 \usepackage[T1]{fontenc}
 \usepackage[latin9]{inputenc}
 \usepackage[a4paper]{geometry}
-\geometry{verbose,tmargin=2.5cm,bmargin=2.5cm,lmargin=2.5cm,rmargin=2.5cm,headheight=2.5cm,headsep=2.5cm,footskip=2.5cm}
+\geometry{verbose,tmargin=2.5cm,bmargin=2.5cm,lmargin=2.5cm,rmargin=2.5cm,headheight=2.5cm,headsep=2.5cm,footskip=1cm}
 \usepackage{babel}
 \usepackage{array}
 \usepackage{amstext}
@@ -148,7 +148,7 @@ UltimateKalman is currently available in MATLAB, C, and Java.
 Each implementation is separate and does not rely on the others. The
 implementation includes MATLAB adapter classes that allow invocation
 of the C and Java implementations from MATLAB. This allows a single
-set of test functions to test all three implementations. 
+set of example functions to invoke all three implementations. 
 
 The programming interfaces of all three implementations are similar.
 They offer exactly the same functionality using the same abstractions,
@@ -188,6 +188,24 @@ was configured to use mingw64 to compile C (mex) code. The code also
 compiles as a standalone C program under both GCC and Microsoft
 Visual C/C++ 2022, as well as under Java version 1.8 (also called
 version 8) and up.
+
+The distribution archive contains a number of directories with scripts
+that build libraries, programs, and this document. The scripts for
+Windows are called \texttt{build.bat}. To run them, type \texttt{build}
+on the Windows command prompt. The scripts for Linux and MacOS are
+called \texttt{build.sh}. To run them, type \texttt{./build.sh} in
+a shell (terminal window). The \texttt{build.sh} files must have permissions
+that allows them to execute as scripts; unpacking the distribution
+archive normally gives them this permission, but if you receive a
+\texttt{permission denied} error message, give the file this premission
+using the command \texttt{chmod +x build.sh} and try again.
+
+The rest of this guild is organized as follows. Section~\ref{sec:matrices-and-vectors}
+explains how vectors and matrices are represented in the three implementations.
+Section~\ref{sec:covariance-matrices} explains how covariance matrices
+are represented. Section~\ref{sec:matlab} presents the programming
+interface of the MATLAB implementation and how to add it to MATLAB's
+search path.
 
 \section{\label{sec:matrices-and-vectors}The representation of vectors and
 matrices}
@@ -276,7 +294,7 @@ is represented using two arguments, a matrix and a single character
 the given matrix is related to $C$. 
 
 UltimateKalman always returns the covariance matrix of $\estimate u_{i}$
-as an upper-triangular inverse factor $W$. The MATLAB and Java
+as an upper triangular inverse factor $W$. The MATLAB and Java
 implementations return covariance matrices as objects of the \texttt{CovarianceMatrix}
 type (always with an inverse-factor representation); the C implementation
 simply returns the inverse factor as a matrix.
@@ -284,8 +302,9 @@ simply returns the inverse factor as a matrix.
 \section{\label{sec:matlab}The MATLAB programming interface}
 
 The MATLAB implementation resides in the \texttt{matlab} directory
-of the distribution archive. Add it to your MATLAB search path using
-MATLAB \texttt{addpath} command. 
+of the distribution archive. To be able to use it, you must add this
+directory to your MATLAB search path using MATLAB's \texttt{addpath}
+command. 
 
 The MATLAB implementation is object oriented and is implemented as
 a handle (reference) class. The constructor takes no arguments.
@@ -396,13 +415,14 @@ kalman = UltimateKalmanJava()
 To use the C implementation, you will first need to compile the C
 code into a MATLAB-callable dynamically-linked library that MATLAB
 uses through an interface called the \texttt{mex} interface. To perform
-this step, run the \texttt{compile.m} script in the \texttt{matlab}
-directory. To use the Java implementation, build the Java library
-using the instructions in the next section, and add both the resulting
-library (a \texttt{jar} file) and the library containing the Apache
-Commons Math library to the MATLAB search path using MATLAB \texttt{addpath}
-command. The script \texttt{replication.m} adds these libraries to
-the path and can serve as an example.
+this step, run the \texttt{UltimateKalman\_build\_\LyXZeroWidthSpace mex.m}
+script in the \texttt{matlab} directory. To use the Java implementation,
+build the Java library using the instructions in Section~\ref{sec:java},
+and add both the resulting library (a \texttt{jar} file) and the library
+containing the Apache Commons Math library to MATLAB's Java search
+path using MATLAB \texttt{javaaddpath} command. The function \texttt{replication.m}
+in the \texttt{examples} sub-directory adds these libraries to the
+path and can serve as an example.
 
 \section{\label{sec:java}The Java programming interface}
 
@@ -427,11 +447,11 @@ successfully releases of OpenJDK on both Windows and Linux. The code
 is compiled so that the library can be used with any version of Java
 starting with version~8 (sometimes also referred to as 1.8).
 
-The build scripts also compile and run a test program, \texttt{Rotation.java}.
-It performs the same computations and outputs the same values as the
-MATLAB example function \texttt{rotation.m} when executed with arguments
-\texttt{rotation(UltimateKalman,5,2)}. This program also serves as
-an example that shows how to write Java code that calls UltimateKalman.
+The build scripts also compile and run an example program, \texttt{Rotation.java}.
+It performs the same computations as the MATLAB example function
+\texttt{rotation.m} when executed with arguments \texttt{rotation(UltimateKalman,5,2)}.
+This program serves as an example that shows how to write Java code
+that calls UltimateKalman.
 
 \section{\label{sec:c-lang}The C programming interface}
 
@@ -497,12 +517,12 @@ when they are no longer needed.
 \subsection*{Building and Running the C Outside Matlab}
 
 To help you integrate UltimateKalman into your own native code in
-C or C++, the software includes three C programs that call UltimateKalman
-and Windows and Linux scripts that builds executable versions of the
-three programs. The scripts compile one of the programs along with
-UltimateKalman, link it with BLAS and LAPACK libraries, and run
-it. You should be able to use these scripts as examples of how to
-compile and link UltimateKalman. In particular, the C implementation
+C or C++, the software includes three example programs that call
+UltimateKalman and Windows and Linux scripts that build executable
+versions of the three programs. The scripts compile one of the programs
+along with UltimateKalman, link it with BLAS and LAPACK libraries,
+and run it. You should be able to use these scripts as examples of
+how to compile and link UltimateKalman. In particular, the C implementation
 of UltimateKalman consists of a single C source file, so it is not
 necessary to build it into a library; the source code or a single
 object file can be used directly in your C or C++ programs or libraries.
@@ -518,22 +538,25 @@ libraries, and \texttt{performance.c}, a program designed to measure
 the running time of UltimateKalman. The program \texttt{rotation.c}
 performs the same computation that the expression \texttt{rotation(UltimateKalman,5,2)}
 performs in MATLAB and should output the same numerical results,
-just like \texttt{Rotation.java} in Java. The program \texttt{performance.c}
+just like \texttt{Rotation.java}. The program \texttt{performance.c}
 implements a Kalman smoother on problems with $n_{i}=m_{i}=6$ or
 $n_{i}=m_{i}=48$ using orthonormal matrices for $F_{i}$ and $G_{i}$
 and with $H_{i}=I$. It measures and reports the running time of the
 smoother.
 
+If you invoke the build script, \texttt{build.bat} or \texttt{build.sh},
+with no arguments, it build and runs \texttt{rotation.c}. To build
+and run one of the other programs, invoke the script with the argument
+\texttt{blastest} or \texttt{performance}.
+
 The Windows script, \texttt{build.bat}, uses the Microsoft C command-line
 compiler (\texttt{cl}) that comes with Microsoft's Visual Studio Community
 2022~\cite{VSCommunity}, a free integrated development environment,
 and the BLAS and LAPACK libraries that are part of Intel's free
-oneAPI Math Kernel Library (MKL)~\cite{MKL}. The script takes one
-argument, the name of the program that you want to build and run,
-\texttt{blastest} or \texttt{rotation}. Here what you should expect
-to see on the console when you build and run \texttt{blastest} (ellipsis
-stand for deleted output that is not particularly interesting; the
-output of the \texttt{blastest} program is shown in bold):
+oneAPI Math Kernel Library (MKL)~\cite{MKL}. Here is what you should
+expect to see on the console when you build and run \texttt{blastest}
+(ellipsis stand for deleted output that is not particularly interesting;
+the output of the \texttt{blastest} program is shown in bold):
 \begin{lstlisting}
 C:\Users\stoledo\github\ultimate-kalman\native>build.bat blastest
 ...
@@ -585,9 +608,7 @@ provide a script that modifies the search path appropriately. In the
 version of MKL that I used, this script is \texttt{c:\textbackslash Program
 Files (x86)\textbackslash Intel\textbackslash oneAPI\textbackslash setvars.bat}. 
 
-Under Linux, the corresponding script is \texttt{build.sh}. It also
-takes a single argument, \texttt{blastest} or \texttt{rotation}. The
-script provides with the software uses the BLAS and LAPACK libraries
+Under Linux, \texttt{build.sh} uses the BLAS and LAPACK libraries
 that are installed in the Ubuntu Linux distribution using the commands
 \begin{lstlisting}
 sudo apt install libblas-dev
@@ -605,13 +626,13 @@ To successfully link UltimateKalman with other implementations of
 the BLAS and LAPACK, you may need to set some preprocessor variables
 that control how UltimateKalman calls these libraries. Most of the
 variations are due to the fact that these libraries were originally
-implemented in Fortran. There are a few other preprocessor variables
-that control the behavior of UltimateKalman. All of these are listed
-and explained in Table~\ref{tab:C-pre-variables}.
+implemented in Fortran. The preprocessor variables that control the
+behavior of UltimateKalman are listed and explained in Table~\ref{tab:C-pre-variables}.
 
 \begin{table}
 \begin{centering}
 \begin{tabular}{ll>{\raggedright}p{0.4\textwidth}}
+\hline 
 variable name & requires a value? & explanation\tabularnewline
 \hline 
 \texttt{BUILD\_MKL} & no & specifies that MKL is used; sets all the other BLAS and LAPACK
@@ -625,6 +646,7 @@ a matrix; usually either \texttt{int32\_t} or \texttt{int64\_t}\tabularnewline
 \texttt{BUILD\_DEBUG\_PRINTOUTS} & no & generates run-time debug printouts\tabularnewline
 \texttt{NDEBUG} & no & suppresses run-time assertion checking\tabularnewline
 \texttt{BUILD\_WIN32\_GETTIMEOFDAY} & no & required under Windows; do not use under Linux or MacOS\tabularnewline
+\hline 
 \end{tabular}
 \par\end{centering}
 \caption{\label{tab:C-pre-variables}Preprocessor variables that control how
@@ -633,10 +655,11 @@ aspects of its behavior.}
 \end{table}
 
 
-\section{\label{sec:testing-and-examples}Testing and Code Examples }
+\section{\label{sec:testing-and-examples}Code Examples }
 
 The software distribution of UltimateKalman includes five MATLAB
-functions that demonstrate how to use UltimateKalman:
+example functions, stored in the \texttt{examples} sub-directory,
+that demonstrate how to use the library:
 \begin{itemize}
 \item \texttt{rotation.m}, modeling a rotating point in the plane (this
 example is also implemented in C and Java, as described above).
@@ -652,16 +675,16 @@ a distributed sensor system. This example demonstrates how to handle
 parameters that appear only in one step.
 \end{itemize}
 The mathematical details of these models are described in the article
-that describes UltimateKalman.
+that describes UltimateKalman. 
 
-The script \texttt{replication.m} runs all of these examples and optionally
-generates the graphs shown in the article. The script can run not
-only the MATLAB implementation, but also the C and Java implementations.
-This script assumes that the corresponding libraries have already
-been built. The version of the C that MATLAB uses is built using
-the \texttt{compile.m} script, as explained in Section~\ref{sec:c-lang}
-above. The Java version should be built outside MATLAB, as explained
-in Section~\ref{sec:java}.
+The script \texttt{replication.m}, also in the \texttt{examples} sub-directory,
+runs all of these examples and optionally generates the graphs shown
+in the article. The script can run not only the MATLAB implementation,
+but also the C and Java implementations. This script assumes that
+the corresponding libraries have already been built. The version of
+the C library that MATLAB uses is built using the \texttt{UltimateKalman\_build\_\LyXZeroWidthSpace mex.m}
+script, as explained in Section~\ref{sec:c-lang} above. The Java
+version should be built outside MATLAB, as explained in Section~\ref{sec:java}.
 
 \section{\label{sec:performance-testing}Support for Performance Testing}
 

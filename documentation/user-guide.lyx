@@ -106,7 +106,7 @@ End
 \bottommargin 2.5cm
 \headheight 2.5cm
 \headsep 2.5cm
-\footskip 2.5cm
+\footskip 1cm
 \secnumdepth 3
 \tocdepth 3
 \paragraph_separation indent
@@ -678,7 +678,8 @@ MATLAB
 \end_inset
 
 .
- This allows a single set of test functions to test all three implementations.
+ This allows a single set of example functions to invoke all three implementatio
+ns.
  
 \end_layout
 
@@ -945,6 +946,115 @@ Java
 \end_inset
 
  version 1.8 (also called version 8) and up.
+\end_layout
+
+\begin_layout Standard
+The distribution archive contains a number of directories with scripts that
+ build libraries, programs, and this document.
+ The scripts for Windows are called 
+\family typewriter
+build.bat
+\family default
+.
+ To run them, type 
+\family typewriter
+build
+\family default
+ on the Windows command prompt.
+ The scripts for Linux and MacOS are called 
+\family typewriter
+build.sh
+\family default
+.
+ To run them, type 
+\family typewriter
+./build.sh
+\family default
+ in a shell (terminal window).
+ The 
+\family typewriter
+build.sh
+\family default
+ files must have permissions that allows them to execute as scripts; unpacking
+ the distribution archive normally gives them this permission, but if you
+ receive a 
+\family typewriter
+permission denied
+\family default
+ error message, give the file this premission using the command 
+\family typewriter
+chmod +x build.sh
+\family default
+ and try again.
+\end_layout
+
+\begin_layout Standard
+The rest of this guild is organized as follows.
+ Section
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:matrices-and-vectors"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ explains how vectors and matrices are represented in the three implementations.
+ Section
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:covariance-matrices"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ explains how covariance matrices are represented.
+ Section
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:matlab"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ presents the programming interface of the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ implementation and how to add it to 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+'s search path.
 \end_layout
 
 \begin_layout Section
@@ -1464,7 +1574,7 @@ UltimateKalman
 \begin_inset Formula $\estimate u_{i}$
 \end_inset
 
- as an upper-triangular inverse factor 
+ as an upper triangular inverse factor 
 \begin_inset Formula $W$
 \end_inset
 
@@ -1523,7 +1633,7 @@ MATLAB
 matlab
 \family default
  directory of the distribution archive.
- Add it to your 
+ To be able to use it, you must add this directory to your 
 \begin_inset Flex Proglang
 status open
 
@@ -1543,7 +1653,7 @@ MATLAB
 
 \end_inset
 
- 
+'s 
 \family typewriter
 addpath
 \family default
@@ -2054,7 +2164,8 @@ mex
  interface.
  To perform this step, run the 
 \family typewriter
-UltimateKalman_build_mex.m
+UltimateKalman_build_\SpecialChar allowbreak
+mex.m
 \family default
  script in the 
 \family typewriter
@@ -2081,18 +2192,40 @@ Java
 
 \end_inset
 
- library using the instructions in the next section, and add both the resulting
- library (a 
+ library using the instructions in Section
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:java"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+, and add both the resulting library (a 
 \family typewriter
 jar
 \family default
- file) and the library containing the Apache Commons Math library to the
- 
+ file) and the library containing the Apache Commons Math library to 
 \begin_inset Flex Proglang
 status open
 
 \begin_layout Plain Layout
 MATLAB
+\end_layout
+
+\end_inset
+
+'s 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
 \end_layout
 
 \end_inset
@@ -2109,16 +2242,16 @@ MATLAB
 
  
 \family typewriter
-addpath
+javaaddpath
 \family default
  command.
- The script 
+ The function 
 \family typewriter
 replication.m
 \family default
  in the 
 \family typewriter
-tests
+examples
 \family default
  sub-directory adds these libraries to the path and can serve as an example.
 \end_layout
@@ -2259,12 +2392,12 @@ Java
 \end_layout
 
 \begin_layout Standard
-The build scripts also compile and run a test program, 
+The build scripts also compile and run an example program, 
 \family typewriter
 Rotation.java
 \family default
 .
- It performs the same computations and outputs the same values as the 
+ It performs the same computations as the 
 \begin_inset Flex Proglang
 status open
 
@@ -2283,7 +2416,7 @@ rotation.m
 rotation(UltimateKalman,5,2)
 \family default
 .
- This program also serves as an example that shows how to write 
+ This program serves as an example that shows how to write 
 \begin_inset Flex Proglang
 status open
 
@@ -2635,17 +2768,7 @@ C++
 
 \end_inset
 
-, the software includes three 
-\begin_inset Flex Proglang
-status open
-
-\begin_layout Plain Layout
-C
-\end_layout
-
-\end_inset
-
- programs that call 
+, the software includes three example programs that call 
 \begin_inset Flex Pkg
 status open
 
@@ -2655,7 +2778,7 @@ UltimateKalman
 
 \end_inset
 
- and Windows and Linux scripts that builds executable versions of the three
+ and Windows and Linux scripts that build executable versions of the three
  programs.
  The scripts compile one of the programs along with 
 \begin_inset Flex Pkg
@@ -2878,16 +3001,6 @@ MATLAB
 \family typewriter
 Rotation.java
 \family default
- in 
-\begin_inset Flex Proglang
-status open
-
-\begin_layout Plain Layout
-Java
-\end_layout
-
-\end_inset
-
 .
  The program 
 \family typewriter
@@ -2915,6 +3028,32 @@ performance.c
 
 .
  It measures and reports the running time of the smoother.
+\end_layout
+
+\begin_layout Standard
+If you invoke the build script, 
+\family typewriter
+build.bat
+\family default
+ or 
+\family typewriter
+build.sh
+\family default
+, with no arguments, it build and runs 
+\family typewriter
+rotation.c
+\family default
+.
+ To build and run one of the other programs, invoke the script with the
+ argument 
+\family typewriter
+blastest
+\family default
+ or 
+\family typewriter
+performance
+\family default
+.
 \end_layout
 
 \begin_layout Standard
@@ -2991,18 +3130,8 @@ literal "false"
 \end_inset
 
 .
- The script takes one argument, the name of the program that you want to
- build and run, 
-\family typewriter
-blastest
-\family default
- or 
-\family typewriter
-rotation
-\family default
-.
- Here what you should expect to see on the console when you build and run
- 
+ Here is what you should expect to see on the console when you build and
+ run 
 \family typewriter
 blastest
 \family default
@@ -3307,21 +3436,11 @@ setvars.bat
 \end_layout
 
 \begin_layout Standard
-Under Linux, the corresponding script is 
+Under Linux, 
 \family typewriter
 build.sh
 \family default
-.
- It also takes a single argument, 
-\family typewriter
-blastest
-\family default
- or 
-\family typewriter
-rotation
-\family default
-.
- The script provides with the software uses the 
+ uses the 
 \begin_inset Flex Pkg
 status open
 
@@ -3470,8 +3589,7 @@ Fortran
 \end_inset
 
 .
- There are a few other preprocessor variables that control the behavior
- of 
+ The preprocessor variables that control the behavior of 
 \begin_inset Flex Pkg
 status open
 
@@ -3481,8 +3599,7 @@ UltimateKalman
 
 \end_inset
 
-.
- All of these are listed and explained in Table
+ are listed and explained in Table
 \begin_inset space ~
 \end_inset
 
@@ -3514,7 +3631,7 @@ status open
 <column alignment="left" valignment="top">
 <column alignment="left" valignment="top" width="40text%">
 <row>
-<cell alignment="left" valignment="top" bottomline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" bottomline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -3523,7 +3640,7 @@ variable name
 
 \end_inset
 </cell>
-<cell alignment="left" valignment="top" bottomline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" bottomline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -3532,7 +3649,7 @@ requires a value?
 
 \end_inset
 </cell>
-<cell alignment="left" valignment="top" bottomline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" bottomline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -3885,7 +4002,7 @@ suppresses run-time assertion checking
 </cell>
 </row>
 <row>
-<cell alignment="center" valignment="top" usebox="none">
+<cell alignment="center" valignment="top" bottomline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -3896,7 +4013,7 @@ BUILD_WIN32_GETTIMEOFDAY
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" usebox="none">
+<cell alignment="center" valignment="top" bottomline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -3905,7 +4022,7 @@ no
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" usebox="none">
+<cell alignment="center" valignment="top" bottomline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -3982,7 +4099,7 @@ name "sec:testing-and-examples"
 
 \end_inset
 
-Testing and Code Examples 
+Code Examples 
 \end_layout
 
 \begin_layout Standard
@@ -4006,17 +4123,11 @@ MATLAB
 
 \end_inset
 
- functions that demonstrate how to use 
-\begin_inset Flex Pkg
-status open
-
-\begin_layout Plain Layout
-UltimateKalman
-\end_layout
-
-\end_inset
-
-:
+ example functions, stored in the 
+\family typewriter
+examples
+\family default
+ sub-directory, that demonstrate how to use the library:
 \end_layout
 
 \begin_layout Itemize
@@ -4114,15 +4225,7 @@ UltimateKalman
 \end_inset
 
 .
- The functions are in the 
-\family typewriter
-tests
-\family default
- sub-directory of the 
-\family typewriter
-matlab
-\family default
- directory.
+ 
 \end_layout
 
 \begin_layout Standard
@@ -4132,7 +4235,7 @@ replication.m
 \family default
 , also in the 
 \family typewriter
-tests
+examples
 \family default
  sub-directory, runs all of these examples and optionally generates the
  graphs shown in the article.
@@ -4179,7 +4282,7 @@ C
 
 \end_inset
 
- that 
+ library that 
 \begin_inset Flex Proglang
 status open
 
@@ -4191,7 +4294,8 @@ MATLAB
 
  uses is built using the 
 \family typewriter
-UltimateKalman_build_mex.m
+UltimateKalman_build_\SpecialChar allowbreak
+mex.m
 \family default
  script, as explained in Section
 \begin_inset space ~
