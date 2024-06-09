@@ -4238,7 +4238,13 @@ replication.m
 examples
 \family default
  sub-directory, runs all of these examples and optionally generates the
- graphs shown in the article.
+ figures shown in Section
+\begin_inset space ~
+\end_inset
+
+5 of the article on UltimateKalman.
+ Comparing the generated figures to those in the article provides visual
+ evidence that the code runs correctly.
  The script can run not only the 
 \begin_inset Flex Proglang
 status open
