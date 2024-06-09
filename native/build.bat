@@ -4,11 +4,10 @@ setlocal
 @ECHO OFF
 	
 IF "%1"=="" (
-  ECHO provide an argument, the name of the C program you want to compile and run
-  GOTO :eof
-) 
-
-SET test=%1%
+  SET test=rotation
+) ELSE (
+  SET test=%1%
+)
 
 @ECHO ON
 
