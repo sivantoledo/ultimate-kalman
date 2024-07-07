@@ -268,13 +268,22 @@ int32_t matrix_ld  (matrix_t* A) { return A->ld;      }
  * Creates an identity matrix (can be rectangular; main diagonal is 1, rest 0).
  */
 matrix_t* matrix_create_identity(int32_t rows, int32_t cols) {
-	int32_t i;
+	int32_t i,j;
 
 	matrix_t* identity = matrix_create(rows,cols);
 
+	for (i=0; i<rows; i++) {
+		for (j=0; j<cols; j++) {
+			matrix_set(identity,i,j, 0.0);
+		}
+		matrix_set(identity,i,i,1.0);
+	}
+
+	/*
 	for (i=0; i<MIN(rows,cols); i++) {
 		matrix_set(identity,i,i,1.0);
 	}
+	*/
 
 	return identity;
 }
