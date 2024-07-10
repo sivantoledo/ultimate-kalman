@@ -58,11 +58,12 @@ classdef UltimateKalman < handle
 
         function evolve(kalman,n_i,H_i,F_i,c_i,K_i)
             %EVOLVE   Evolve the state using the given linear recurrence.
-            %   kalman.EVOLVE(H_i,F_i,c_i,K_i) evolves the state using the recurrence
+            %   kalman.EVOLVE(n_i,H_i,F_i,c_i,K_i) evolves the state using the recurrence
             %                H_i * u_i = F_i * u_{i-1} + c_i + epsilon
-            %   where C_i is the covariance matrix of the error term epsilon.
+            %   where n_i is the dimension of u_i,
+            %   C_i is the covariance matrix of the error term epsilon.
             %   The covariance matrix C_i must be an instance of
-            %   CovarianceMatrix. The matrices H and F are standard Matlab
+            %   CovarianceMatrix. The matrices H_i and F_i are standard Matlab
             %   matrices, and be is a standard column vector.
             % 
             %   In the first step, this method does nothing; the first state is
