@@ -2910,7 +2910,7 @@ UltimateKalman
 
 , and the build scripts are all under the 
 \family typewriter
-native
+c
 \family default
  directory of the distribution archive.
 \end_layout
@@ -3157,7 +3157,7 @@ github
 \backslash
 ultimate-kalman
 \backslash
-native>build.bat blastest
+c>build.bat blastest
 \end_layout
 
 \begin_layout Plain Layout
