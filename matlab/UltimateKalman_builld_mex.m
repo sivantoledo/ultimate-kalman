@@ -1,6 +1,6 @@
 clear mex;
 if ispc
-    cd '..\native'
+    cd '..\c'
     if (~isempty(ver('MATLAB')))
         disp('compiling and linking under MATLAB ...');
         mex -DNDEBUG -DBUILD_MEX -DBUILD_MATLAB -DBUILD_LAPACK_H -DBUILD_BLAS_H -DBUILD_WIN32_GETTIMEOFDAY ultimatekalmanmex.c ultimatekalman.c -lmwlapack -lmwblas
@@ -17,11 +17,11 @@ if ispc
     end
     disp('compiling and linking done');
     cd '..\matlab'
-    addpath '..\native'
+    addpath '..\c'
 end
 
 if isunix
-    cd '../native'
+    cd '../c'
     if (~isempty(ver('MATLAB')))
         disp('compiling and linking under MATLAB ...');
         mex -DNDEBUG -DBUILD_MEX -DBUILD_MATLAB -DBUILD_LAPACK_H -DBUILD_BLAS_H ultimatekalmanmex.c ultimatekalman.c -lmwlapack -lmwblas
@@ -38,12 +38,12 @@ if isunix
     end
     disp('compiling and linking done');
     cd '../matlab'
-    addpath '../native'
+    addpath '../c'
 end
 
 if ismac
     warning('MacOS mex generation not yet tested');
-    cd '../native'
+    cd '../c'
     if (~isempty(ver('MATLAB')))
         disp('compiling and linking under MATLAB ...');
         mex -DNDEBUG -DBUILD_MEX -DBUILD_MATLAB -DBUILD_LAPACK_H -DBUILD_BLAS_H ultimatekalmanmex.c ultimatekalman.c -lmwlapack -lmwblas
@@ -60,7 +60,7 @@ if ismac
     end
     disp('compiling and linking done');
     cd '../matlab'
-    addpath '../native'
+    addpath '../c'
 end
 
 

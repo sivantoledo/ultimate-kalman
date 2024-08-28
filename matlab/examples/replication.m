@@ -31,7 +31,7 @@ addpath '..';
 %end
 
 if ( exp || strcmp(implementation,'C')==1 )
-    addpath '../../native'
+    addpath '../../c'
 end
 
 if ( exp || strcmp(implementation,'Java')==1 )
