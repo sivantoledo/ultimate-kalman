@@ -8,7 +8,7 @@ The software itself is also archived on Zenodo and is citable [![DOI](https://ze
 
 ## User Guide
 
-A detailed user guide is available in [documentation/user-guide.pdf](documentation/user-guide.pdf).
+A detailed user guide is available in [userManual/userManual.pdf](userManual/userManual.pdf).
 
 ## License
 
