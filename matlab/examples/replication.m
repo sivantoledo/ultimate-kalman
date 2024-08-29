@@ -87,10 +87,15 @@ if exp; exportgraphics(gca,'../../outputs/rotation2.pdf'); end;
 rotation(@factory, 5,1)
 if exp; exportgraphics(gca,'../../outputs/rotation1.pdf'); end;
 
-constant(@factory, 1,101,true,false,[NaN,1])
-if exp; exportgraphics(gca,'../../outputs/constant_smoothed.pdf'); end;
-constant(@factory, 1,101,false,false,[NaN,1])
-if exp; exportgraphics(gca,'../../outputs/constant_filtered.pdf'); end;
+% constant(@factory, 1,101,true,false,[NaN,1])
+% if exp; exportgraphics(gca,'../../outputs/constant_smoothed.pdf'); end;
+% constant(@factory, 1,101,false,false,[NaN,1])
+% if exp; exportgraphics(gca,'../../outputs/constant_filtered.pdf'); end;
+
+constant(@factory, 1,101,true,true,[NaN,1])
+if exp; exportgraphics(gca,'../../outputs/sloping_smoothed.pdf'); end;
+constant(@factory, 1,101,false,true,[NaN,1])
+if exp; exportgraphics(gca,'../../outputs/sloping_filtered.pdf'); end;
 
 constant(@factory, 1,101,true,true,[50,0.25])
 if exp; exportgraphics(gca,'../../outputs/sloping_smoothed_exception.pdf'); end;

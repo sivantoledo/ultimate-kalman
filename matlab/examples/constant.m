@@ -94,28 +94,63 @@ end
 
 t = 0:k-1;
 
+% pallete = [ 2.6667e-01   4.6667e-01   6.6667e-01
+%             4.0000e-01   8.0000e-01   9.3333e-01
+%             1.3333e-01   5.3333e-01   2.0000e-01
+%             8.0000e-01   7.3333e-01   2.6667e-01
+%             9.3333e-01   4.0000e-01   4.6667e-01
+%             7.3333e-01   7.3333e-01   7.3333e-01];
+
+gray   = [7.3333e-01   7.3333e-01   7.3333e-01];
+red    = [9.3333e-01   4.0000e-01   4.6667e-01];
+cyan   = [4.0000e-01   8.0000e-01   9.3333e-01];
+green  = [1.3333e-01   5.3333e-01   2.0000e-01];
+blue   = [2.6667e-01   4.6667e-01   6.6667e-01];
+yellow = [8.0000e-01   7.3333e-01   2.6667e-01];
+
+linewidth  = 1.5;
+markersize = 8;
+
+% plot(1:100,1*ones(100,1),'LineWidth',2,'Color',gray);
+% hold on
+% plot(1:100,2*ones(100,1),'LineWidth',2,'Color',red);
+% plot(1:100,3*ones(100,1),'LineWidth',2,'Color',cyan);
+% plot(1:100,4*ones(100,1),'LineWidth',2,'Color',green);
+% plot(1:100,5*ones(100,1),'LineWidth',2,'Color',blue);
+% plot(1:100,6*ones(100,1),'LineWidth',2,'Color',yellow);
+% ylim([0 7])
+% hold off
+
+
 %close all
 figure
 axis square
-set(gca,'Box','on');;
+set(gca,'Box','on');
 hold on;
-plot(t,states,'k-','LineWidth',1);
-if (smooth)
-  plot(t,est,'m-','LineWidth',1);
-else
-  plot(t,est,'b-','LineWidth',1);
-end
 
 xs = [t, fliplr(t)];
 ys = [est+3*std, fliplr(est-3*std)];
-fill(xs, ys,'k','FaceAlpha',0.2,'LineStyle','none');
+%fill(xs, ys,'k','FaceAlpha',0.2,'LineStyle','none');
+fill(xs, ys,gray,'LineStyle','none');
+
+
+%plot(t,states,'k-','LineWidth',1);
+h=plot(t,states,'Color',yellow,'LineWidth',linewidth,'Marker','none');
+if (smooth)
+  plot(t,est,'Color',cyan,'LineWidth',linewidth,'Marker','none');
+else
+  plot(t,est,'Color',blue,'LineWidth',linewidth,'Marker','none');
+end
+
 
 %obs
 %min(obs(:,1))
 %max(obs(:,1));
 %states
 
-plot(t,obs,'r.');
+%h=plot(t,obs,'r.');
+%h
+h=plot(t,obs,'Marker','.','MarkerSize',markersize,'LineStyle','none','Color',red);
 
 xlim([ min(t) max(t) ]);
 %ylim([ min(obs) max(obs) ]);

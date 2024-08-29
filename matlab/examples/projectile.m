@@ -112,16 +112,27 @@ for i=1:k
     smoothed(:,i) = kalman.estimate(i-1);
 end
 
+gray   = [7.3333e-01   7.3333e-01   7.3333e-01];
+red    = [9.3333e-01   4.0000e-01   4.6667e-01];
+cyan   = [4.0000e-01   8.0000e-01   9.3333e-01];
+green  = [1.3333e-01   5.3333e-01   2.0000e-01];
+blue   = [2.6667e-01   4.6667e-01   6.6667e-01];
+yellow = [8.0000e-01   7.3333e-01   2.6667e-01];
+
+linewidth  = 1.25;
+markersize = 8;
 
 %close all
 figure
 axis square
 set(gca,'Box','on');;
 hold on;
-plot(states(1,:),states(2,:),'k-','LineWidth',1);
-plot(smoothed(1,:),smoothed(2,:),'m-','LineWidth',1);
-plot(filtered(1,:),filtered(2,:),'b-','LineWidth',1);
-plot(obs(1,:),obs(2,:),'r.');
+
+plot(states(1,:),states(2,:),'Color',yellow,'LineWidth',linewidth,'Marker','none');
+plot(smoothed(1,:),smoothed(2,:),'Color',cyan,'LineWidth',linewidth,'Marker','none');
+plot(filtered(1,:),filtered(2,:),'Color',blue,'LineWidth',linewidth,'Marker','none');
+%plot(obs(1,:),obs(2,:),'r.');
+plot(obs(1,:),obs(2,:),'Marker','.','MarkerSize',markersize,'LineStyle','none','Color',red); 
 %plot(full(:,1),full(:,2),'m-','LineWidth',1);
 hold off;
 if exp; exportgraphics(gca,'../../outputs/projectile.pdf'); end;
@@ -130,9 +141,10 @@ figure
 axis square
 set(gca,'Box','on');;
 hold on;
-plot(states(1,:),states(2,:),'k-','LineWidth',1);
-plot(obs(1,:),obs(2,:),'r.');
-plot(filtered(1,:),filtered(2,:),'b-','LineWidth',1);
+plot(states(1,:),states(2,:),'Color',yellow,'LineWidth',linewidth,'Marker','none');
+%plot(obs(1,:),obs(2,:),'r.');
+plot(obs(1,:),obs(2,:),'Marker','.','MarkerSize',markersize,'LineStyle','none','Color',red); 
+plot(filtered(1,:),filtered(2,:),'Color',blue,'LineWidth',linewidth,'Marker','none');
 %plot(full(:,1),full(:,2),'m-','LineWidth',1);
 xlim([ min(obs(1,:)) max(obs(1,:)) ]);
 ylim([ min(obs(2,:)) max(obs(2,:)) ]);

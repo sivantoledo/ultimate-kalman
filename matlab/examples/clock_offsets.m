@@ -72,14 +72,29 @@ end
 
 relative = f - f(:,1);
 
+gray   = [7.3333e-01   7.3333e-01   7.3333e-01];
+red    = [9.3333e-01   4.0000e-01   4.6667e-01];
+cyan   = [4.0000e-01   8.0000e-01   9.3333e-01];
+green  = [1.3333e-01   5.3333e-01   2.0000e-01];
+blue   = [2.6667e-01   4.6667e-01   6.6667e-01];
+yellow = [8.0000e-01   7.3333e-01   2.6667e-01];
+
+linewidth  = 1.25;
+markersize = 8;
+
 %close all;
 figure
 axis square
 set(gca,'Box','on');;
 hold on;
-plot(tau',relative);
-set(gca,'ColorOrderIndex',1);
-plot(tau,filtered(1:clockCount,:)-filtered(1,:),'--');
+
+%plot(tau,filtered(1:clockCount,:)-filtered(1,:),'--');
+plot(tau,filtered(1:clockCount,:)-filtered(1,:),'Color',blue,'LineWidth',linewidth,'Marker','none');
+
+%plot(tau',relative);
+plot(tau',relative,'Color',yellow,'LineWidth',linewidth,'Marker','none');
+%set(gca,'ColorOrderIndex',1);
+
 xlabel('time (s)');
 ylabel('relative offset (s)');
 hold off;
