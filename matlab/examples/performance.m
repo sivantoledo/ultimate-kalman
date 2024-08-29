@@ -55,13 +55,30 @@ medians = median(r)
 size(r)
 sizes
 
+gray   = [7.3333e-01   7.3333e-01   7.3333e-01];
+red    = [9.3333e-01   4.0000e-01   4.6667e-01];
+cyan   = [4.0000e-01   8.0000e-01   9.3333e-01];
+green  = [1.3333e-01   5.3333e-01   2.0000e-01];
+blue   = [2.6667e-01   4.6667e-01   6.6667e-01];
+yellow = [8.0000e-01   7.3333e-01   2.6667e-01];
+
+linewidth  = 1.25;
+markersize = 8;
+
+colors = [red
+          yellow
+          green];
+
 %close all
 figure
 axis square
 set(gca,'Box','on');;
 hold on;
 %plot(r,'k-','LineWidth',1);
-plot(decimation*(0:size(r,1)-1),r,'LineWidth',1);
+for j=1:size(r,2)
+    plot(decimation*(0:size(r,1)-1),r(:,j),'LineWidth',linewidth,'Color',colors(j,:),'Marker','none');
+end
+%plot(decimation*(0:size(r,1)-1),r,'LineWidth',1);
 xlim([0 decimation*(size(r,1)-1)]);
 ylim([0 1.33*max(medians)])
 if length(sizes) > 1
