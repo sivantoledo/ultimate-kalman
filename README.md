@@ -2,7 +2,7 @@
 
 This repository contains the source code of UltimateKalman in three different programming languages: MATLAB, C and Java.
 
-Most of the documentation for UltimateKalman is available in an article [available on arXiv](https://arxiv.org/abs/2207.13526).
+UltimateKalman is documented carefully in an article in the [ACM Transactions on Mathematical Software](https://doi.org/10.1145/3699958). Please cite this article when citing the algorithm or the software.
 
 The software itself is also archived on Zenodo and is citable [![DOI](https://zenodo.org/badge/512375929.svg)](https://zenodo.org/badge/latestdoi/512375929).
 
