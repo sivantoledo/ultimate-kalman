@@ -23,7 +23,7 @@ classdef UltimateKalmanNative < handle
     end
 
     methods (Access = public)
-        function kalman = UltimateKalmanNative()
+        function kalman = UltimateKalmanNative(options)
             kalman = kalman@handle();
             kalman.handle = ultimatekalmanmex('create');
             if kalman.handle < 0
@@ -150,8 +150,10 @@ classdef UltimateKalmanNative < handle
                 s = -1;
             end
             estimate = ultimatekalmanmex('estimate',kalman.handle,s);
-            W        = ultimatekalmanmex('covariance',kalman.handle,s);
-            cov = CovarianceMatrix(W,'W');
+            %W        = ultimatekalmanmex('covariance',kalman.handle,s);
+            %cov = CovarianceMatrix(W,'W');
+            [W,dtype]  = ultimatekalmanmex('covariance',kalman.handle,s);
+            cov = CovarianceMatrix(W,char(dtype));
         end
 
         function forget(kalman,s)
@@ -196,6 +198,28 @@ classdef UltimateKalmanNative < handle
             %   This method must be called after the last step has been
             %   observed.
             ultimatekalmanmex('smooth',kalman.handle);
+        end
+
+        function u = gather(kalman)
+            e = kalman.earliest();
+            l = kalman.latest();
+            N = 0;
+            for i=kalman.earliest():kalman.latest()
+                N = N + length(kalman.estimate(i));
+                 %[range' u(range)]
+            end
+            %N = kalman.steps{l}.estimateStart + kalman.steps{l}.dimension - 1;
+            u = zeros(N,1);
+
+            j = 1;
+            for i=kalman.earliest():kalman.latest()
+                estimate = kalman.estimate(i);
+                range = j:j + length(estimate) - 1;
+                u(range) = estimate;
+                %[range' u(range)]
+                j = j + length(estimate);
+                
+            end
         end
 
         function t = perftest(kalman,H,F,c,K,G,o,C,count,decimation)

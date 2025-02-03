@@ -23,7 +23,7 @@ classdef UltimateKalmanJava < handle
     end
 
     methods (Access = public)
-        function kalman = UltimateKalmanJava()
+        function kalman = UltimateKalmanJava(options)
             kalman = kalman@handle();
             % kalman.handle = sivantoledo.kalman.UltimateKalman();
             kalman.handle = javaObject("sivantoledo.kalman.UltimateKalman");
