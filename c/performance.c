@@ -169,6 +169,55 @@ double o48[] = {
 		+1.39154217337082242e+00, -4.58127023804962674e-01, +1.53666859836478698e+00, -1.48105958026458340e+00, -2.73830182374819664e+00, -7.01081160713621032e-01, -1.02312093558422412e+00, -5.23615564247168486e-01, +1.42617157520417659e+00, +2.26774821098518764e+00, -1.12580983380758851e-01, -2.26243867464962695e-01, -3.56988371970690554e-01, -3.10148156512947359e-01, +1.23026184190633869e+00, +7.68371204764935922e-01, -1.26484007784499108e+00, -1.09578165679762474e-01, +5.18490510649879277e-01, +8.96916383575406817e-01, -4.94340664086803383e-01, -1.07500435364327518e+00, -1.54710477374877620e+00, +3.24831485312387203e-01, -7.06656181746865841e-01, -5.06885518347647057e-01, -6.69639886266488293e-01, +2.73206144532254447e-01, +2.16053987119017604e-01, +1.00621401338724908e-01, -2.76333423892771768e-01, +1.86189326321396981e-01, +2.64525786597715806e-01, +3.06034938941115386e-01, +1.02441337932038690e+00, -1.29869659107874676e-02, +2.24452486600498602e-01, +2.06954662482362634e-01, +6.98712616883145121e-01, -1.10269219432673732e-01, +9.62781414806645475e-01, -2.58086893047255428e+00, -3.21330723754538083e-01, +1.07501322207917016e+00, +9.24475998934258691e-01, +7.17989218631576054e-01, +8.66603607321408842e-01, +1.90966870223246277e+00
 };
 
+// this function is from ChatGPT.
+double generateGaussian(double mean, double stddev) {
+    // Generate two uniform random numbers in the range (0, 1)
+    double u1 = rand() / (RAND_MAX + 1.0);
+    double u2 = rand() / (RAND_MAX + 1.0);
+
+    // Apply Box-Muller transform
+    double z0 = sqrt(-2.0 * log(u1)) * cos(2.0 * M_PI * u2);
+
+    // Adjust for desired mean and standard deviation
+    return z0 * stddev + mean;
+}
+
+kalman_matrix_t* matrix_create_mutate_qr(kalman_matrix_t* A);
+void matrix_mutate_apply_qt(kalman_matrix_t* QR, kalman_matrix_t* TAU, kalman_matrix_t* C);
+
+kalman_matrix_t* generateRandomOrthonormal(int rows, int cols) {
+	int i,j;
+	int n;
+
+	if (rows==1 || cols == 1) {
+		kalman_matrix_t* QR = matrix_create(rows,cols);
+		for (i=0; i<rows; i++) {
+			for (j=0; j<cols; j++) {
+				matrix_set(QR,i,j,generateGaussian(0.0,1.0));
+			}
+		}
+		return QR;
+	}
+
+	// we assume that rows >= cols
+
+	kalman_matrix_t* QR = matrix_create(rows,rows);
+	for (i=0; i<rows; i++) {
+		for (j=0; j<cols; j++) {
+			matrix_set(QR,i,j,generateGaussian(0.0,1.0));
+		}
+	}
+
+	kalman_matrix_t* A = matrix_create_identity(rows,cols);
+	kalman_matrix_t* TAU = matrix_create_mutate_qr(QR);
+	matrix_mutate_apply_qt(QR,TAU,A);
+
+	matrix_free(TAU);
+	matrix_free(QR);
+
+	return A;
+}
+
 double times[16];
 
 double perftest_smooth(
@@ -217,6 +266,7 @@ double perftest_smooth(
 
 	for (i=0; i<count; i++) {
 		kalman_matrix_t* e = kalman_estimate(kalman,i);
+		// matrix_print(e, "%.4f");
 		matrix_free(e);
 	}
 
@@ -231,6 +281,14 @@ double perftest_smooth(
 	seconds      = end.tv_sec  - begin.tv_sec;
 	microseconds = end.tv_usec - begin.tv_usec;
 	times[3]          = seconds + microseconds*1e-6;
+
+	matrix_free(H);
+	matrix_free(F);
+	matrix_free(c);
+	matrix_free(K);
+	matrix_free(G);
+	matrix_free(o);
+	matrix_free(C);
 
 	return times[3];
 }
@@ -266,12 +324,20 @@ int main(int argc, char* argv[]) {
 					        count);
 		break;
 	default:
-		printf("dimension must be 6 or 48, exiting\n");
-		return 1;
+		t = perftest_smooth(matrix_create_identity(n,n), generateRandomOrthonormal(n, n), matrix_create_constant(n,1,0.0), matrix_create_identity(n,n), 'W',
+				                                         generateRandomOrthonormal(n, n), generateRandomOrthonormal(n, 1), matrix_create_identity(n,n), 'W',
+					        count);
+		break;
+		//printf("dimension must be 6 or 48, exiting\n");
+		//return 1;
 	}
 	
 	printf("performance testing took %.2e seconds\n",t);
-	printf("performance testing breakdown %.2e %.2e %.2e %.2e (filter, smooth, read estimates, free)\n",times[0],times[1],times[2],times[3]);
+	printf("performance testing breakdown %.2e %.2e %.2e %.2e (filter, smooth, read estimates, free)\n",
+			times[0],
+			times[1]-times[0],
+			times[2]-times[1],
+			times[3]-times[2]);
 
 	printf("performance testing done\n");
 	return 0;
