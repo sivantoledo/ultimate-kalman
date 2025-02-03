@@ -1,14 +1,14 @@
 # UltimateKalman: Flexible Kalman Filtering and Smoothing Using Orthogonal Transformations
 
-This repository contains the source code of UltimateKalman in three different programming languages: MATLAB, C and Java.
+This repository contains the source code of several Kalman filters and smoothers (including the repository's namesake, UltimateKalman) in three different programming languages: MATLAB, C and Java.
 
-UltimateKalman is documented carefully in an article in the [ACM Transactions on Mathematical Software](https://doi.org/10.1145/3699958). Please cite this article when citing the algorithm or the software. 
+- Release v1.2.0, contains the sequential UltimateKalman algorithm, which is documented carefully in an article in the [ACM Transactions on Mathematical Software](https://doi.org/10.1145/3699958). The algorithm is implemented monolithically in all 3 languages. Please cite this article when citing the sequential UltimateKalman algorithm or its implementation. This release is also available on Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14543666.svg)](https://doi.org/10.5281/zenodo.14543666).  
 
-The software itself is also archived on Zenodo and is citable. The release that corresponds to the _ACM Tranactions on Mathematical Software article_, release v1.2.0, is available on Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14543666.svg)](https://doi.org/10.5281/zenodo.14543666).
+- Release v2.0.0 contains two parallel Kalman smoothers, as well as a conventional sequential Kalman filter and smoother. These implementations are described in an article by Shahaf Gargir and Sivan Toledo accepted to IPDPS 2025. The actual parallel implementations are available only in C/C++, but there are also sequential Matlab implementations of all the algorithms, for clarity. The Matlab implementation is now modular and uses a class hierarchy, to eliminate code duplication (so it is no longer monolithic).
 
 ## User Guide
 
-A detailed user guide is available in [userManual/userManual.pdf](userManual/userManual.pdf).
+A detailed user guide (for version 1.2.0!) is available in [userManual/userManual.pdf](userManual/userManual.pdf).
 
 ## License
 
