@@ -257,7 +257,11 @@ static void mexEstimate(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs
 }
 
 static void mexCovariance(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
-	argCheck("covariance",2,2,1,1,nlhs,plhs,nrhs,prhs);
+	//argCheck("covariance",2,2,1,1,nlhs,plhs,nrhs,prhs);
+	argCheck("covariance",2,2,1,2,nlhs,plhs,nrhs,prhs);
+
+	fprintf(stderr,"in %d out %d\n",nlhs,nrhs);
+	fflush(stderr);
 
 	int handle = (int) floor(mxGetScalar(prhs[1]));
 	void* kalman = handleGet(kalman_handles,handle);
@@ -267,12 +271,24 @@ static void mexCovariance(int nlhs, mxArray *plhs[], int nrhs, const mxArray *pr
 	//printf("covariance %d %d %08x\n",s_i,handle,kalman);
 
 	kalman_matrix_t* W = kalman_covariance(kalman,s_i);
+	char type          = kalman_covariance_type(kalman,s_i);
 
 	if (W == NULL) {
 		plhs[0] = mxCreateDoubleMatrix(0,0,mxREAL);
+		if (nlhs == 2) {
+			plhs[1] = mxCreateDoubleMatrix(1,1,mxREAL);
+			double* out = mxGetPr(plhs[1]);
+			*out = (double) 'W';
+		}
 	} else {
 		plhs[0] =  matrix_copy_to_mxarray(W);
 		matrix_free(W);
+
+		if (nlhs == 2) {
+			plhs[1] = mxCreateDoubleMatrix(1,1,mxREAL);
+			double* out = mxGetPr(plhs[1]);
+			*out = (double) type;
+		}
 	}
 }
 

@@ -854,6 +854,7 @@ matrix_t* cov_weigh(matrix_t* cov, char cov_type, matrix_t* A) {
 			 );
 		break;
 	case 'U': // cov and an upper triangular matrix that we need to solve with
+	case 'F': // same representation; in Matlab, we started from explicit cov and factored
 
 		//if (debug) printf("cov U %d %d %d %d\n",matrix_cols(cov),matrix_rows(cov),matrix_cols(A),matrix_rows(A));
 
@@ -894,6 +895,7 @@ matrix_t* cov_weigh(matrix_t* cov, char cov_type, matrix_t* A) {
 		}
 		break;
 	default:
+		printf("unknown cov_type %c\n",cov_type);
 		assert( 0 );
 		WA = matrix_create_constant(matrix_rows(A), matrix_cols(A), NaN);
 		break;
@@ -1385,7 +1387,7 @@ void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 	matrix_free(W_i_o_i);
 
 	farray_append(kalman->steps,kalman->current);
-	kalman->current = NULL;
+	//kalman->current = NULL; // had no effect, commented out Aug 2024 to avoid bugs in testing
 
 #ifdef BUILD_DEBUG_PRINTOUTS
 	printf("kalman_observe done\n");
@@ -1487,6 +1489,7 @@ void kalman_smooth(kalman_t* kalman) {
 
 	//printf("smooth2 %d to %d\n",last,first);
 
+#ifndef NO_COVARIANCE_ESTIMATES
 	matrix_t* R;
 	int32_t n_i, n_ipo;
 	for (si=last; si>=first; si--) {
@@ -1511,8 +1514,10 @@ void kalman_smooth(kalman_t* kalman) {
 			n_ipo = n_i;
 		}
 	}
+#endif
 }
 
+char kalman_covariance_type(kalman_t* kalman, int64_t si) { return 'W'; }
 
 matrix_t* kalman_covariance(kalman_t* kalman, int64_t si) {
 	//int32_t i,j;

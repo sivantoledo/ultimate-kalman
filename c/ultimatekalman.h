@@ -158,6 +158,7 @@ void      kalman_observe   (kalman_t* kalman, kalman_matrix_t* G_i, kalman_matri
 void      kalman_smooth    (kalman_t* kalman);
 kalman_matrix_t* kalman_estimate  (kalman_t* kalman, int64_t si);
 kalman_matrix_t* kalman_covariance(kalman_t* kalman, int64_t si);
+char             kalman_covariance_type(kalman_t* kalman, int64_t si);
 void      kalman_forget    (kalman_t* kalman, int64_t si);
 void      kalman_rollback  (kalman_t* kalman, int64_t si);
 kalman_matrix_t* kalman_perftest(kalman_t* kalman,
