@@ -16,6 +16,7 @@ gcc \
     -o $test \
     $test.c \
     ultimatekalman.c \
+    -framework Acceleratex \
     -llapack -lblas -lm
 
 echo generated test program
