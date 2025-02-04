@@ -1030,6 +1030,7 @@ matrix_t* explicit(matrix_t* cov, char type) {
 		matrix_t* C = matrix_create_copy(cov);
 		return C;
 	}
+	return NULL;
 }
 
 /******************************************************************************/
@@ -1363,7 +1364,7 @@ void smooth(kalman_t* kalman) {
 	i->state      = i->smoothedState      ;
 	i->covariance = i->smoothedCovariance ;
 
-	printf("smooth first:last = %d:%d\n",first,last);
+	printf("smooth first:last = %lld:%lld\n",first,last);
 	step_t* ipo = i;
 	for (si=last-1; si>=first; si--) {
 		i = farray_get(kalman->steps,si);
