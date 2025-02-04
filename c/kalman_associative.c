@@ -1044,6 +1044,7 @@ matrix_t* explicit(matrix_t* cov, char type) {
 		matrix_t* C = matrix_create_copy(cov);
 		return C;
 	}
+	return NULL;
 }
 
 /******************************************************************************/
