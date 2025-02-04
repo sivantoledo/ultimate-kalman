@@ -37,10 +37,6 @@ int kalman_parallel_blocksize(int blocksize_in);
 //#define BLOCKSIZE 1000
 #define BLOCKSIZE 10
 
-#if defined(PARALLEL) && !defined(MACOS)
-#define malloc(x) aligned_alloc(64,(x))
-#endif
-
 #ifdef PARALLEL
 #ifdef MACOS
 void* local_aligned_alloc(size_t alignment, size_t size) {
@@ -53,7 +49,7 @@ void* local_aligned_alloc(size_t alignment, size_t size) {
 #else
 #define malloc(x) aligned_alloc(64,(x))
 #endif
-
+#endif
 
 #ifdef _WIN32
 // for "unused" attribute

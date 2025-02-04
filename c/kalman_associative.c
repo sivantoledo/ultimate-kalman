@@ -11,8 +11,23 @@
 #include <pthread.h>
 
 //#include "parallel_for_c.h"
+int kalman_parallel_init(int number_of_threads);
 void parallel_for_c(void* kalman, void** helper, size_t l, size_t n, size_t block_size, void (*func)(void*, void**, size_t, size_t, size_t));
 void parallel_scan_c(void** input, void** sums, void* create_array , void* (*f)(void*, void*, void*, int, int), int length, int stride);
+#endif
+
+#ifdef PARALLEL
+#ifdef MACOS
+void* local_aligned_alloc(size_t alignment, size_t size) {
+	void* p;
+	int result = posix_memalign(&p, alignment, size);
+	if (result != 0) return NULL;
+	return p;
+} 
+#define malloc(x) local_aligned_alloc(64,(x))
+#else
+#define malloc(x) aligned_alloc(64,(x))
+#endif
 #endif
 
 #ifdef _WIN32
@@ -1270,7 +1285,8 @@ void kalman_smooth(kalman_t* kalman) {
 //#define BLOCKSIZE 1000
 #define BLOCKSIZE 10
 
-void parallelInit(LockedArray_t* la, void* *helper, size_t length, size_t start, size_t end){
+void parallelInit(void* la_v, void* *helper, size_t length, size_t start, size_t end){
+    LockedArray_t* la = (LockedArray_t*) la_v;
 	for (int i = start; i < end; i++) {
         la->arrays[i] = (step_t**)malloc(COLUMNS * sizeof(step_t*));
         for (int j = 0; j < COLUMNS; j++) {
@@ -1335,7 +1351,8 @@ void addElement(LockedArray_t* la, int row, step_t* element) {
 #endif
 }
 
-void parallelDestroy(LockedArray_t* la, void* *helper, size_t length, size_t start, size_t end){
+void parallelDestroy(void* la_v, void* *helper, size_t length, size_t start, size_t end){
+    LockedArray_t* la = (LockedArray_t*) la_v;
 	for (int i = start; i < end; i++) {
 		for (int j = 0; j < la->columns; j++){
 			if (la->arrays[i][j] != NULL){
@@ -1623,19 +1640,24 @@ void buildSmoothingElement(kalman_t* kalman, int i) {
 	}
 }
 
-void buildFilteringElements(kalman_t* kalman, step_t* *helper, size_t l, size_t start, size_t end){
+void buildFilteringElements(void* kalman_v, void* *helper, size_t l, size_t start, size_t end){
+  kalman_t* kalman = (kalman_t*) kalman_v;
 	for (int j=start; j < end; j++) {
 		buildFilteringElement(kalman,j);
 	}
 }
-void buildSmoothingElements(kalman_t* kalman, step_t* *helper, size_t l, size_t start, size_t end){
+void buildSmoothingElements(void* kalman_v, void* *helper, size_t l, size_t start, size_t end){
+  kalman_t* kalman = (kalman_t*) kalman_v;
 	
 	for (int j=start; j < end; j++) {
 		buildSmoothingElement(kalman,j);
 	}
 }
 
-void filtered_to_state(kalman_t* kalman, step_t* *filtered, size_t l, size_t start, size_t end){
+void filtered_to_state(void* kalman_v, void* *filtered_v, size_t l, size_t start, size_t end){
+  kalman_t* kalman = (kalman_t*) kalman_v;
+  step_t* *filtered = (step_t**) filtered_v;
+
 	int i = start;
 	for (int j = start + 1; j < end + 1; j++) {
 		step_t* step_j = farray_get(kalman->steps,j);
@@ -1648,7 +1670,9 @@ void filtered_to_state(kalman_t* kalman, step_t* *filtered, size_t l, size_t sta
 		i++;
 	}
 }
-void smoothed_to_state(kalman_t* kalman, step_t* *smoothed, size_t l, size_t start, size_t end){
+void smoothed_to_state(void* kalman_v, void* *smoothed_v, size_t l, size_t start, size_t end){
+  kalman_t* kalman = (kalman_t*) kalman_v;
+  step_t* *smoothed = (step_t**) smoothed_v;
 	int i = 0;
 	for (int j = start; j < end; j++) {
 		i = l - 2 - j + 1;
@@ -1676,7 +1700,7 @@ void smooth(kalman_t* kalman) {
 #ifdef PARALLEL
 	step_t** filtered = (step_t**)malloc((l - 1) * sizeof(step_t*));
 	LockedArray_t* filtered_created_steps = initLockedArray(l);
-	parallel_scan_c(kalman->steps->elements, filtered, filtered_created_steps, filteringAssociativeOperation , l - 1, 1);
+	parallel_scan_c(kalman->steps->elements, (void**) filtered, filtered_created_steps, filteringAssociativeOperation , l - 1, 1);
 	destroyLockedArray(filtered_created_steps);
 #else
 	step_t** filtered = cummulativeSumsSequential(kalman, filteringAssociativeOperation, 1, l - 1, 1);
@@ -1684,9 +1708,9 @@ void smooth(kalman_t* kalman) {
 	
 
 #ifdef PARALLEL
-	parallel_for_c(kalman, filtered, l, l - 1, BLOCKSIZE, filtered_to_state);
+	parallel_for_c(kalman, (void**) filtered, l, l - 1, BLOCKSIZE, filtered_to_state);
 #else
-	filtered_to_state(kalman, filtered, l, 0, l - 1);
+	filtered_to_state(kalman, (void**) filtered, l, 0, l - 1);
 #endif
 
 	free(filtered);
@@ -1700,22 +1724,23 @@ void smooth(kalman_t* kalman) {
 #ifdef PARALLEL
 	step_t** smoothed = (step_t**)malloc(l * sizeof(step_t*));
 	LockedArray_t* smoothed_created_steps = initLockedArray(l);
-	parallel_scan_c(kalman->steps->elements, smoothed, smoothed_created_steps, smoothingAssociativeOperation , l, -1);
+	parallel_scan_c(kalman->steps->elements, (void**) smoothed, smoothed_created_steps, smoothingAssociativeOperation , l, -1);
 	destroyLockedArray(smoothed_created_steps);
 #else
 	step_t** smoothed = cummulativeSumsSequential(kalman, smoothingAssociativeOperation, l - 1, 0, -1);
 #endif
 
 #ifdef PARALLEL
-	parallel_for_c(kalman, smoothed, l, l - 1, BLOCKSIZE, smoothed_to_state);
+	parallel_for_c(kalman, (void**) smoothed, l, l - 1, BLOCKSIZE, smoothed_to_state);
 #else
-	smoothed_to_state(kalman, smoothed, l, 0, l - 1);
+	smoothed_to_state(kalman, (void**) smoothed, l, 0, l - 1);
 #endif
 
 	free(smoothed);
 }
 
-step_t** cummulativeSumsSequential(kalman_t* kalman, step_t* (*f)(step_t*, step_t*), int s, int e, int stride) {
+//step_t** cummulativeSumsSequential(kalman_t* kalman, step_t* (*f)(step_t*, step_t*), int s, int e, int stride) {
+step_t** cummulativeSumsSequential(kalman_t* kalman, void* (*f)(void*, void*, void*, int, int), int s, int e, int stride) {
 		step_t** sums = (step_t**)malloc((abs(e-s) + 1)*sizeof(step_t*));
 		int i = 0;
 		step_t** a = (step_t**)kalman->steps->elements;
@@ -1725,13 +1750,13 @@ step_t** cummulativeSumsSequential(kalman_t* kalman, step_t* (*f)(step_t*, step_
 
 		if (s > e) {
 			for (int j=s+stride; j>=e; j+=stride) {
-				sum = f(sum,a[j]);
+			        sum = (step_t*) f(sum,a[j], NULL, -1, -1);
 				sums[i] = sum;
 				i++;
 			}
 		}else{
 			for (int j=s+stride; j<=e; j+=stride) {
-				sum = f(sum,a[j]);
+				sum = (step_t*) f(sum,a[j], NULL, -1, -1);
 				sums[i] = sum;
 				i++;
 			}
@@ -1739,7 +1764,12 @@ step_t** cummulativeSumsSequential(kalman_t* kalman, step_t* (*f)(step_t*, step_
 		return sums;
 }
 
-step_t* filteringAssociativeOperation(step_t* si, step_t* sj, LockedArray_t* created_steps, int row, int is_final_scan) {
+//step_t* filteringAssociativeOperation(step_t* si, step_t* sj, LockedArray_t* created_steps, int row, int is_final_scan) {
+void* filteringAssociativeOperation(void* si_v, void* sj_v, void* created_steps_v, int row, int is_final_scan) {
+  step_t* si = (step_t*) si_v;
+  step_t* sj = (step_t*) sj_v;
+  LockedArray_t* created_steps = (LockedArray_t*) created_steps_v;
+  
 		if (si == NULL){
 			return sj;
 		}
@@ -1838,8 +1868,11 @@ step_t* filteringAssociativeOperation(step_t* si, step_t* sj, LockedArray_t* cre
 }
 
 
-step_t* smoothingAssociativeOperation(step_t* si, step_t* sj, LockedArray_t* created_steps, int row, int is_final_scan) {
-
+//step_t* smoothingAssociativeOperation(step_t* si, step_t* sj, LockedArray_t* created_steps, int row, int is_final_scan) {
+void* smoothingAssociativeOperation(void* si_v, void* sj_v, void* created_steps_v, int row, int is_final_scan) {
+  step_t* si = (step_t*) si_v;
+  step_t* sj = (step_t*) sj_v;
+  LockedArray_t* created_steps = (LockedArray_t*) created_steps_v;
 		if (si == NULL){
 			return sj;
 		}

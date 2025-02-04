@@ -188,10 +188,13 @@ typedef struct LockedArray{
 
 void smooth(kalman_t* kalman);
 
-step_t** cummulativeSumsSequential(kalman_t* kalman, step_t* (*f)(step_t*, step_t*), int s, int e, int stride);
+//step_t** cummulativeSumsSequential(kalman_t* kalman, step_t* (*f)(step_t*, step_t*), int s, int e, int stride);
+step_t** cummulativeSumsSequential(kalman_t* kalman, void* (*f)(void*, void*, void*, int, int), int s, int e, int stride);
 
-step_t* filteringAssociativeOperation(step_t* si, step_t* sj, LockedArray_t* created_steps, int row, int is_final_scan);
-step_t* smoothingAssociativeOperation(step_t* si, step_t* sj, LockedArray_t* created_steps, int row, int is_final_scan);
+//step_t* filteringAssociativeOperation(step_t* si, step_t* sj, LockedArray_t* created_steps, int row, int is_final_scan);
+void* filteringAssociativeOperation(void* si_v, void* sj_v, void* created_steps_v, int row, int is_final_scan);
+//step_t* smoothingAssociativeOperation(step_t* si, step_t* sj, LockedArray_t* created_steps, int row, int is_final_scan);
+void* smoothingAssociativeOperation(void* si_v, void* sj_v, void* created_steps_v, int row, int is_final_scan);
 
 kalman_matrix_t* kalman_estimate  (kalman_t* kalman, int64_t si);
 kalman_matrix_t* kalman_covariance(kalman_t* kalman, int64_t si);

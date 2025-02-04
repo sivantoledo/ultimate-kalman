@@ -15,6 +15,7 @@
 
 //#include "parallel_for_c.h"
 void parallel_for_c(void* kalman, void* indices, int length, size_t n, size_t block_size, void (*func)(void*, void*, int, size_t, size_t));
+int kalman_parallel_init(int number_of_threads);
 
 #ifdef PARALLEL
 #define malloc(x) aligned_alloc(64,(x))
@@ -275,6 +276,8 @@ void matrix_mutate_chop(matrix_t* A, int32_t rows, int32_t cols) {
 	A->row_dim = rows;
 	A->col_dim = cols;
 }
+
+int32_t matrix_rows(matrix_t* A);
 
 void matrix_mutate_triu(matrix_t* A) {
 	int32_t n = matrix_rows(A);
@@ -823,19 +826,29 @@ kalman_matrix_t* generateRandomOrthonormal(int rows, int cols) {
 double times[16];
 matrix_t* A;
 
-void ep_alloc_struct(kalman_t* kalman, step_t* *indices, int n, size_t start, size_t end) {
+//void ep_alloc_struct(kalman_t* kalman, step_t* *indices, int n, size_t start, size_t end) {
+void ep_alloc_struct(void* kalman_v, void* indices_v, int n, size_t start, size_t end) {
+  kalman_t* kalman  = (kalman_t*) kalman_v;
+  step_t**  indices = (step_t**)  indices_v;
+  
   for (int i = start; i < end; ++i) {
     indices[i] = (step_t*) malloc(sizeof(step_t));
   }
 }
 
-void ep_alloc_matrix(kalman_t* kalman, step_t* *indices, int n, size_t start, size_t end) {
+void ep_alloc_matrix(void* kalman_v, void* indices_v, int n, size_t start, size_t end) {
+  kalman_t* kalman  = (kalman_t*) kalman_v;
+  step_t**  indices = (step_t**)  indices_v;
+
 	for (int i = start; i < end; ++i) {
 	  indices[i] -> A = matrix_create(2*n,n);
 	}
 }
 
-void ep_fill_matrix(kalman_t* kalman, step_t* *indices, int n, size_t start, size_t end) {
+void ep_fill_matrix(void*  kalman_v, void* indices_v, int n, size_t start, size_t end) {
+  kalman_t* kalman  = (kalman_t*) kalman_v;
+  step_t**  indices = (step_t**)  indices_v;
+
 	for (int i = start; i < end; ++i) {
 	  for (int r=0; r<2*n; r++) {
 	    for (int c=0; c<n; c++) {
@@ -845,7 +858,10 @@ void ep_fill_matrix(kalman_t* kalman, step_t* *indices, int n, size_t start, siz
 	}
 }
 
-void ep_create(kalman_t* kalman, step_t* *indices, int n, size_t start, size_t end) {
+void ep_create(void*  kalman_v, void* indices_v, int n, size_t start, size_t end) {
+  kalman_t* kalman  = (kalman_t*) kalman_v;
+  step_t**  indices = (step_t**)  indices_v;
+
 	for (int i = start; i < end; ++i) {
 	  indices[i] = (step_t*) malloc(sizeof(step_t));
 	  //indices[i] -> A = matrix_create_copy(A);
@@ -858,7 +874,10 @@ void ep_create(kalman_t* kalman, step_t* *indices, int n, size_t start, size_t e
 	}
 }
 
-void ep_factor(kalman_t* kalman, step_t* *indices, int n, size_t start, size_t end) {
+void ep_factor(void* kalman_v, void* indices_v, int n, size_t start, size_t end) {
+  kalman_t* kalman  = (kalman_t*) kalman_v;
+  step_t**  indices = (step_t**)  indices_v;
+
 	for (int i = start; i < end; ++i) {
 		indices[i]->TAU = matrix_create_mutate_qr(indices[i]->A);
 	}
@@ -990,7 +1009,7 @@ int main(int argc, char* argv[]) {
 			times[2]-times[1],
 			times[3]-times[2]);
 
-	printf("embarrassingly parallel testing done\n",t);
+	printf("embarrassingly parallel testing done\n");
 
 	return 0;
 }
