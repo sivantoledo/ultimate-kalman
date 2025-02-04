@@ -11,11 +11,18 @@ echo On Linux, run \"source /opt/intel/oneapi/setvars.sh\" under bash to set env
 
 case "$(uname)" in 
     Darwin)
-        LIBDIR="-L$(brew --prefix tbb)/lib -framework Accelerate"
-        INCDIR="-I$(brew --prefix tbb)/include -Wimplicit-function-declaration"
-        SEQLIBS="-llapack -lblas -lm"
-        PARLIBS="-ltbbmalloc_proxy -ltbb -llapack -lblas -lm"
-        PRNLIBS="-ltbbmalloc_proxy -ltbb -llapack -lblas -lm"
+        LIBDIR=""
+        INCDIR="-I$(brew --prefix tbb)/include -DBUILD_BLAS_UNDERSCORE -DMACOS"
+        SEQLIBS="-L$(brew --prefix openblas)/lib -llapack -lblas -lm"
+        PARLIBS="-ltbbmalloc_proxy -ltbb -framework Accelerate -llapack -lblas -lm -lc"
+        PARLIBS="-L$(brew --prefix openblas)/lib -llapack -lblas -lm -L$(brew --prefix tbb)/lib -ltbb -ltbbmalloc -ltbbmalloc_proxy"
+
+        LIBDIR=""
+        INCDIR="-I$(brew --prefix tbb)/include -DBUILD_BLAS_UNDERSCORE -DMACOS"
+        SEQLIBS="-framework Accelerate -llapack -lblas -lm"
+        PARLIBS="-framework Accelerate -llapack -lblas -lm -L$(brew --prefix tbb)/lib -ltbb -ltbbmalloc -ltbbmalloc_proxy"
+
+        PRNLIBS=$PARLIBS
         ;;
     Linux)
         LIBDIR=""
@@ -40,7 +47,6 @@ gcc -O2 $INCDIR -DNO_COVARIANCE_ESTIMATES \
                            -DBUILD_DEBUG_PRINTOUTSx -c -o ultimatekalman_nc.o                  ultimatekalman.c
 gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o ultimatekalman.o                     ultimatekalman.c
 gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_filter_smoother.o             kalman_filter_smoother.c
-exit 1
 
 gcc -O2 $INCDIR -DPARALLEL -DBUILD_DEBUG_PRINTOUTSx -c -o ultimatekalman_oddeven.o             ultimatekalman_oddeven.c
 gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o ultimatekalman_oddeven_seq.o         ultimatekalman_oddeven.c

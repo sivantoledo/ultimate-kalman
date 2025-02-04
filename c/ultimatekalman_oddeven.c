@@ -7,17 +7,50 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
 
 // for getenv
 #include <stdlib.h>
 
 //#include "parallel_for_c.h"
-void parallel_for_c(void* kalman, void* indices, int length, int** helper, size_t n, size_t block_size, void (*func)(void*, void*, int, size_t, size_t));
+void parallel_for_c(void* kalman, void* indices, int length, int** helper, size_t n, size_t block_size, void (*func)(void*, void*, int, int**, size_t, size_t));
+/*
+void assign_indices(void* kalman_v, void* indices_v, int length, int** helper, size_t start, size_t end) {
+	kalman_t* kalman = (kalman_t*) kalman_v;
+	step_t* *indices = (step_t**) indices_v;
+	for (int i = start; i < end; ++i) {
+		indices[i] = farray_get(kalman->steps,i);
+	}
+}
+
+void f(kalman_t* kalman) {
+
+	int length = farray_size(kalman->steps);
+	step_t* *indices = (step_t**)malloc(length * sizeof(step_t*));
+
+	parallel_for_c(kalman, indices, length, NULL, length, BLOCKSIZE, assign_indices);
+}
+*/
+int kalman_parallel_init(int number_of_threads);
+int kalman_parallel_blocksize(int blocksize_in);
 
 //#define BLOCKSIZE 1000
 #define BLOCKSIZE 10
 
+#if defined(PARALLEL) && !defined(MACOS)
+#define malloc(x) aligned_alloc(64,(x))
+#endif
+
 #ifdef PARALLEL
+#ifdef MACOS
+void* local_aligned_alloc(size_t alignment, size_t size) {
+	void* p;
+	int result = posix_memalign(&p, alignment, size);
+	if (result != 0) return NULL;
+	return p;
+} 
+#define malloc(x) local_aligned_alloc(64,(x))
+#else
 #define malloc(x) aligned_alloc(64,(x))
 #endif
 
@@ -259,6 +292,7 @@ void matrix_mutate_triu(matrix_t* A) {
  * Creates a matrix with undefined elements
  */
 matrix_t* matrix_create(int32_t rows, int32_t cols) {
+	//fprintf(stderr,"sizeof matrix_t is %lu\n",sizeof(matrix_t));
 	matrix_t* A = malloc(sizeof(matrix_t));
 	assert( A!= NULL );
 	A->row_dim = rows;
@@ -1201,7 +1235,9 @@ matrix_t* kalman_estimate(kalman_t* kalman, int64_t si) {
 	return matrix_create_copy(step->state);
 }
 
-void assign_indices(kalman_t* kalman, step_t* *indices, int length, int** helper, size_t start, size_t end) {
+void assign_indices(void* kalman_v, void* indices_v, int length, int** helper, size_t start, size_t end) {
+	kalman_t* kalman = (kalman_t*) kalman_v;
+	step_t* *indices = (step_t**) indices_v;
 	for (int i = start; i < end; ++i) {
 		indices[i] = farray_get(kalman->steps,i);
 	}
@@ -1246,7 +1282,10 @@ void free_and_assign(matrix_t** original, matrix_t* new){
 	}
 	*original = new;
 }
-void G_F_to_R_tilde(kalman_t* kalman, step_t* *indices, int length, int** helper, size_t start, size_t end) {
+void G_F_to_R_tilde(void* kalman_v, void* indices_v, int length, int** helper, size_t start, size_t end){
+	kalman_t* kalman = (kalman_t*) kalman_v;
+	step_t* *indices = (step_t**)indices_v;
+
 	for (int j_ = start; j_ < end; ++j_) {
 		int j = j_ * 2;
 
@@ -1294,7 +1333,10 @@ void G_F_to_R_tilde(kalman_t* kalman, step_t* *indices, int length, int** helper
 		}
 	}//Done first part of the algorithm
 }
-void H_R_tilde_to_R(kalman_t* kalman, step_t* *indices, int length, int** helper, size_t start, size_t end) {
+void H_R_tilde_to_R(void* kalman_v, void* indices_v, int length, int** helper, size_t start, size_t end){
+	kalman_t* kalman = (kalman_t*) kalman_v;
+	step_t* *indices = (step_t**)indices_v;
+
 	for (int j_ = start; j_ < end; j_++){
 		int j = j_ * 2;
 
@@ -1338,10 +1380,14 @@ void H_R_tilde_to_R(kalman_t* kalman, step_t* *indices, int length, int** helper
 	} //Done second part of the algorithm
 
 }
-void H_tilde_G_to_G_tilde(kalman_t* kalman, step_t* *indices, int length, int** helper, size_t start, size_t end){
+void H_tilde_G_to_G_tilde(void* kalman_v, void* indices_v, int length, int** helper, size_t start, size_t end){
+	kalman_t* kalman = (kalman_t*) kalman_v;
+	step_t* *indices = (step_t**)indices_v;
+
 	for (int j_ = start; j_ < end; j_++){
 		int j = j_ * 2;
-		int i = indices[j];
+		// Sivan Feb 2025 wrong type and seens not to be used, commenting out
+		//int i = indices[j];
 
 		step_t* step_ipo = indices[j + 1];
 		matrix_t* H_tilde = step_ipo->H_tilde;
@@ -1364,7 +1410,10 @@ void H_tilde_G_to_G_tilde(kalman_t* kalman, step_t* *indices, int length, int** 
 
 	}//Done third part of the algorithm
 }
-void Variables_Renaming (kalman_t* kalman, step_t* *indices, int length, int** helper, size_t start, size_t end){
+void Variables_Renaming(void* kalman_v, void* indices_v, int length, int** helper, size_t start, size_t end){
+	kalman_t* kalman = (kalman_t*) kalman_v;
+	step_t* *indices = (step_t**)indices_v;
+
 	for (int j_ = start; j_ < end; ++j_){
 		int j = j_ * 2;
 		// int i = indices[j];
@@ -1397,12 +1446,18 @@ void Variables_Renaming (kalman_t* kalman, step_t* *indices, int length, int** h
 	}
 }
 
-void Init_new_indices (step_t* *new_indices, step_t* *indices, int length, int** helper, size_t start, size_t end){
-	for (int i = start; i < end; ++i) {
+void Init_new_indices(void* new_indices_v, void* indices_v, int length, int** helper, size_t start, size_t end){
+	step_t** new_indices = (step_t**) new_indices_v;
+	step_t** indices     = (step_t**) indices_v;
+
+    for (int i = start; i < end; ++i) {
 		new_indices[i] = indices[2*i + 1];
 	}
 }
-void Solve_Estimates (kalman_t* kalman, step_t* *indices, int length, int** helper, size_t start, size_t end){
+void Solve_Estimates(void* kalman_v, void* indices_v, int length, int** helper, size_t start, size_t end){
+	kalman_t* kalman = (kalman_t*) kalman_v;
+	step_t* *indices = (step_t**)indices_v;
+
 	for (int j_ = start; j_ < end; ++j_){
 		int j = j_ * 2;
 
@@ -1477,7 +1532,10 @@ void Solve_Estimates (kalman_t* kalman, step_t* *indices, int length, int** help
 // Cov Change 4
 // ==========================================
 
-void Convert_LDLT (kalman_t* kalman, step_t* *indices, int length, int** helper, size_t start, size_t end){
+void Convert_LDLT(void* kalman_v, void* indices_v, int length, int** helper, size_t start, size_t end){
+	kalman_t* kalman = (kalman_t*) kalman_v;
+	step_t* *indices = (step_t**)indices_v;
+
 	for (int j_ = start; j_ < end; ++j_){
 		int j = j_ * 2;
 
@@ -1512,7 +1570,10 @@ void Convert_LDLT (kalman_t* kalman, step_t* *indices, int length, int** helper,
 	}
 }
 
-void SelInv (kalman_t* kalman, step_t* *indices, int length, int** converters, size_t start, size_t end){
+void SelInv(void* kalman_v, void* indices_v, int length, int** converters, size_t start, size_t end){
+	kalman_t* kalman = (kalman_t*) kalman_v;
+	step_t* *indices = (step_t**)indices_v;
+
 	int * vtop_n = converters[0];
 	int * ptov_n2 = converters[1];
 	
@@ -1755,7 +1816,10 @@ void SelInv (kalman_t* kalman, step_t* *indices, int length, int** converters, s
 // ==========================================
 
 
-void one_layer_converter (kalman_t* kalman, step_t* *indices, int length, int** helper, size_t start, size_t end){
+void one_layer_converter (void* kalman_v, void* indices_v, int length, int** helper, size_t start, size_t end){
+	kalman_t* kalman = (kalman_t*) kalman_v;
+	step_t* *indices = (step_t**)indices_v;
+	 
 	int* virtual_to_phisical = helper[0];
 	int* phisical_to_virtual = helper[1];
 	int* variables = helper[2];
@@ -1805,9 +1869,9 @@ int ** virtual_phisical(int n){
 		variables[4] = index;
 
 		#ifdef PARALLEL
-		parallel_for_c(NULL, NULL, NULL, result, ceil((double)(n - start)/jump),BLOCKSIZE,one_layer_converter);
+		parallel_for_c(NULL, NULL, 0, result, ceil((double)(n - start)/jump),BLOCKSIZE,one_layer_converter);
 		#else
-		one_layer_converter(NULL, NULL, NULL, result, 0, ceil((double)(n - start)/jump));
+		one_layer_converter(NULL, NULL, 0, result, 0, ceil((double)(n - start)/jump));
 		#endif
 
 		index += ceil((double)(n - start)/jump);

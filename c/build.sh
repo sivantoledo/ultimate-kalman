@@ -9,6 +9,20 @@ fi
 
 echo generating test program $test
 
+case "$(uname)" in 
+    Darwin)
+        LIBDIR="-framework Accelerate"
+        ;;
+    Linux)
+        LIBDIR=""
+        ;;
+    *)
+        echo "I do not know how to build the code on this operating system"
+        exit 1
+        ;;
+esac
+
+
 gcc \
     -O2 \
     -DBUILD_BLAS_UNDERSCORE -DBUILD_LAPACK_UNDERSCORE \
@@ -16,7 +30,7 @@ gcc \
     -o $test \
     $test.c \
     ultimatekalman.c \
-    -framework Acceleratex \
+    $LIBDIR \
     -llapack -lblas -lm
 
 echo generated test program
