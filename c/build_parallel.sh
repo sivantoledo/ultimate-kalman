@@ -7,7 +7,11 @@ else
     test=$1
 fi
 
-echo On Linux, run \"source /opt/intel/oneapi/setvars.sh\" under bash to set environment variables
+# On Intel servers, we installed Intel's oneAPI package, which includes both TBB and MKL (which includes optimized BLAS and LAPACK).
+# On ARM servers (Graviton3), we installed tbb from Ubuntu's libtbb-dev package, and the ARM Performance Libraries (downloaded as a tar file).
+
+echo On Linux Intel, run \"source /opt/intel/oneapi/setvars.sh\" under bash to set environment variables
+echo On Linux ARM, run \"export LD_LIBRARY_PATH=/opt/arm/armpl_24.10_gcc/lib/\"
 
 case "$(uname)" in 
     Darwin)
@@ -25,14 +29,32 @@ case "$(uname)" in
         PRNLIBS=$PARLIBS
         ;;
     Linux)
-        LIBDIR=""
-        INCDIR="-DBUILD_MKL"
-        # sequential libraries; not sure why -lpthread was used, but it was included
-        SEQLIBS="                  -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl"
-        PARLIBS="-ltbbmalloc_proxy -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl -ltbb"
-        # parallel with nested TBB parallelism
-        PRNLIBS="-ltbbmalloc_proxy -lmkl_intel_lp64 -lmkl_tbb_thread -lmkl_core -lpthread -lm -ldl -ltbb"
-        ;;
+	case "$(uname -m)" in
+	    aarch64)
+		echo "ARM"
+		LIBDIR="-L/opt/arm/armpl_24.10_gcc/lib/"
+		INCDIR="-DBUILD_BLAS_UNDERSCORE"
+		# sequential libraries; not sure why -lpthread was used, but it was included
+		SEQLIBS="                  -larmpl_lp64 -lpthread -lm -ldl"
+		PARLIBS="-ltbbmalloc_proxy -larmpl_lp64 -lpthread -lm -ldl -ltbb -lpthread -lm -ldl -ltbb"
+		# parallel with nested TBB parallelism
+		PRNLIBS="-ltbbmalloc_proxy -larmpl_lp64 -lpthread -lm -ldl -ltbb -lpthread -lm -ldl -ltbb"
+	    ;;
+	    x86_64)
+		LIBDIR=""
+		INCDIR="-DBUILD_MKL"
+		# sequential libraries; not sure why -lpthread was used, but it was included
+		SEQLIBS="                  -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl"
+		PARLIBS="-ltbbmalloc_proxy -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl -ltbb"
+		# parallel with nested TBB parallelism
+		PRNLIBS="-ltbbmalloc_proxy -lmkl_intel_lp64 -lmkl_tbb_thread -lmkl_core -lpthread -lm -ldl -ltbb"
+		;;
+	    *)
+		echo "I do not know how to build for this architecture (uname -m)"
+		exit 1
+		;;
+       esac
+       ;;
     *)
         echo "I do not know how to build the code on this operating system"
         exit 1
