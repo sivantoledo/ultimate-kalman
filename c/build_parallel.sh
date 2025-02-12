@@ -41,6 +41,16 @@ case "$(uname)" in
 		PRNLIBS="-ltbbmalloc_proxy -larmpl_lp64 -lpthread -lm -ldl -ltbb -lpthread -lm -ldl -ltbb"
 	    ;;
 	    x86_64)
+		if grep -q "EPYC" /proc/cpuinfo; then
+		   echo "Building for AMD EPYC"
+		   LIBDIR="-L/specific/amd-gcc/5.0.0/gcc/lib_LP64"
+		   INCDIR="-DBUILD_BLAS_UNDERSCORE"
+		   # sequential libraries; not sure why -lpthread was used, but it was included
+		   SEQLIBS="                  -lflame -lblis-mt -laoclutils -lgomp -lpthread -lm -ldl"
+		   PARLIBS="-ltbbmalloc_proxy -lflame -lblis-mt -laoclutils -lgomp -lpthread -lm -ldl -ltbb"
+		   # parallel with nested TBB parallelism
+		   PRNLIBS="-ltbbmalloc_proxy -lflame -lblis-mt -laoclutils -lpthread -lm -ldl -ltbb"
+		else
 		LIBDIR=""
 		INCDIR="-DBUILD_MKL"
 		# sequential libraries; not sure why -lpthread was used, but it was included
@@ -48,6 +58,7 @@ case "$(uname)" in
 		PARLIBS="-ltbbmalloc_proxy -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl -ltbb"
 		# parallel with nested TBB parallelism
 		PRNLIBS="-ltbbmalloc_proxy -lmkl_intel_lp64 -lmkl_tbb_thread -lmkl_core -lpthread -lm -ldl -ltbb"
+		fi
 		;;
 	    *)
 		echo "I do not know how to build for this architecture (uname -m)"
