@@ -17,10 +17,10 @@ if ispc
                 disp('compiling and linking under MATLAB (parallel associative) ...');
                 mex -DNDEBUG -DBUILD_MEX -DBUILD_MATLAB -DBUILD_LAPACK_H -DBUILD_BLAS_H -DBUILD_WIN32_GETTIMEOFDAY ultimatekalmanmex.c kalman_associative_parallel.c -lmwlapack -lmwblas
             case 'ultimate'
-                disp('compiling and linking under MATLAB ...');
-                mex -DNDEBUG -DBUILD_MEX -DBUILD_MATLAB -DBUILD_LAPACK_H -DBUILD_BLAS_H -DBUILD_WIN32_GETTIMEOFDAY ultimatekalmanmex.c ultimatekalman.c -lmwlapack -lmwblas
+                disp('compiling and linking under MATLAB ... (ultimate kalman)');
+                mex -DNDEBUG -DBUILD_MEX -DBUILD_MATLAB -DBUILD_LAPACK_H -DBUILD_BLAS_H -DBUILD_WIN32_GETTIMEOFDAY ultimatekalmanmex.c ultimatekalman.c flexible_arrays.c kalman_matrix_ops.c -lmwlapack -lmwblas
             case 'filter_smoother'
-                disp('compiling and linking under MATLAB ...');
+                disp('compiling and linking under MATLAB ... (kalman filter smoother)');
                 mex -DNDEBUG -DBUILD_MEX -DBUILD_MATLAB -DBUILD_LAPACK_H -DBUILD_BLAS_H -DBUILD_WIN32_GETTIMEOFDAY ultimatekalmanmex.c kalman_filter_smoother.c -lmwlapack -lmwblas
             otherwise
                 error(['unknown parallel variant ' parallel])
