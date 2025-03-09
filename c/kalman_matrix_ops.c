@@ -503,6 +503,99 @@ void matrix_mutate_gemm(double ALPHA, matrix_t* A, matrix_t* B, double BETA, mat
 	//if (debug) printf("dtrtr done\n");
 }
 
+matrix_t* matrix_create_multiply(matrix_t* A, matrix_t* B) {
+	assert(A != NULL);
+	assert(B != NULL);
+	assert(matrix_cols(A) == matrix_rows(B));
+
+	matrix_t* output = matrix_create_constant(matrix_rows(A),matrix_cols(B),0.0);
+	matrix_mutate_gemm(1, A, B, 0, output);
+
+	return output;
+}
+
+matrix_t* matrix_create_mldivide(matrix_t* A, matrix_t* B) {
+	assert(A != NULL);
+	assert(B != NULL);
+	assert(matrix_rows(A) == matrix_cols(A));
+
+	matrix_t* R = matrix_create_copy(A);
+	matrix_t* Q = matrix_create_mutate_qr(R);
+
+	B = matrix_create_copy(B);
+	matrix_mutate_apply_qt(R,Q,B);
+
+	matrix_mutate_triu(R);
+	matrix_t* A_inverse =  matrix_create_trisolve(R,B);
+
+	matrix_free(R);
+	matrix_free(Q);
+	matrix_free(B);
+
+	return A_inverse;
+
+}	
+
+matrix_t* matrix_create_inverse(matrix_t* A) {
+	matrix_t* I = matrix_create_identity(matrix_rows(A),matrix_cols(A));
+	matrix_t* A_inverse = matrix_create_mldivide(A,I);
+	matrix_free(I);
+
+	return A_inverse;
+}
+
+matrix_t* matrix_create_transpose(matrix_t* A) {
+	int32_t i,j;
+
+	matrix_t* AT = matrix_create(matrix_cols(A),matrix_rows(A));
+
+	for (i=0; i<matrix_rows(AT); i++) {
+		for (j=0; j<matrix_cols(AT); j++) {
+			matrix_set(AT,i,j, matrix_get(A,j,i));
+		}
+	}
+	return AT;
+}
+
+matrix_t* matrix_create_subtract(matrix_t* A, matrix_t* B) {
+	int32_t i,j;
+
+	assert(A != NULL);
+	assert(B != NULL);
+	assert(matrix_rows(A) == matrix_rows(B));
+	assert(matrix_cols(A) == matrix_cols(B));
+
+	matrix_t* C = matrix_create_copy(A);
+
+	for (i=0; i<matrix_rows(A); i++) {
+		for (j=0; j<matrix_cols(A); j++) {
+			matrix_set(C,i,j, matrix_get(A,i,j) - matrix_get(B,i,j));
+		}
+	}
+
+	return C;
+}
+matrix_t* matrix_create_add(matrix_t* A, matrix_t* B) {
+	int32_t i,j;
+
+	assert(A != NULL);
+	assert(B != NULL);
+	assert(matrix_rows(A) == matrix_rows(B));
+	assert(matrix_cols(A) == matrix_cols(B));
+
+	matrix_t* C = matrix_create_copy(A);
+
+	for (i=0; i<matrix_rows(A); i++) {
+		for (j=0; j<matrix_cols(A); j++) {
+			matrix_set(C,i,j, matrix_get(A,i,j) + matrix_get(B,i,j));
+		}
+	}
+
+	return C;
+}
+
+
+
 #ifdef BUILD_MEX
 matrix_t* matrix_create_from_mxarray(const mxArray* mx) {
 	if (mx==NULL) {
