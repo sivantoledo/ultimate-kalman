@@ -17,6 +17,10 @@
 #include <unistd.h>
 #endif
 
+#define KALMAN_MATRIX_SHORT_TYPE
+#include "ultimatekalman.h"
+
+#ifdef MOVED
 /******************************************************************************/
 /* BLAS AND LAPACK DECLARATIONS                                               */
 /******************************************************************************/
@@ -135,9 +139,12 @@ void
 					 );
 #endif
 
+#endif
+
+#ifdef OBSOLETE
 #define ULTIMATEKALMAN_C
 #include "kalman_filter_smoother.h"
-
+#endif
 
 
 #ifdef BUILD_MEX
@@ -194,6 +201,7 @@ int gettimeofday(struct timeval * tp, struct timezone * tzp)
 #include <sys/time.h>
 #endif
 
+#ifdef MOVED
 /******************************************************************************/
 /* MATRICES                                                                   */
 /******************************************************************************/
@@ -895,6 +903,8 @@ static void* farray_drop_last(farray_t* a) {
 	return r;
 }
 
+#endif 
+
 /******************************************************************************/
 /* COVARIANCE MATRICES                                                        */
 /******************************************************************************/
@@ -1030,6 +1040,29 @@ matrix_t* explicit(matrix_t* cov, char type) {
 /* KALMAN STEPS                                                               */
 /******************************************************************************/
 
+typedef struct step_st {
+	int64_t step; // logical step number
+	int32_t dimension;
+	
+	char   C_type;
+	char   K_type;
+
+	//kalman_matrix_t* H;
+	kalman_matrix_t* F;
+
+	kalman_matrix_t* predictedState;
+	kalman_matrix_t* predictedCovariance;
+
+	kalman_matrix_t* assimilatedState;
+	kalman_matrix_t* assimilatedCovariance;
+
+	kalman_matrix_t* smoothedState;
+	kalman_matrix_t* smoothedCovariance;
+
+	kalman_matrix_t* state;
+	kalman_matrix_t* covariance;
+} step_t;
+
 static step_t* step_create() {
 	step_t* s = malloc(sizeof(step_t));
 	s->step      = -1;
@@ -1110,12 +1143,13 @@ int64_t   kalman_latest(kalman_t* kalman) {
 }
 
 void kalman_evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, matrix_t* c_i, matrix_t* K_i, char K_type) {
-	kalman->current = step_create();
-	kalman->current->dimension = n_i;
+	step_t* kalman_current;
+	kalman->current = kalman_current = step_create();
+	kalman_current->dimension = n_i;
 
 	if (farray_size(kalman->steps)==0) {
 		//if (debug) printf("kalman_evolve first step\n");
-		kalman->current->step = 0;
+		kalman_current->step = 0;
 		return;
 	}
 
@@ -1130,7 +1164,7 @@ void kalman_evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, 
 
 	step_t* imo = farray_get_last( kalman->steps );
 	assert(imo != NULL);
-	kalman->current->step = (imo->step) + 1;
+	kalman_current->step = (imo->step) + 1;
 
 	//if (debug) printf("kalman_evolve step = %d\n",kalman->current->step);
 
@@ -1140,7 +1174,7 @@ void kalman_evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, 
 
 	// we assume H_i is an identity, need to check in the final code
 	//kalman->current->H	= matrix_create_copy(H_i);
-	kalman->current->F 	= matrix_create_copy(F_i);
+	kalman_current->F 	= matrix_create_copy(F_i);
 
 	//printf("imo->assimilatedState = ");
 	//matrix_print(imo->assimilatedState,"%.3e");
@@ -1174,7 +1208,7 @@ void kalman_evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, 
 	//matrix_free( HinvTrans );
 	//matrix_free( Hinv );
 
-	kalman->current->predictedState = matrix_create_add(predictedState,c_i);
+	kalman_current->predictedState = matrix_create_add(predictedState,c_i);
 	matrix_free(predictedState);
 
 	matrix_t* K_i_explicit = explicit(K_i,K_type);
@@ -1183,14 +1217,14 @@ void kalman_evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, 
 	matrix_t* F_iTrans = matrix_create_transpose( F_i );
 	matrix_t* t5 = matrix_create_multiply( t4, F_iTrans );
 
-	kalman->current->predictedCovariance = matrix_create_add( t5, K_i_explicit );
+	kalman_current->predictedCovariance = matrix_create_add( t5, K_i_explicit );
 
 	matrix_free( F_iTrans );
 	matrix_free( t5 );
 	matrix_free( t4 );
 
-	kalman->current->state      = kalman->current->predictedState      ;
-	kalman->current->covariance = kalman->current->predictedCovariance ;
+	kalman_current->state      = kalman_current->predictedState      ;
+	kalman_current->covariance = kalman_current->predictedCovariance ;
 }
 
 void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_i, char C_type) {
@@ -1201,16 +1235,17 @@ void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 
 	assert(kalman != NULL);
 	assert(kalman->current != NULL);
-	int32_t n_i = kalman->current->dimension;
+	step_t* kalman_current = kalman->current;	
+	int32_t n_i = kalman_current->dimension;
 
 #ifdef BUILD_DEBUG_PRINTOUTS
-	printf("observe %d\n",(int) kalman->current->step);
+	printf("observe %d\n",(int) kalman_current->step);
 #endif
 
 	// matrix_t* W_i_G_i = NULL;
 	// matrix_t* W_i_o_i = NULL;
 
-	if (kalman->current->step == 0) {
+	if (kalman_current->step == 0) {
 		//printf("filter_smoother step 0 observation cov-type %c\n",C_type);
 		matrix_t* W_i_G_i = cov_weigh(C_i,C_type,G_i);
 		matrix_t* W_i_o_i = cov_weigh(C_i,C_type,o_i);
@@ -1225,12 +1260,12 @@ void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 		matrix_mutate_chop(W_i_o_i, n_i, 1  ); // it might have been tall
 		matrix_mutate_triu(W_i_G_i);
 
-		kalman->current->assimilatedState =  matrix_create_trisolve(W_i_G_i,W_i_o_i);
+		kalman_current->assimilatedState =  matrix_create_trisolve(W_i_G_i,W_i_o_i);
 
 		matrix_t* R_trans = matrix_create_transpose(W_i_G_i);
 		matrix_t* R_trans_R = matrix_create_multiply( R_trans, W_i_G_i );
 
-		kalman->current->assimilatedCovariance = matrix_create_inverse(R_trans_R);
+		kalman_current->assimilatedCovariance = matrix_create_inverse(R_trans_R);
 
 		//matrix_print(kalman->current->assimilatedCovariance,"%.3e");
 		//matrix_print(kalman->current->assimilatedState,"%.3e");
@@ -1241,16 +1276,16 @@ void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 		matrix_free( W_i_G_i );
 		matrix_free( W_i_o_i );
 
-		kalman->current->state      = kalman->current->assimilatedState      ;
-		kalman->current->covariance = kalman->current->assimilatedCovariance ;
+		kalman_current->state      = kalman_current->assimilatedState      ;
+		kalman_current->covariance = kalman_current->assimilatedCovariance ;
 
 		farray_append(kalman->steps,kalman->current);
 		return;
 	}
 
 	if (o_i == NULL) {
-		kalman->current->assimilatedState      = matrix_create_copy( kalman->current->predictedState      );
-		kalman->current->assimilatedCovariance = matrix_create_copy( kalman->current->predictedCovariance );
+		kalman_current->assimilatedState      = matrix_create_copy( kalman_current->predictedState      );
+		kalman_current->assimilatedCovariance = matrix_create_copy( kalman_current->predictedCovariance );
 
 	} else {
 #ifdef BUILD_DEBUG_PRINTOUTS
@@ -1264,15 +1299,15 @@ void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 		// W_i_G_i = cov_weigh(C_i,C_type,G_i);
 		// W_i_o_i = cov_weigh(C_i,C_type,o_i);
 
-		matrix_t* predictedObservations = matrix_create_multiply( G_i, kalman->current->predictedState );
+		matrix_t* predictedObservations = matrix_create_multiply( G_i, kalman_current->predictedState );
 
 		matrix_t* G_i_trans = matrix_create_transpose( G_i );
-		matrix_t* t1 = matrix_create_multiply( G_i, kalman->current->predictedCovariance );
+		matrix_t* t1 = matrix_create_multiply( G_i, kalman_current->predictedCovariance );
 		matrix_t* t2 = matrix_create_multiply( t1, G_i_trans );
 		matrix_t* C_i_explicit = explicit( C_i, C_type );
 		matrix_t* S = matrix_create_add( t2, C_i_explicit );
 
-		matrix_t* t4 = matrix_create_multiply( kalman->current->predictedCovariance, G_i_trans );
+		matrix_t* t4 = matrix_create_multiply( kalman_current->predictedCovariance, G_i_trans );
 		matrix_t* S_inv = matrix_create_inverse( S );
 		matrix_t* gain = matrix_create_multiply( t4, S_inv );
 
@@ -1280,12 +1315,12 @@ void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 
 		matrix_t* gain_innovation = matrix_create_multiply( gain, innovation );
 
-		kalman->current->assimilatedState = matrix_create_add( kalman->current->predictedState, gain_innovation );
+		kalman_current->assimilatedState = matrix_create_add( kalman_current->predictedState, gain_innovation );
 
 		matrix_t* t5 = matrix_create_multiply( gain, G_i );
-		matrix_t* t6 = matrix_create_multiply( t5, kalman->current->predictedCovariance );
+		matrix_t* t6 = matrix_create_multiply( t5, kalman_current->predictedCovariance );
 
-		kalman->current->assimilatedCovariance = matrix_create_subtract( kalman->current->predictedCovariance, t6 );
+		kalman_current->assimilatedCovariance = matrix_create_subtract( kalman_current->predictedCovariance, t6 );
 
 		matrix_free( t6 );
 		matrix_free( gain_innovation );
@@ -1304,8 +1339,8 @@ void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 
 	}
 
-	kalman->current->state      = kalman->current->assimilatedState      ;
-	kalman->current->covariance = kalman->current->assimilatedCovariance ;
+	kalman_current->state      = kalman_current->assimilatedState      ;
+	kalman_current->covariance = kalman_current->assimilatedCovariance ;
 
 	farray_append(kalman->steps,kalman->current);
 
