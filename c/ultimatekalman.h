@@ -23,6 +23,7 @@
 //kalman_matrix_t* cov_weigh(kalman_matrix_t* cov, char cov_type, kalman_matrix_t* A);
 //kalman_matrix_t* cov_weigh(cov_t* cov, kalman_matrix_t* A);
 
+#ifdef MOVED
 /******************************************************************************/
 /* KALMAN STEPS                                                               */
 /******************************************************************************/
@@ -46,6 +47,8 @@ typedef struct step_st {
 //step_t* step_create();
 //void    step_free(step_t* step);
 
+#endif
+
 /******************************************************************************/
 /* KALMAN                                                                     */
 /******************************************************************************/
@@ -53,7 +56,8 @@ typedef struct step_st {
 typedef struct kalman_st {
 	//int64_t first; // logical index of first element
 	farray_t* steps;
-	step_t*   current;
+	//step_t*   current;
+	void*   current; // really a pointer to step_t
 } kalman_t;
 
 kalman_t* kalman_create    ();

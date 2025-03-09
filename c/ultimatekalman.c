@@ -181,6 +181,21 @@ matrix_t* cov_weigh(matrix_t* cov, char cov_type, matrix_t* A) {
 /* KALMAN STEPS                                                               */
 /******************************************************************************/
 
+typedef struct step_st {
+	int64_t step; // logical step number
+	int32_t dimension;
+
+	kalman_matrix_t* Rdiag;
+	kalman_matrix_t* Rsupdiag;
+	kalman_matrix_t* y;
+
+	kalman_matrix_t* Rbar;
+	kalman_matrix_t* ybar;
+
+	kalman_matrix_t* state;
+	kalman_matrix_t* covariance;
+} step_t;
+
 static step_t* step_create() {
 	step_t* s = malloc(sizeof(step_t));
 	s->step      = -1;
@@ -249,12 +264,13 @@ int64_t   kalman_latest(kalman_t* kalman) {
 }
 
 void kalman_evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, matrix_t* c_i, matrix_t* K_i, char K_type) {
-	kalman->current = step_create();
-	kalman->current->dimension = n_i;
+	step_t* kalman_current;
+	kalman->current = kalman_current = step_create();
+	kalman_current->dimension = n_i;
 
 	if (farray_size(kalman->steps)==0) {
 		//if (debug) printf("kalman_evolve first step\n");
-		kalman->current->step = 0;
+		kalman_current->step = 0;
 		return;
 	}
 
@@ -269,7 +285,7 @@ void kalman_evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, 
 
 	step_t* imo = farray_get_last( kalman->steps );
 	assert(imo != NULL);
-	kalman->current->step = (imo->step) + 1;
+	kalman_current->step = (imo->step) + 1;
 
 	//if (debug) printf("kalman_evolve step = %d\n",kalman->current->step);
 
@@ -424,8 +440,8 @@ void kalman_evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, 
 	//printf("%d: A %d %d B %d %d\n",kalman->current->step,matrix_rows(A),matrix_cols(A),matrix_rows(B),matrix_cols(B));
 
 	if (matrix_rows(B) > n_imo) {
-		kalman->current->Rbar = matrix_create_sub(B,n_imo,matrix_rows(B)-n_imo, 0, matrix_cols(B));
-		kalman->current->ybar = matrix_create_sub(y,n_imo,matrix_rows(y)-n_imo, 0, matrix_cols(y));
+		kalman_current->Rbar = matrix_create_sub(B,n_imo,matrix_rows(B)-n_imo, 0, matrix_cols(B));
+		kalman_current->ybar = matrix_create_sub(y,n_imo,matrix_rows(y)-n_imo, 0, matrix_cols(y));
 	}
 
 	// free imo's Rdiag and y, if they are set
@@ -460,10 +476,11 @@ void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 
 	assert(kalman != NULL);
 	assert(kalman->current != NULL);
-	int32_t n_i = kalman->current->dimension;
+	step_t* kalman_current = kalman->current;
+	int32_t n_i = kalman_current->dimension;
 
 #ifdef BUILD_DEBUG_PRINTOUTS
-	printf("observe %d\n",(int) kalman->current->step);
+	printf("observe %d\n",(int) kalman_current->step);
 #endif
 
 	matrix_t* W_i_G_i = NULL;
@@ -498,8 +515,8 @@ void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 	//if (debug) printf("kalman_observe %08x %d %08x %d\n",G_i,G_i?matrix_rows(G_i):0, kalman->current->Rbar, kalman->current->Rbar?matrix_rows(kalman->current->Rbar):0);
 	//if (debug) printf("current ybar %08x Rbar %08x Woi %08x\n",kalman->current->Rbar, kalman->current->ybar, W_i_o_i);
 
-	matrix_t* A = matrix_create_vconcat(kalman->current->Rbar, W_i_G_i);
-	matrix_t* y = matrix_create_vconcat(kalman->current->ybar, W_i_o_i);
+	matrix_t* A = matrix_create_vconcat(kalman_current->Rbar, W_i_G_i);
+	matrix_t* y = matrix_create_vconcat(kalman_current->ybar, W_i_o_i);
 
 	if ( A != NULL ) { // we got some rows from at least one of the two blocks
 #ifdef BUILD_DEBUG_PRINTOUTS
@@ -579,7 +596,7 @@ void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 
 		/*********************************************/
 
-		int32_t n_i = kalman->current->dimension;
+		int32_t n_i = kalman_current->dimension;
 
 		//if (debug) printf("observe n_i = %d\n",n_i);
 
@@ -602,24 +619,24 @@ void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 		matrix_print(A,"%.3e");
 #endif
 
-		kalman->current->Rdiag  = A;
-		kalman->current->y      = y;
+		kalman_current->Rdiag  = A;
+		kalman_current->y      = y;
 
-		matrix_mutate_triu(kalman->current->Rdiag);
+		matrix_mutate_triu(kalman_current->Rdiag);
 
 		} else { // A is flat, no need to factor
 			//printf("obs step %d no need to factor, flat\n",kalman->current->step);
-			kalman->current->Rdiag  = A;
-			kalman->current->y      = y;
+			kalman_current->Rdiag  = A;
+			kalman_current->y      = y;
 		}
 
 		// solve for the estimate
 
 		matrix_t* state = NULL;
 
-		if (matrix_rows(kalman->current->Rdiag)==n_i) {
+		if (matrix_rows(kalman_current->Rdiag)==n_i) {
 
-			state = matrix_create_trisolve(kalman->current->Rdiag,y);
+			state = matrix_create_trisolve(kalman_current->Rdiag,y);
 
 			/*
 
@@ -649,8 +666,8 @@ void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 			state = matrix_create_constant(n_i,1,NaN);
 		}
 
-		kalman->current->state = state;
-		kalman->current->covariance = matrix_create_copy(kalman->current->Rdiag);
+		kalman_current->state = state;
+		kalman_current->covariance = matrix_create_copy(kalman_current->Rdiag);
 	}
 
 	matrix_free(W_i_G_i);
