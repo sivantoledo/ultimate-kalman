@@ -18,7 +18,7 @@
 #endif
 
 #define KALMAN_MATRIX_SHORT_TYPE
-#include "ultimatekalman.h"
+#include "kalman.h"
 
 #ifdef BUILD_MEX
 #include "mex.h"
@@ -47,6 +47,7 @@ static void mex_assert(int c, int line) {
 
 static double NaN = 0.0 / 0.0;
 
+#ifdef MOVED
 #if defined(BUILD_WIN32_GETTIMEOFDAY) && defined(_WIN32)
 #include <windows.h>
 typedef SSIZE_T ssize_t;
@@ -74,6 +75,9 @@ int gettimeofday(struct timeval * tp, struct timezone * tzp)
 #include <sys/time.h>
 #endif
 
+#endif
+
+#ifdef MOVED
 /******************************************************************************/
 /* COVARIANCE MATRICES                                                        */
 /******************************************************************************/
@@ -204,6 +208,7 @@ matrix_t* explicit(matrix_t* cov, char type) {
 	}
 	return NULL;
 }
+#endif
 
 /******************************************************************************/
 /* KALMAN STEPS                                                               */
@@ -232,7 +237,8 @@ typedef struct step_st {
 	kalman_matrix_t* covariance;
 } step_t;
 
-static step_t* step_create() {
+//static step_t* step_create() {
+void* step_create() {
 	step_t* s = malloc(sizeof(step_t));
 	s->step      = -1;
 	s->dimension = -1;
@@ -257,7 +263,9 @@ static step_t* step_create() {
 	return s;
 }
 
-void step_free(step_t* s) {
+//void step_free(step_t* s) {
+void step_free(void* v) {
+	step_t* s = (step_t*) v;
 	
 	//matrix_free(s->H);
 	matrix_free(s->F);
@@ -274,10 +282,23 @@ void step_free(step_t* s) {
 	free(s);
 }
 
+int64_t step_get_step(void* v) {
+	return ((step_t*) v)->step;
+}
+
+int32_t step_get_dimension(void* v) {
+	return ((step_t*) v)->dimension;
+}
+
+kalman_matrix_t* step_get_state(void* v) {
+	return ((step_t*) v)->state;
+}
+
 /******************************************************************************/
 /* KALMAN                                                                     */
 /******************************************************************************/
 
+#ifdef MOVED
 kalman_t* kalman_create() {
 	kalman_t* kalman = malloc(sizeof(kalman_t));
 	assert( kalman != NULL );
@@ -310,10 +331,11 @@ int64_t   kalman_latest(kalman_t* kalman) {
 	step_t* s = farray_get_last(kalman->steps);
 	return s->step;
 }
+#endif
 
 void kalman_evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, matrix_t* c_i, matrix_t* K_i, char K_type) {
 	step_t* kalman_current;
-	kalman->current = kalman_current = step_create();
+	kalman->current = kalman_current = (step_t*) step_create();
 	kalman_current->dimension = n_i;
 
 	if (farray_size(kalman->steps)==0) {
@@ -518,6 +540,7 @@ void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 #endif
 }
 
+#ifdef MOVED
 matrix_t* kalman_estimate(kalman_t* kalman, int64_t si) {
 #ifdef BUILD_DEBUG_PRINTOUTS
 	printf("kalman_estimate\n");
@@ -532,6 +555,7 @@ matrix_t* kalman_estimate(kalman_t* kalman, int64_t si) {
 
 	return matrix_create_copy(step->state);
 }
+#endif
 
 /*
  * Sivan March 2025: this was called smooth and was called trivially from kalman_smooth
@@ -629,7 +653,7 @@ matrix_t* kalman_covariance(kalman_t* kalman, int64_t si) {
 	return cov;
 }
 
-
+#ifdef MOVED
 void kalman_forget(kalman_t* kalman, int64_t si) {
 #ifdef BUILD_DEBUG_PRINTOUTS
 	printf("forget %d\n",(int) si);
@@ -658,6 +682,7 @@ void kalman_forget(kalman_t* kalman, int64_t si) {
 	printf("forget %d done\n",(int) si);
 #endif
 }
+#endif
 
 void kalman_rollback(kalman_t* kalman, int64_t si) {
 	if (farray_size(kalman->steps) == 0) return;
@@ -686,6 +711,8 @@ void kalman_rollback(kalman_t* kalman, int64_t si) {
 	} while (step->step > si);
 	//printf("rollback to %d new latest %d\n",si,kalman_latest(kalman));
 }
+
+#ifdef MOVED
 
 static struct timeval begin, end;
 
@@ -740,6 +767,7 @@ matrix_t* kalman_perftest(kalman_t* kalman,
 
 	return t;
 }
+#endif
 
 /******************************************************************************/
 /* END OF FILE                                                                */

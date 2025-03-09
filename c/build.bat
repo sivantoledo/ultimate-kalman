@@ -38,13 +38,17 @@ REM echo %path%
 
 ECHO generating test program %test%.exe
 
+::   ultimatekalman.c ^
+
+
 cl ^
   %C_FLAGS% ^
   -Fe%test%.exe ^
   -I. ^
   %BLAS_LAPACK_FLAGS% ^
   -DBUILD_WIN32_GETTIMEOFDAY ^
-  ultimatekalman.c ^
+  kalman_filter_smoother.c ^
+  kalman_base.c ^
   kalman_matrix_ops.c ^
   flexible_arrays.c ^
   %test%.c ^
