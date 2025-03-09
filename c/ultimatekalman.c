@@ -17,6 +17,7 @@
 #include <unistd.h>
 #endif
 
+#ifdef MOVED
 /******************************************************************************/
 /* BLAS AND LAPACK DECLARATIONS                                               */
 /******************************************************************************/
@@ -135,10 +136,10 @@ void
 					 );
 #endif
 
-#define ULTIMATEKALMAN_C
+#endif /* moved */
+
+#define KALMAN_MATRIX_SHORT_TYPE
 #include "ultimatekalman.h"
-
-
 
 #ifdef BUILD_MEX
 #include "mex.h"
@@ -194,6 +195,7 @@ int gettimeofday(struct timeval * tp, struct timezone * tzp)
 #include <sys/time.h>
 #endif
 
+#ifdef MOVED 
 /******************************************************************************/
 /* MATRICES                                                                   */
 /******************************************************************************/
@@ -702,7 +704,9 @@ mxArray* matrix_copy_to_mxarray(matrix_t* A) {
 }
 #endif
 
+#endif /* moved */
 
+#ifdef MOVED
 /******************************************************************************/
 /* FLEXIBLE ARRAYS OF POINTERS                                                */
 /******************************************************************************/
@@ -803,6 +807,8 @@ static void* farray_drop_last(farray_t* a) {
 	(a->end)--;
 	return r;
 }
+
+#endif /* MOVED to flexible_arrays.c */
 
 /******************************************************************************/
 /* COVARIANCE MATRICES                                                        */

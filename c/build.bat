@@ -45,6 +45,8 @@ cl ^
   %BLAS_LAPACK_FLAGS% ^
   -DBUILD_WIN32_GETTIMEOFDAY ^
   ultimatekalman.c ^
+  kalman_matrix_ops.c ^
+  flexible_arrays.c ^
   %test%.c ^
   %BLAS_LAPACK_LIBS% 
 

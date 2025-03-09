@@ -7,13 +7,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#ifdef PARALLEL
-#include <pthread.h>
-
-//#include "parallel_for_c.h"
-void parallel_for_c(void* kalman, void** helper, size_t l, size_t n, size_t block_size, void (*func)(void*, void**, size_t, size_t, size_t));
-void parallel_scan_c(void** input, void** sums, void* create_array , void* (*f)(void*, void*, void*, int, int), int length, int stride);
-#endif
 
 #ifdef _WIN32
 // for "unused" attribute
@@ -1084,15 +1077,6 @@ void step_free(step_t* s) {
 /******************************************************************************/
 
 kalman_t* kalman_create() {
-#ifdef PARALLEL
-	char* nthreads_string = getenv("NTHREADS");
-	int nthreads = 0;
-	if (nthreads_string != NULL && sscanf(nthreads_string,"%d",&nthreads)==1) {
-		kalman_parallel_init(nthreads);
-		printf("limiting to %d threads/cores\n",nthreads);
-	}
-#endif
-
 	kalman_t* kalman = malloc(sizeof(kalman_t));
 	assert( kalman != NULL );
 	kalman->steps   = farray_create();
@@ -1345,11 +1329,10 @@ matrix_t* kalman_estimate(kalman_t* kalman, int64_t si) {
 	return matrix_create_copy(step->state);
 }
 
+/*
+ * Sivan March 2025: this was called smooth and was called trivially from kalman_smooth
+ */
 void kalman_smooth(kalman_t* kalman) {
-	smooth(kalman);
-}
-
-void smooth(kalman_t* kalman) {
 	if (farray_size(kalman->steps) == 0) return;
 
 	int64_t si;

@@ -1,5 +1,5 @@
-#ifndef ULTIMATE_KALMAN
-#define ULTIMATE_KALMAN
+#ifndef ULTIMATE_KALMAN_H
+#define ULTIMATE_KALMAN_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,6 +9,10 @@
 #include "mex.h"
 #endif
 
+#include "kalman_matrix_ops.h"
+#include "flexible_arrays.h"
+
+#ifdef MOVED
 /******************************************************************************/
 /* MATRICES                                                                   */
 /******************************************************************************/
@@ -79,6 +83,9 @@ void matrix_mutate_gemm(double ALPHA, kalman_matrix_t* A, kalman_matrix_t* B, do
 
 //kalman_matrix_t* matrix_create_vconcat(kalman_matrix_t* A, kalman_matrix_t* B);
 
+#endif
+
+#ifdef MOVED
 /******************************************************************************/
 /* FLEXIBLE ARRAYS OF POINTERS                                                */
 /******************************************************************************/
@@ -102,6 +109,8 @@ typedef struct farray_st {
 //static void      farray_append(farray_t* a, void* v);
 //static void*     farray_drop_first(farray_t* a);
 //static void*     farray_drop_last(farray_t* a);
+
+#endif
 
 /******************************************************************************/
 /* COVARIANCE MATRICES                                                        */

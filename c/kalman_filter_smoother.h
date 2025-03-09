@@ -164,26 +164,6 @@ int64_t   kalman_latest    (kalman_t* kalman);
 void      kalman_evolve    (kalman_t* kalman, int32_t n_i, kalman_matrix_t* H_i, kalman_matrix_t* F_i, kalman_matrix_t* c_i, kalman_matrix_t* K_i, char K_type);
 void      kalman_observe   (kalman_t* kalman, kalman_matrix_t* G_i, kalman_matrix_t* o_i, kalman_matrix_t* C_i, char C_type);
 void      kalman_smooth    (kalman_t* kalman);
-void	  apply_Q_on_block_matrix (kalman_matrix_t* R, kalman_matrix_t* Q, kalman_matrix_t** upper, kalman_matrix_t** lower);
-void	  parallel_smooth  (kalman_t* kalman, int* indices, int length);
-
-
-typedef struct LockedArray{
-    step_t*** arrays;          
-    int rows;             
-    int columns;    
-#ifdef PARALLEL
-    pthread_mutex_t* locks;
-#endif
-} LockedArray_t;
-
-void smooth(kalman_t* kalman);
-
-step_t** cummulativeSumsSequential(kalman_t* kalman, step_t* (*f)(step_t*, step_t*), int s, int e, int stride);
-
-step_t* filteringAssociativeOperation(step_t* si, step_t* sj, LockedArray_t* created_steps, int row, int is_final_scan);
-step_t* smoothingAssociativeOperation(step_t* si, step_t* sj, LockedArray_t* created_steps, int row, int is_final_scan);
-
 kalman_matrix_t* kalman_estimate  (kalman_t* kalman, int64_t si);
 kalman_matrix_t* kalman_covariance(kalman_t* kalman, int64_t si);
 char             kalman_covariance_type(kalman_t* kalman, int64_t si);
