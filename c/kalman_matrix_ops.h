@@ -194,6 +194,19 @@ void matrix_print(kalman_matrix_t* A, char* format);
  */
 void matrix_mutate_gemm(double ALPHA, kalman_matrix_t* A, kalman_matrix_t* B, double BETA, kalman_matrix_t* C);
 
+void matrix_mutate_scale(kalman_matrix_t* A, double s);
+void matrix_mutate_copy(kalman_matrix_t* C, kalman_matrix_t* A);
+void matrix_mutate_apply_qt(kalman_matrix_t* QR, kalman_matrix_t* TAU, kalman_matrix_t* C);
+void matrix_mutate_triu(kalman_matrix_t* A);
+void matrix_mutate_chop(kalman_matrix_t* A, int32_t rows, int32_t cols);
+void matrix_mutate_trisolve(kalman_matrix_t* U, kalman_matrix_t* b);
+
+
+
+kalman_matrix_t* matrix_create_trisolve(kalman_matrix_t* U, kalman_matrix_t* b);
+kalman_matrix_t* matrix_create_vconcat(kalman_matrix_t* A, kalman_matrix_t* B);
+kalman_matrix_t* matrix_create_mutate_qr(kalman_matrix_t* A);
+
 //kalman_matrix_t* matrix_create_vconcat(kalman_matrix_t* A, kalman_matrix_t* B);
 
 /******************************************************************************/

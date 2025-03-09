@@ -71,7 +71,7 @@ static int selector(char* expected, int nrhs, const mxArray *prhs[]) {
   //selector = mxGetChars(prhs[0]);
 
   mxGetString(prhs[0], selector, 32);
-mexPrintf("selector = <%s>\n",selector);
+
   if (expected == NULL) { // a mechanism to display the selector for debugging
   	mexPrintf("selector = <%s>\n",selector);
   	return 0;
@@ -379,7 +379,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     size_t ncols;                   /* size of matrix */
     double *outMatrix;              /* output matrix */
 
-    mexPrintf("Build time = %s %s\n",__DATE__,__TIME__);
+    //mexPrintf("Build time = %s %s\n",__DATE__,__TIME__);
 
 
     //selector(NULL,nrhs,prhs);
