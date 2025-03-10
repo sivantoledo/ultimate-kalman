@@ -331,7 +331,7 @@ void kalman_rollback(kalman_t* kalman, int64_t si) {
 		step = farray_drop_last(kalman->steps);
 		sj = step_get_step(step);
 		if (sj == si) {
-			printf("rollback got to %d\n",si);
+		  //printf("rollback got to %d\n",si);
 
             /*
 			matrix_free( step->Rdiag     );
