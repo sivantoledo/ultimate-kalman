@@ -1,7 +1,7 @@
 /*
- * ultimatekalman.c
+ * kalman_filter_smoother.c
  *
- * (C) Sivan Toledo, 2022
+ * (C) Sivan Toledo, 2024-2025
  */
 #include <stdio.h>
 #include <stdlib.h>
