@@ -30,6 +30,10 @@ gcc \
     -o $test \
     $test.c \
     ultimatekalman.c \
+    kalman_base.c \
+    kalman_parallel_sequential.c \
+    kalman_matrix_ops.c \
+    flexible_arrays.c \
     $LIBDIR \
     -llapack -lblas -lm
 

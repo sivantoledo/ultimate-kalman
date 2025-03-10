@@ -25,7 +25,7 @@
 #include "kalman.h"
 
 #ifdef PARALLEL
-#include "kalman_tbb.h"
+#include "kalman_parallel.h"
 
 #define parallel_for_c parallel_for_c_oddeven
 
@@ -346,7 +346,8 @@ void assign_indices(void* kalman_v, void* indices_v, int length, int** helper, s
 	}
 }
 
-void G_F_to_R_tilde(void* kalman_v, void* indices_v, int length, int** helper, size_t start, size_t end){
+//void G_F_to_R_tilde(void* kalman_v, void* indices_v, int length, int** helper, size_t start, size_t end){
+void G_F_to_R_tilde(void** indices_v, int length, size_t start, size_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
 	step_t* *indices = (step_t**)indices_v;
 
@@ -996,11 +997,13 @@ void smooth_recursive(step_t** indices, int length) {
 		return;
     }
 	// First part of the algorithm
-	#ifdef PARALLEL
-	parallel_for_c(NULL, indices, length, NULL, (length + 1)/2,BLOCKSIZE,G_F_to_R_tilde);
-	#else
-	G_F_to_R_tilde(NULL, indices, length, NULL, 0, (length + 1)/2);
-	#endif
+	//#ifdef PARALLEL
+	//parallel_for_c(NULL, indices, length, NULL, (length + 1)/2,BLOCKSIZE,G_F_to_R_tilde);
+	//#else
+	//G_F_to_R_tilde(NULL, indices, length, NULL, 0, (length + 1)/2);
+	//#endif
+
+	foreach_step_in_range(indices, length, (length + 1)/2, G_F_to_R_tilde);
 
 	//Second part of the algorithm
 	#ifdef PARALLEL
