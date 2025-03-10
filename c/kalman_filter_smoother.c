@@ -47,169 +47,6 @@ static void mex_assert(int c, int line) {
 
 static double NaN = 0.0 / 0.0;
 
-#ifdef MOVED
-#if defined(BUILD_WIN32_GETTIMEOFDAY) && defined(_WIN32)
-#include <windows.h>
-typedef SSIZE_T ssize_t;
-
-static
-int gettimeofday(struct timeval * tp, struct timezone * tzp)
-{
-    // Note: some broken versions only have 8 trailing zero's, the correct epoch has 9 trailing zero's
-    static const uint64_t EPOCH = ((uint64_t) 116444736000000000ULL);
-
-    SYSTEMTIME  system_time;
-    FILETIME    file_time;
-    uint64_t    time;
-
-    GetSystemTime( &system_time );
-    SystemTimeToFileTime( &system_time, &file_time );
-    time =  ((uint64_t)file_time.dwLowDateTime )      ;
-    time += ((uint64_t)file_time.dwHighDateTime) << 32;
-
-    tp->tv_sec  = (long) ((time - EPOCH) / 10000000L);
-    tp->tv_usec = (long) (system_time.wMilliseconds * 1000);
-    return 0;
-}
-#else
-#include <sys/time.h>
-#endif
-
-#endif
-
-#ifdef MOVED
-/******************************************************************************/
-/* COVARIANCE MATRICES                                                        */
-/******************************************************************************/
-
-matrix_t* cov_weigh(matrix_t* cov, char cov_type, matrix_t* A) {
-	blas_int_t M,N,K,LDA,LDB,LDC,NRHS,INFO;
-	double ALPHA, BETA;
-
-	assert(A != NULL);
-	assert(cov != NULL);
-
-#ifdef BUILD_DEBUG_PRINTOUTS
-	printf("cov(%c) ",cov_type);
-	matrix_print(cov,"%.3e");
-	printf("A ");
-	matrix_print(A,"%.3e");
-#endif
-
-	matrix_t* WA = NULL;
-
-	int32_t i,j, rows, cols;
-
-	switch (cov_type) {
-	case 'W':
-		//if (debug) printf("cov W %d %d %d %d\n",matrix_cols(cov),matrix_rows(cov),matrix_cols(A),matrix_rows(A));
-
-		assert(matrix_cols(cov) == matrix_rows(A));
-
-		WA = matrix_create_constant(matrix_rows(A), matrix_cols(A),0.0);
-
-		M = matrix_rows(WA);
-		N = matrix_cols(WA);
-		K = matrix_cols(cov);
-		LDA = matrix_ld(cov);
-		LDB = matrix_ld(A);
-		LDC = matrix_ld(WA);
-		ALPHA = 1.0;
-		BETA  = 0.0;
-#ifdef BUILD_BLAS_UNDERSCORE
-    dgemm_
-#else
-    dgemm
-#endif
-		     ("n","N",&M,&N,&K,&ALPHA, cov->elements, &LDA, A->elements, &LDB, &BETA, WA->elements, &LDC
-#ifdef BUILD_BLAS_STRLEN_END
-          ,1,1
-#endif
-			 );
-		break;
-	case 'U': // cov and an upper triangular matrix that we need to solve with
-	case 'F': // same representation; in Matlab, we started from explicit cov and factored
-
-		//if (debug) printf("cov U %d %d %d %d\n",matrix_cols(cov),matrix_rows(cov),matrix_cols(A),matrix_rows(A));
-
-		// is this correct for 'F'?
-		WA = matrix_create_trisolve(cov,A);
-		/*
-		assert(matrix_cols(cov) == matrix_rows(A));
-
-		WA = matrix_create_copy(A);
-
-		N = matrix_cols(cov);
-		LDA = matrix_ld(cov);
-
-		NRHS = matrix_cols(WA);
-		LDB = matrix_ld(WA);
-
-		//if (debug) printf("dtrtrs N=%d NRHS=%d LDA=%d LDB=%d\n",N,NRHS,LDA,LDB);
-		//if (debug) printf("dtrtrs A %08x state %08x\n",step->Rdiag->elements, state->elements);
-
-		//if (debug) matrix_print(step->Rdiag,NULL);
-		//if (debug) matrix_print(kalman->current->state,NULL);
-
-		// upper triangular, no transpose, diagonal is general (not unit)
-		dtrtrs("U","N","N", &N, &NRHS, cov->elements, &LDA, WA->elements, &LDB, &INFO);
-		*/
-		break;
-	case 'w':
-		assert(matrix_rows(cov) == matrix_rows(A));
-
-		rows = matrix_rows(A);
-		cols = matrix_cols(A);
-
-		WA = matrix_create_constant(rows, cols,0.0);
-
-		for (j=0; j<cols; j++) {
-			for (i=0; i<rows; i++) {
-				matrix_set(WA,i,j, matrix_get(cov,i,0) * matrix_get(A,i,j) );
-			}
-		}
-		break;
-	default:
-		printf("unknown covariance-matrix type %c\n",cov_type);
-		assert( 0 );
-		WA = matrix_create_constant(matrix_rows(A), matrix_cols(A), NaN);
-		break;
-	}
-
-	//if (debug) printf("WA ");
-	//if (debug) matrix_print(WA,"%.3e");
-
-	return WA;
-}
-// SUPPORT 'W','C' only
-matrix_t* explicit(matrix_t* cov, char type) {
-	assert(type == 'W' || type == 'C' || type == 'U' || type == 'F');
-	if (type == 'W') {
-		matrix_t* WT = matrix_create_transpose(cov);
-		matrix_t* WTW  = matrix_create_multiply(WT,cov);
-		matrix_t* C = matrix_create_inverse(WTW);
-		matrix_free(WT);
-		matrix_free(WTW);
-		return C;
-	}
-	if (type == 'U' || type == 'F') {
-		//printf("L = ");
-		//matrix_print(cov,"%.3e");
-		matrix_t* LT = matrix_create_transpose(cov);
-		matrix_t* C  = matrix_create_multiply(cov,LT);
-		matrix_free(LT);
-		//printf("C = ");
-		//matrix_print(C,"%.3e");
-		return C;
-	}
-	if (type == 'C') {
-		matrix_t* C = matrix_create_copy(cov);
-		return C;
-	}
-	return NULL;
-}
-#endif
-
 /******************************************************************************/
 /* KALMAN STEPS                                                               */
 /******************************************************************************/
@@ -297,41 +134,6 @@ kalman_matrix_t* step_get_state(void* v) {
 /******************************************************************************/
 /* KALMAN                                                                     */
 /******************************************************************************/
-
-#ifdef MOVED
-kalman_t* kalman_create() {
-	kalman_t* kalman = malloc(sizeof(kalman_t));
-	assert( kalman != NULL );
-	kalman->steps   = farray_create();
-	kalman->current = NULL;
-	return kalman;
-}
-
-void kalman_free(kalman_t* kalman) {
-	//printf("waning: kalman_free not fully implemented yet (steps not processed)\n");
-
-	while (farray_size(kalman->steps) > 0) {
-		step_t* i = farray_drop_last(kalman->steps);
-		step_free(i);
-	}
-
-	farray_free( kalman->steps );
-	// step_free( kalman->current );
-	free( kalman );
-}
-
-int64_t   kalman_earliest(kalman_t* kalman) {
-	if ( farray_size(kalman->steps) == 0 ) return -1;
-	step_t* s = farray_get_first(kalman->steps);
-	return s->step;
-}
-
-int64_t   kalman_latest(kalman_t* kalman) {
-	if ( farray_size(kalman->steps) == 0 ) return -1;
-	step_t* s = farray_get_last(kalman->steps);
-	return s->step;
-}
-#endif
 
 void kalman_evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, matrix_t* c_i, matrix_t* K_i, char K_type) {
 	step_t* kalman_current;
@@ -540,23 +342,6 @@ void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 #endif
 }
 
-#ifdef MOVED
-matrix_t* kalman_estimate(kalman_t* kalman, int64_t si) {
-#ifdef BUILD_DEBUG_PRINTOUTS
-	printf("kalman_estimate\n");
-#endif
-
-	if (farray_size(kalman->steps) == 0) return NULL;
-
-	if (si < 0) si = farray_last_index(kalman->steps);
-	step_t* step = farray_get(kalman->steps,si);
-
-	if (step->state == NULL) return matrix_create_constant(step->dimension,1,NaN);
-
-	return matrix_create_copy(step->state);
-}
-#endif
-
 /*
  * Sivan March 2025: this was called smooth and was called trivially from kalman_smooth
  */
@@ -653,37 +438,6 @@ matrix_t* kalman_covariance(kalman_t* kalman, int64_t si) {
 	return cov;
 }
 
-#ifdef MOVED
-void kalman_forget(kalman_t* kalman, int64_t si) {
-#ifdef BUILD_DEBUG_PRINTOUTS
-	printf("forget %d\n",(int) si);
-#endif
-
-	if (farray_size(kalman->steps) == 0) return;
-
-	if (si < 0) si = farray_last_index(kalman->steps) - 1;
-
-#ifdef BUILD_DEBUG_PRINTOUTS
-	printf("forget %d now %d to %d\n",(int) si,(int) farray_first_index(kalman->steps),(int) farray_last_index(kalman->steps));
-#endif
-
-	if (si > farray_last_index (kalman->steps) - 1) return; // don't delete last step
-	if (si < farray_first_index(kalman->steps)    ) return; // nothing to delete
-
-
-	while (farray_first_index(kalman->steps) <= si) {
-		step_t* step = farray_drop_first(kalman->steps);
-		step_free(step);
-#ifdef BUILD_DEBUG_PRINTOUTS
-		printf("forget new first %d\n",(int) farray_first_index(kalman->steps));
-#endif
-	}
-#ifdef BUILD_DEBUG_PRINTOUTS
-	printf("forget %d done\n",(int) si);
-#endif
-}
-#endif
-
 void kalman_rollback(kalman_t* kalman, int64_t si) {
 	if (farray_size(kalman->steps) == 0) return;
 
@@ -711,63 +465,6 @@ void kalman_rollback(kalman_t* kalman, int64_t si) {
 	} while (step->step > si);
 	//printf("rollback to %d new latest %d\n",si,kalman_latest(kalman));
 }
-
-#ifdef MOVED
-
-static struct timeval begin, end;
-
-matrix_t* kalman_perftest(kalman_t* kalman,
-		                      matrix_t* H, matrix_t* F, matrix_t* c, matrix_t* K, char K_type,
-		                      matrix_t* G, matrix_t* o,              matrix_t* C, char C_type,
-									        int32_t count, int32_t decimation) {
-
-	matrix_t* t = matrix_create_constant(count/decimation, 1, NaN);
-	int32_t i,j,n;
-
-	//printf("perftest count %d decimation %d rows %d\n",count,decimation,matrix_rows(t));
-
-	//struct timeval begin, end;
-	gettimeofday(&begin, 0);
-
-	j = 0;
-	n = matrix_cols(G);
-
-	for (i=0; i<count; i++) {
-		//printf("perftest iter %d (j=%d)\n",i,j);
-		//if (debug) printf("perftest iter %d (j=%d)\n",i,j);
-		kalman_evolve(kalman,n,H,F,c,K,K_type);
-		kalman_observe(kalman,G,o,C,C_type);
-		matrix_t* e = kalman_estimate(kalman,-1);
-		matrix_free(e);
-		kalman_forget(kalman,-1);
-
-		if ((i % decimation) == decimation-1) {
-			gettimeofday(&end, 0);
-			long seconds      = end.tv_sec  - begin.tv_sec;
-			long microseconds = end.tv_usec - begin.tv_usec;
-			double elapsed    = seconds + microseconds*1e-6;
-
-			assert(j < matrix_rows(t));
-
-			//printf("perftest store i=%d (j=%d) %.3e\n",i,j,elapsed/decimation);
-			matrix_set(t,j,0,elapsed / decimation); // average per step
-			j = j+1;
-
-			gettimeofday(&begin, 0);
-			//begin = end;
-		}
-	}
-
-	//printf("perftest done\n");
-	//printf("  matrix_t* t = %08x\n",t);
-
-	//printf("perftest count %d decimation %d rows %d cols %d\n",count,decimation,matrix_rows(t),matrix_cols(t));
-
-	//matrix_print(t,"%.3e");
-
-	return t;
-}
-#endif
 
 /******************************************************************************/
 /* END OF FILE                                                                */
