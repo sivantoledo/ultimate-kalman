@@ -318,18 +318,20 @@ void kalman_forget(kalman_t* kalman, int64_t si) {
 }
 
 void kalman_rollback(kalman_t* kalman, int64_t si) {
-	//printf("rollback %d\n",si);
-	if (farray_size(kalman->steps) == 0) return;
+        //printf("rollback %d\n",si);
+        if (farray_size(kalman->steps) == 0) return;
 
 	if (si > farray_last_index (kalman->steps)) return; // we can roll  back even the last step (its observation)
 	if (si < farray_first_index(kalman->steps)) return;
 
 	//step_t* step;
 	void* step;
+	int64_t sj;
 	do {
 		step = farray_drop_last(kalman->steps);
-		if (step_get_step(step) == si) {
-			//printf("rollback got to %d\n",si);
+		sj = step_get_step(step);
+		if (sj == si) {
+			printf("rollback got to %d\n",si);
 
             /*
 			matrix_free( step->Rdiag     );
@@ -344,11 +346,11 @@ void kalman_rollback(kalman_t* kalman, int64_t si) {
 			kalman->current = step;
 
 		} else {
-			//printf("rollback dropped step %d\n",step->step);
+		  //printf("rollback dropped step %d\n",step_get_step(step));
 			// don't we need to free the step? Sivan March 2025
-			step_free(step);
+		  step_free(step);
 		}
-	} while (step_get_step(step) > si);
+	} while (sj > si);
 
 	//printf("rollback to %d new latest %d\n",si,kalman_latest(kalman));
 

@@ -74,11 +74,21 @@ esac
 
 # gcc -O2 -DBUILD_MKL -DBUILD_DEBUG_PRINTOUTSx -c performance.c ultimatekalman.c
 gcc -O2 -c performance.c 
+gcc -O2 -c rotation.c 
+
+gcc -O2 $INCDIR -DPARALLEL -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_base_par.o                    kalman_base.c
+gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_base.o                        kalman_base.c
+gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_matrix_ops.o                  kalman_matrix_ops.c
+gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o flexible_arrays.o                    flexible_arrays.c
+
+gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_parallel_sequential.o                    kalman_parallel_sequential.c
 
 gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o ultimatekalman.o                     ultimatekalman.c
 gcc -O2 $INCDIR -DPARALLEL -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_oddeven.o                     kalman_oddeven.c
 gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_oddeven_seq.o                 kalman_oddeven.c
 gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_filter_smoother.o             kalman_filter_smoother.c
+
+g++ -std=c++11 $INCDIR -c kalman_parallel_tbb.cpp
 
 #gcc -O2 $INCDIR -DNO_COVARIANCE_ESTIMATES \
 #                           -DBUILD_DEBUG_PRINTOUTSx -c -o ultimatekalman_nc.o                  ultimatekalman.c
@@ -111,19 +121,60 @@ gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_filter_smoother
 #g++ -std=c++11 $INCDIR -c ultimatekalman_oddeven_wrappers.cpp
 #g++ -std=c++11 $INCDIR -c kalman_associative_wrappers.cpp
 
-g++ -std=c++11 $INCDIR -c kalman_parallel_tbb.cpp
-
 # -lmkl_tbb_thread
 # -lmkl_sequential
 
 echo LINKING
 
 g++ \
+    -std=c++11 \
+    -o rotation_ultimate \
+    rotation.o \
+    ultimatekalman.o \
+    kalman_base.o \
+    flexible_arrays.o \
+    kalman_matrix_ops.o \
+    $LIBDIR $SEQLIBS
+
+g++ \
+    -std=c++11 \
+    -o rotation_oddeven \
+    rotation.o \
+    kalman_oddeven.o \
+    kalman_base_par.o \
+    flexible_arrays.o \
+    kalman_matrix_ops.o \
+    kalman_parallel_tbb.o \
+    $LIBDIR $PARLIBS
+
+g++ \
+    -std=c++11 \
+    -o performance_ultimate \
+    performance.o \
+    ultimatekalman.o \
+    kalman_base.o \
+    flexible_arrays.o \
+    kalman_matrix_ops.o \
+    kalman_parallel_sequential.o \
+    $LIBDIR $SEQLIBS
+
+g++ \
+    -std=c++11 \
+    -o performance_filter_smoother \
+    performance.o \
+    kalman_filter_smoother.o \
+    kalman_base.o \
+    flexible_arrays.o \
+    kalman_matrix_ops.o \
+    kalman_parallel_sequential.o \
+    $LIBDIR $SEQLIBS
+
+g++ \
   -std=c++11 \
   -o performance_oddeven \
   performance.o \
   kalman_oddeven.o \
-  kalman_base.o \
+  kalman_base_par.o \
   flexible_arrays.o \
   kalman_matrix_ops.o \
   kalman_parallel_tbb.o \
