@@ -1,3 +1,4 @@
+#ifdef OBSOLETE
 #ifndef ULTIMATE_KALMAN
 #define ULTIMATE_KALMAN
 
@@ -179,3 +180,4 @@ kalman_matrix_t* kalman_perftest(kalman_t* kalman,
 /******************************************************************************/
 
 #endif
+#endif // obsolete

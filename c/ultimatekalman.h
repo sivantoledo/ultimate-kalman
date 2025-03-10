@@ -1,3 +1,4 @@
+#ifdef OBSOLETE
 #ifndef ULTIMATE_KALMAN_H
 #define ULTIMATE_KALMAN_H
 
@@ -83,4 +84,5 @@ kalman_matrix_t* kalman_perftest(kalman_t* kalman,
 /* END OF FILE                                                                */
 /******************************************************************************/
 
+#endif
 #endif
