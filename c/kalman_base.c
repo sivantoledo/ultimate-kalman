@@ -301,8 +301,6 @@ void kalman_forget(kalman_t* kalman, int64_t si) {
 #endif
 }
 
-#ifdef LATER
-
 void kalman_rollback(kalman_t* kalman, int64_t si) {
 	//printf("rollback %d\n",si);
 	if (farray_size(kalman->steps) == 0) return;
@@ -310,37 +308,36 @@ void kalman_rollback(kalman_t* kalman, int64_t si) {
 	if (si > farray_last_index (kalman->steps)) return; // we can roll  back even the last step (its observation)
 	if (si < farray_first_index(kalman->steps)) return;
 
-	step_t* step;
+	//step_t* step;
+	void* step;
 	do {
 		step = farray_drop_last(kalman->steps);
-		if (step->step == si) {
+		if (step_get_step(step) == si) {
 			//printf("rollback got to %d\n",si);
 
-			/*
-			kalman->current = step_create();
-			kalman->current->dimension = step->dimension;
-			kalman->current->step      = step->step;
-			kalman->current->Rbar      = step->Rbar;
-			kalman->current->ybar      = step->ybar;
-			 */
-			// TODO free...
-
+            /*
 			matrix_free( step->Rdiag     );
 			matrix_free( step->Rsupdiag  );
 			matrix_free( step->y         );
 			matrix_free( step->state     );
 			matrix_free( step->covariance);
+			*/
+			
+			step_rollback(step);
+			
 			kalman->current = step;
 
 		} else {
 			//printf("rollback dropped step %d\n",step->step);
+			// don't we need to free the step? Sivan March 2025
+			step_free(step);
 		}
-	} while (step->step > si);
+	} while (step_get_step(step) > si);
 
 	//printf("rollback to %d new latest %d\n",si,kalman_latest(kalman));
 
 }
-#endif
+
 static struct timeval begin, end;
 
 matrix_t* kalman_perftest(kalman_t* kalman,

@@ -25,6 +25,7 @@ kalman_matrix_t* explicit(kalman_matrix_t* cov, char type);
 
 void*   step_create  ();         // returns a pointer to a step_t
 void    step_free    (void* v);  // takes a pointer to a step_t
+void    step_rollback(void* v);  // rollback the step to just after the call to evolve
 
 int64_t step_get_step(void* v);
 int32_t step_get_dimension(void* v);

@@ -119,6 +119,17 @@ void step_free(void* v) {
 	free(s);
 }
 
+void step_rollback(void* v) {
+	step_t* s = (step_t*) v;
+	matrix_free(s->smoothedState);
+	matrix_free(s->smoothedCovariance);
+	matrix_free(s->assimilatedState);
+	matrix_free(s->assimilatedCovariance);
+	// fix aliases
+	s->state      = s->predictedState;
+	s->covariance = s->predictedCovariance;
+}
+
 int64_t step_get_step(void* v) {
 	return ((step_t*) v)->step;
 }
@@ -438,6 +449,7 @@ matrix_t* kalman_covariance(kalman_t* kalman, int64_t si) {
 	return cov;
 }
 
+#ifdef MOVED
 void kalman_rollback(kalman_t* kalman, int64_t si) {
 	if (farray_size(kalman->steps) == 0) return;
 
@@ -465,6 +477,7 @@ void kalman_rollback(kalman_t* kalman, int64_t si) {
 	} while (step->step > si);
 	//printf("rollback to %d new latest %d\n",si,kalman_latest(kalman));
 }
+#endif
 
 /******************************************************************************/
 /* END OF FILE                                                                */
