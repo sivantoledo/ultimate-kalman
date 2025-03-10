@@ -397,7 +397,9 @@ void G_F_to_R_tilde(void** indices_v, int length, size_t start, size_t end){
 		}
 	}//Done first part of the algorithm
 }
-void H_R_tilde_to_R(void* kalman_v, void* indices_v, int length, int** helper, size_t start, size_t end){
+
+//void H_R_tilde_to_R(void* kalman_v, void* indices_v, int length, int** helper, size_t start, size_t end){
+void H_R_tilde_to_R(void** indices_v, int length, size_t start, size_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
 	step_t* *indices = (step_t**)indices_v;
 
@@ -444,7 +446,9 @@ void H_R_tilde_to_R(void* kalman_v, void* indices_v, int length, int** helper, s
 	} //Done second part of the algorithm
 
 }
-void H_tilde_G_to_G_tilde(void* kalman_v, void* indices_v, int length, int** helper, size_t start, size_t end){
+
+//void H_tilde_G_to_G_tilde(void* kalman_v, void* indices_v, int length, int** helper, size_t start, size_t end){
+void H_tilde_G_to_G_tilde(void** indices_v, int length, size_t start, size_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
 	step_t* *indices = (step_t**)indices_v;
 
@@ -474,7 +478,9 @@ void H_tilde_G_to_G_tilde(void* kalman_v, void* indices_v, int length, int** hel
 
 	}//Done third part of the algorithm
 }
-void Variables_Renaming(void* kalman_v, void* indices_v, int length, int** helper, size_t start, size_t end){
+
+//void Variables_Renaming(void* kalman_v, void* indices_v, int length, int** helper, size_t start, size_t end){
+void Variables_Renaming(void** indices_v, int length, size_t start, size_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
 	step_t* *indices = (step_t**)indices_v;
 
@@ -1005,19 +1011,22 @@ void smooth_recursive(step_t** indices, int length) {
 	foreach_step_in_range(indices, length, (length + 1)/2, G_F_to_R_tilde);
 
 	//Second part of the algorithm
-	#ifdef PARALLEL
-	parallel_for_c(NULL, indices, length, NULL, (length + 1)/2,BLOCKSIZE, H_R_tilde_to_R);
-	#else
-	H_R_tilde_to_R(NULL, indices, length, NULL, 0, (length + 1)/2);
-	#endif
+	//#ifdef PARALLEL
+	//parallel_for_c(NULL, indices, length, NULL, (length + 1)/2,BLOCKSIZE, H_R_tilde_to_R);
+	//#else
+	//H_R_tilde_to_R(NULL, indices, length, NULL, 0, (length + 1)/2);
+	//#endif
+	foreach_step_in_range(indices, length, (length + 1)/2, H_R_tilde_to_R);
 
 	//Third part of the algorithm
-	#ifdef PARALLEL
-	parallel_for_c(NULL, indices, length, NULL, length/2,BLOCKSIZE, H_tilde_G_to_G_tilde);
-	#else
-	H_tilde_G_to_G_tilde(NULL, indices, length, NULL, 0, length/2);
-	#endif
-
+	//#ifdef PARALLEL
+	//parallel_for_c(NULL, indices, length, NULL, length/2,BLOCKSIZE, H_tilde_G_to_G_tilde);
+	//#else
+	//H_tilde_G_to_G_tilde(NULL, indices, length, NULL, 0, length/2);
+	//#endif
+	// Sivan March 2025 not sure why this goes to length/2, not as in previous two
+	foreach_step_in_range(indices, length, length/2, H_tilde_G_to_G_tilde);
+	
 	//Fix the last index
 
 	if (length % 2 == 1){
@@ -1044,13 +1053,13 @@ void smooth_recursive(step_t** indices, int length) {
 	}
 
 	// Create new Kalman for the recursion
-	#ifdef PARALLEL
-	parallel_for_c(NULL, indices, length, NULL, length/2, BLOCKSIZE, Variables_Renaming);
-	#else
-	Variables_Renaming(NULL, indices, length, NULL, 0, length/2);
-	#endif
+	//#ifdef PARALLEL
+	//parallel_for_c(NULL, indices, length, NULL, length/2, BLOCKSIZE, Variables_Renaming);
+	//#else
+	//Variables_Renaming(NULL, indices, length, NULL, 0, length/2);
+	//#endif
+	foreach_step_in_range(indices, length, length/2, Variables_Renaming);
 	
-
 	// The Recursion
 
 	step_t* *new_indices = (step_t**)malloc(length/2 * sizeof(step_t*));
@@ -1110,7 +1119,7 @@ void smooth_recursive(step_t** indices, int length) {
 void kalman_smooth(kalman_t* kalman) {
 
 	int length = farray_size(kalman->steps);
-	step_t* *indices = (step_t**)malloc(length * sizeof(step_t*));
+	step_t** indices = (step_t**) malloc(length * sizeof(step_t*));
 
 #ifdef PARALLEL
 	parallel_for_c(kalman, indices, length, NULL, length, BLOCKSIZE, assign_indices);

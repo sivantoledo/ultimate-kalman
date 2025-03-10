@@ -42,6 +42,8 @@ ECHO generating test program %test%.exe
 :: kalman_filter_smoother.c
 :: kalman_oddeven.c
 
+del %test%.exe
+
 cl ^
   %C_FLAGS% ^
   -Fe%test%.exe ^
