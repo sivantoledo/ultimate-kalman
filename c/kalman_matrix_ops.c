@@ -313,6 +313,29 @@ void matrix_mutate_scale(matrix_t* A, double s) {
 	}
 }
 
+/* function from ultimatekalman_oddeven.c; name is wrong, there is no mutation */
+/*
+matrix_t* matrix_mutate_subtract(matrix_t* A, matrix_t* B) {
+	int32_t i,j;
+
+	assert(A != NULL);
+	assert(B != NULL);
+	assert(matrix_rows(A) == matrix_rows(B));
+	assert(matrix_cols(A) == matrix_cols(B));
+
+	matrix_t* C = matrix_create_copy(A);
+
+	for (i=0; i<matrix_rows(A); i++) {
+		for (j=0; j<matrix_cols(A); j++) {
+			matrix_set(C,i,j, matrix_get(A,i,j) - matrix_get(B,i,j));
+		}
+	}
+
+	return C;
+}
+*/
+
+
 // returns TAU
 // nor for flat matrices
 matrix_t* matrix_create_mutate_qr(matrix_t* A) {
