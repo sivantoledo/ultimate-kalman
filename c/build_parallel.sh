@@ -75,30 +75,74 @@ esac
 # gcc -O2 -DBUILD_MKL -DBUILD_DEBUG_PRINTOUTSx -c performance.c ultimatekalman.c
 gcc -O2 -c performance.c 
 
-
-gcc -O2 $INCDIR -DNO_COVARIANCE_ESTIMATES \
-                           -DBUILD_DEBUG_PRINTOUTSx -c -o ultimatekalman_nc.o                  ultimatekalman.c
 gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o ultimatekalman.o                     ultimatekalman.c
+gcc -O2 $INCDIR -DPARALLEL -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_oddeven.o                     kalman_oddeven.c
+gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_oddeven_seq.o                 kalman_oddeven.c
 gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_filter_smoother.o             kalman_filter_smoother.c
 
-gcc -O2 $INCDIR -DPARALLEL -DBUILD_DEBUG_PRINTOUTSx -c -o ultimatekalman_oddeven.o             ultimatekalman_oddeven.c
-gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o ultimatekalman_oddeven_seq.o         ultimatekalman_oddeven.c
+#gcc -O2 $INCDIR -DNO_COVARIANCE_ESTIMATES \
+#                           -DBUILD_DEBUG_PRINTOUTSx -c -o ultimatekalman_nc.o                  ultimatekalman.c
+#gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o ultimatekalman.o                     ultimatekalman.c
+#gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_filter_smoother.o             kalman_filter_smoother.c
 
-gcc -O2 $INCDIR -DPARALLEL -DBUILD_DEBUG_PRINTOUTSx -c -o ultimatekalman_oddeven_nc.o          ultimatekalman_oddeven_nc.c
-gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o ultimatekalman_oddeven_nc_seq.o      ultimatekalman_oddeven_nc.c
+#gcc -O2 $INCDIR -DPARALLEL -DBUILD_DEBUG_PRINTOUTSx -c -o ultimatekalman_oddeven.o             ultimatekalman_oddeven.c
+#gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o ultimatekalman_oddeven_seq.o         ultimatekalman_oddeven.c
+
+#gcc -O2 $INCDIR -DNO_COVARIANCE_ESTIMATES \
+#                           -DBUILD_DEBUG_PRINTOUTSx -c -o ultimatekalman_nc.o                  ultimatekalman.c
+#gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o ultimatekalman.o                     ultimatekalman.c
+#gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_filter_smoother.o             kalman_filter_smoother.c
+
+#gcc -O2 $INCDIR -DPARALLEL -DBUILD_DEBUG_PRINTOUTSx -c -o ultimatekalman_oddeven.o             ultimatekalman_oddeven.c
+#gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o ultimatekalman_oddeven_seq.o         ultimatekalman_oddeven.c
+
+#gcc -O2 $INCDIR -DPARALLEL -DBUILD_DEBUG_PRINTOUTSx -c -o ultimatekalman_oddeven_nc.o          ultimatekalman_oddeven_nc.c
+#gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o ultimatekalman_oddeven_nc_seq.o      ultimatekalman_oddeven_nc.c
 	
-gcc -O2 $INCDIR -DPARALLEL -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_associative.o                 kalman_associative.c
-gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_associative_seq.o             kalman_associative.c
+#gcc -O2 $INCDIR -DPARALLEL -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_associative.o                 kalman_associative.c
+#gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_associative_seq.o             kalman_associative.c
 
-gcc -O2 $INCDIR -DPARALLEL -DBUILD_DEBUG_PRINTOUTSx -DNDEBUG -c -o embarrassingly_parallel.o            embarrassingly_parallel.c
-gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -DNDEBUG -c -o embarrassingly_parallel_seq.o        embarrassingly_parallel.c
+#gcc -O2 $INCDIR -DPARALLEL -DBUILD_DEBUG_PRINTOUTSx -DNDEBUG -c -o embarrassingly_parallel.o            embarrassingly_parallel.c
+#gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -DNDEBUG -c -o embarrassingly_parallel_seq.o        embarrassingly_parallel.c
 
-g++ -std=c++11 $INCDIR -c ultimatekalman_oddeven_nc_wrappers.cpp
-g++ -std=c++11 $INCDIR -c ultimatekalman_oddeven_wrappers.cpp
-g++ -std=c++11 $INCDIR -c kalman_associative_wrappers.cpp
+#gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -DNDEBUG -c -o kalman_parallel_sequential.o         kalman_parallel_sequential.c
+
+#g++ -std=c++11 $INCDIR -c ultimatekalman_oddeven_nc_wrappers.cpp
+#g++ -std=c++11 $INCDIR -c ultimatekalman_oddeven_wrappers.cpp
+#g++ -std=c++11 $INCDIR -c kalman_associative_wrappers.cpp
+
+g++ -std=c++11 $INCDIR -c kalman_parallel_tbb.cpp
 
 # -lmkl_tbb_thread
 # -lmkl_sequential
+
+echo LINKING
+
+g++ \
+  -std=c++11 \
+  -o performance_oddeven \
+  performance.o \
+  kalman_oddeven.o \
+  kalman_base.o \
+  flexible_arrays.o \
+  kalman_matrix_ops.o \
+  kalman_parallel_tbb.o \
+  $LIBDIR $PARLIBS
+
+g++ \
+  -std=c++11 \
+  -o performance_oddeven_seq \
+  performance.o \
+  kalman_oddeven_seq.o \
+  kalman_base.o \
+  flexible_arrays.o \
+  kalman_matrix_ops.o \
+  kalman_parallel_sequential.o \
+  $LIBDIR $SEQLIBS
+
+echo DONE
+
+exit
 
 g++ \
   -std=c++11 \
