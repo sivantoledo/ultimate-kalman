@@ -49,7 +49,8 @@ int gettimeofday(struct timeval * tp, struct timezone * tzp)
 #include <sys/time.h>
 #endif
 
-#include "ultimatekalman.h"
+//#include "ultimatekalman.h"
+#include "kalman.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846

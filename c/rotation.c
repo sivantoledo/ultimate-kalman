@@ -22,7 +22,7 @@
 
 #include <math.h>
 
-#include "ultimatekalman.h"
+#include "kalman.h"
 
 double PI = 3.141592653589793;
 
