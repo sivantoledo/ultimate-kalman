@@ -142,6 +142,15 @@ kalman_matrix_t* step_get_state(void* v) {
 	return ((step_t*) v)->state;
 }
 
+kalman_matrix_t* step_get_covariance(void* v) {
+	return ((step_t*) v)->covariance;
+}
+
+char step_get_covariance_type(void* v) {
+	return 'C';
+}
+
+
 /******************************************************************************/
 /* KALMAN                                                                     */
 /******************************************************************************/
@@ -423,6 +432,7 @@ void kalman_smooth(kalman_t* kalman) {
 
 }
 
+#ifdef MOVED
 char kalman_covariance_type(kalman_t* kalman, int64_t si) { return 'C'; }
 
 matrix_t* kalman_covariance(kalman_t* kalman, int64_t si) {
@@ -448,6 +458,7 @@ matrix_t* kalman_covariance(kalman_t* kalman, int64_t si) {
 
 	return cov;
 }
+#endif
 
 #ifdef MOVED
 void kalman_rollback(kalman_t* kalman, int64_t si) {

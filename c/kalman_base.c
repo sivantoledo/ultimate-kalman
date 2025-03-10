@@ -338,6 +338,35 @@ void kalman_rollback(kalman_t* kalman, int64_t si) {
 
 }
 
+char kalman_covariance_type(kalman_t* kalman, int64_t si) { 
+	return step_get_covariance_type(NULL); // currently the same for all steps 
+}
+
+matrix_t* kalman_covariance(kalman_t* kalman, int64_t si) {
+	
+#ifdef BUILD_DEBUG_PRINTOUTS
+	printf("kalman_covariance\n");
+#endif
+
+	if (farray_size(kalman->steps) == 0) return NULL;
+
+	if (si < 0) si = farray_last_index(kalman->steps);
+	void* step = farray_get(kalman->steps,si);
+
+	matrix_t* cov = NULL;
+
+	if (step_get_covariance(step) != NULL) {
+		cov = matrix_create_copy(step_get_covariance(step));
+	} else {
+		int32_t n_i = step_get_dimension(step);
+		cov = matrix_create_constant(n_i,n_i,NaN);
+	}
+
+	return cov;
+}
+
+
+
 static struct timeval begin, end;
 
 matrix_t* kalman_perftest(kalman_t* kalman,

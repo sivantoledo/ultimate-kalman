@@ -31,6 +31,7 @@ int64_t step_get_step(void* v);
 int32_t step_get_dimension(void* v);
 kalman_matrix_t* step_get_state(void* v);
 kalman_matrix_t* step_get_covariance(void* v);
+char             step_get_covariance_type(void* v);
 
 
 /******************************************************************************/
@@ -53,6 +54,7 @@ int64_t   kalman_latest    (kalman_t* kalman);
 void      kalman_evolve    (kalman_t* kalman, int32_t n_i, kalman_matrix_t* H_i, kalman_matrix_t* F_i, kalman_matrix_t* c_i, kalman_matrix_t* K_i, char K_type);
 void      kalman_observe   (kalman_t* kalman, kalman_matrix_t* G_i, kalman_matrix_t* o_i, kalman_matrix_t* C_i, char C_type);
 void      kalman_smooth    (kalman_t* kalman);
+
 kalman_matrix_t* kalman_estimate  (kalman_t* kalman, int64_t si);
 kalman_matrix_t* kalman_covariance(kalman_t* kalman, int64_t si);
 char             kalman_covariance_type(kalman_t* kalman, int64_t si);
