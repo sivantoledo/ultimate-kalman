@@ -216,6 +216,22 @@ matrix_t* explicit(matrix_t* cov, char type) {
 /******************************************************************************/
 
 kalman_t* kalman_create() {
+#ifdef PARALLEL
+	char* nthreads_string = getenv("NTHREADS");
+	int nthreads = 0;
+	if (nthreads_string != NULL && sscanf(nthreads_string,"%d",&nthreads)==1) {
+		kalman_parallel_init(nthreads);
+		printf("limiting to %d threads/cores\n",nthreads);
+	}
+
+	char* blocksize_string = getenv("TBB_BLOCKSIZE");
+	int blocksize = 0;
+	if (blocksize_string != NULL && sscanf(blocksize_string,"%d",&blocksize)==1) {
+		kalman_parallel_blocksize(blocksize);
+		printf("setting blocksize to %d\n",blocksize);
+	}
+#endif	
+	
 	kalman_t* kalman = malloc(sizeof(kalman_t));
 	assert( kalman != NULL );
 	kalman->steps   = farray_create();
