@@ -1,6 +1,9 @@
+#include <cstddef>
+#include <cstdint>
 #include <tbb/parallel_for.h>
 #include <tbb/blocked_range.h>
 #include <tbb/global_control.h>
+#include <tbb/parallel_scan.h>
 
 // Define the parallel function with C linkage
 extern "C" {
