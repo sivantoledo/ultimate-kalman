@@ -30,8 +30,7 @@
 #define parallel_for_c parallel_for_c_oddeven
 
 // should remove...
-//#define BLOCKSIZE 1000
-//#define BLOCKSIZE 10
+#define BLOCKSIZE 10
 
 #ifdef MACOS
 void* local_aligned_alloc(size_t alignment, size_t size) {

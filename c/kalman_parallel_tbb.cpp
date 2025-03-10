@@ -21,7 +21,7 @@ extern "C" {
 		return 0;
 	}
 
-    void foreach_step_in_range(step** step_pointers, int length, size_t n, void (*func)(step**, int, size_t, size_t)) {
+    void foreach_step_in_range(void** step_pointers, int length, size_t n, void (*func)(void*, int, size_t, size_t)) {
     	tbb::global_control control(tbb::global_control::max_allowed_parallelism, nthreads);
 
     	//printf("blocksize = %d\n",blocksize>0 ? blocksize : block_size);
