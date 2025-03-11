@@ -322,10 +322,10 @@ static void observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 }
 
 
-#ifdef PARALLEL
 /******************************************************************************/
 /* CONCURRENT SET OF POINTERS                                                 */
 /******************************************************************************/
+#ifdef PARALLEL
 
 /*
  * We define a simple concurrent set data structure, to keep track of steps
@@ -355,9 +355,8 @@ void parallelInit(void* la_v, void* *helper, size_t length, size_t start, size_t
         for (int j = 0; j < COLUMNS; j++) {
             la->arrays[i][j] = (step_t*)NULL;
         }
-#ifdef PARALLEL
+
         pthread_mutex_init(&la->locks[i], NULL);  // Initialize the lock for the row
-#endif
     }
 }
 
@@ -367,17 +366,9 @@ concurrent_set_t* concurrent_set_create(int k) {
     la->rows = k;
     la->columns = COLUMNS;
     la->arrays = (step_t***)malloc(k * sizeof(step_t**));
-#ifdef PARALLEL
     la->locks = (pthread_mutex_t*)malloc(k * sizeof(pthread_mutex_t));
-#endif
 
-#ifdef PARALLEL
-	parallel_for_c(la, NULL, 0, k, BLOCKSIZE, parallelInit);
-#else
-	fprintf(stderr,"1\n");
-	parallelInit(la, NULL, 0, 0, k); // k was l
-	fprintf(stderr,"2\n");
-#endif
+    parallel_for_c(la, NULL, 0, k, BLOCKSIZE, parallelInit);
 
     return la;
 }
@@ -399,36 +390,32 @@ int findEmptyColumn(step_t** row, int columns) {
 
 static
 void concurrent_set_insert(concurrent_set_t* la, int row, step_t* element) {
-	assert (row < la->rows);
+  assert (row < la->rows);
 
-	if (row == -1){
-		row = rand() % la->rows;
-	}
+  if (row == -1){
+    row = rand() % la->rows;
+  }
 
-#ifdef PARALLEL
-   pthread_mutex_lock(&la->locks[row]);
-#endif
+  pthread_mutex_lock(&la->locks[row]);
 
-    int col = findEmptyColumn(la->arrays[row], la->columns);
-	la->arrays[row][col] = element;  // Add the element
+  int col = findEmptyColumn(la->arrays[row], la->columns);
+  la->arrays[row][col] = element;  // Add the element
 
-#ifdef PARALLEL
-	pthread_mutex_unlock(&la->locks[row]);
-#endif
+  pthread_mutex_unlock(&la->locks[row]);
 }
 
 static void parallelDestroy(void* la_v, void* *helper, size_t length, size_t start, size_t end){
-    concurrent_set_t* la = (concurrent_set_t*) la_v;
-	for (int i = start; i < end; i++) {
-		for (int j = 0; j < la->columns; j++){
-			if (la->arrays[i][j] != NULL){
-				step_free(la->arrays[i][j]);
-			}
-		}
-        free(la->arrays[i]);
-
-        pthread_mutex_destroy(&la->locks[i]);
+  concurrent_set_t* la = (concurrent_set_t*) la_v;
+  for (int i = start; i < end; i++) {
+    for (int j = 0; j < la->columns; j++){
+      if (la->arrays[i][j] != NULL){
+	step_free(la->arrays[i][j]);
+      }
     }
+    free(la->arrays[i]);
+    
+    pthread_mutex_destroy(&la->locks[i]);
+  }
 }
 
 static void concurrent_set_free(concurrent_set_t* la) {
@@ -437,19 +424,13 @@ static void concurrent_set_free(concurrent_set_t* la) {
   free(la->locks);
   free(la);
 }
-
-/******************************************************************************/
-/* END Lock Arrays                                                            */
-/******************************************************************************/
 #endif /* ifdef PARALLEL */
 
 /******************************************************************************/
 /* Associative Smoother                                                       */
 /******************************************************************************/
 
-
-static
-void buildFilteringElement(kalman_t* kalman, int i) {
+static void buildFilteringElement(kalman_t* kalman, int i) {
 	/*
 		we denote by Z the matrix denoted by C in the article,
 		because we already use C for the covariance of the
