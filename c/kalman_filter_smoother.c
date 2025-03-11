@@ -75,7 +75,7 @@ typedef struct step_st {
 } step_t;
 
 //static step_t* step_create() {
-void* step_create() {
+static void* step_create() {
 	step_t* s = malloc(sizeof(step_t));
 	s->step      = -1;
 	s->dimension = -1;
@@ -101,7 +101,7 @@ void* step_create() {
 }
 
 //void step_free(step_t* s) {
-void step_free(void* v) {
+static void step_free(void* v) {
 	step_t* s = (step_t*) v;
 	
 	//matrix_free(s->H);
@@ -119,7 +119,7 @@ void step_free(void* v) {
 	free(s);
 }
 
-void step_rollback(void* v) {
+static void step_rollback(void* v) {
 	step_t* s = (step_t*) v;
 	matrix_free(s->smoothedState);
 	matrix_free(s->smoothedCovariance);
@@ -130,23 +130,23 @@ void step_rollback(void* v) {
 	s->covariance = s->predictedCovariance;
 }
 
-int64_t step_get_step(void* v) {
+static int64_t step_get_index(void* v) {
 	return ((step_t*) v)->step;
 }
 
-int32_t step_get_dimension(void* v) {
+static int32_t step_get_dimension(void* v) {
 	return ((step_t*) v)->dimension;
 }
 
-kalman_matrix_t* step_get_state(void* v) {
+static kalman_matrix_t* step_get_state(void* v) {
 	return ((step_t*) v)->state;
 }
 
-kalman_matrix_t* step_get_covariance(void* v) {
+static kalman_matrix_t* step_get_covariance(void* v) {
 	return ((step_t*) v)->covariance;
 }
 
-char step_get_covariance_type(void* v) {
+static char step_get_covariance_type(void* v) {
 	return 'C';
 }
 
@@ -155,7 +155,7 @@ char step_get_covariance_type(void* v) {
 /* KALMAN                                                                     */
 /******************************************************************************/
 
-void kalman_evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, matrix_t* c_i, matrix_t* K_i, char K_type) {
+static void evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, matrix_t* c_i, matrix_t* K_i, char K_type) {
 	step_t* kalman_current;
 	kalman->current = kalman_current = (step_t*) step_create();
 	kalman_current->dimension = n_i;
@@ -240,7 +240,7 @@ void kalman_evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, 
 	kalman_current->covariance = kalman_current->predictedCovariance ;
 }
 
-void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_i, char C_type) {
+static void observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_i, char C_type) {
 
 #ifdef BUILD_DEBUG_PRINTOUTS
 	printf("observe!\n");
@@ -248,7 +248,7 @@ void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 
 	assert(kalman != NULL);
 	assert(kalman->current != NULL);
-	step_t* kalman_current = kalman->current;	
+	step_t* kalman_current = kalman->current;
 	int32_t n_i = kalman_current->dimension;
 
 #ifdef BUILD_DEBUG_PRINTOUTS
@@ -362,10 +362,7 @@ void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 #endif
 }
 
-/*
- * Sivan March 2025: this was called smooth and was called trivially from kalman_smooth
- */
-void kalman_smooth(kalman_t* kalman) {
+static void smooth(kalman_t* kalman) {
 	if (farray_size(kalman->steps) == 0) return;
 
 	int64_t si;
@@ -432,63 +429,20 @@ void kalman_smooth(kalman_t* kalman) {
 
 }
 
-#ifdef MOVED
-char kalman_covariance_type(kalman_t* kalman, int64_t si) { return 'C'; }
-
-matrix_t* kalman_covariance(kalman_t* kalman, int64_t si) {
+void kalman_create_filter_smoother(kalman_t* kalman) {
+	kalman->evolve  = evolve;	
+	kalman->observe = observe;	
+	kalman->smooth  = smooth;	
 	
-#ifdef BUILD_DEBUG_PRINTOUTS
-	printf("kalman_covariance\n");
-#endif
-
-	if (farray_size(kalman->steps) == 0) return NULL;
-
-	if (si < 0) si = farray_last_index(kalman->steps);
-	step_t* step = farray_get(kalman->steps,si);
-
-	int32_t n_i = step->dimension;
-
-	matrix_t* cov = NULL;
-
-	if (step->covariance) {
-		cov = matrix_create_copy(step->covariance);
-	} else {
-		cov = matrix_create_constant(n_i,n_i,NaN);
-	}
-
-	return cov;
+	kalman->step_create        = step_create;
+	kalman->step_free          = step_free;
+	kalman->step_rollback      = step_rollback;
+	kalman->step_get_index     = step_get_index;
+	kalman->step_get_dimension = step_get_dimension;
+	kalman->step_get_state     = step_get_state;
+	kalman->step_get_covariance      = step_get_covariance;
+	kalman->step_get_covariance_type = step_get_covariance_type;
 }
-#endif
-
-#ifdef MOVED
-void kalman_rollback(kalman_t* kalman, int64_t si) {
-	if (farray_size(kalman->steps) == 0) return;
-
-	if (si > farray_last_index (kalman->steps)) return; // we can roll  back even the last step (its observation)
-	if (si < farray_first_index(kalman->steps)) return;
-
-	step_t* step;
-	do {
-		step = farray_drop_last(kalman->steps);
-		if (step->step == si) {
-
-			matrix_free(step->smoothedState);
-			matrix_free(step->smoothedCovariance);
-			matrix_free(step->assimilatedState);
-			matrix_free(step->assimilatedCovariance);
-			// fix aliases
-			step->state      = step->predictedState;
-			step->covariance = step->predictedCovariance;
-
-			kalman->current = step;
-
-		} else {
-			//printf("rollback dropped step %d\n",step->step);
-		}
-	} while (step->step > si);
-	//printf("rollback to %d new latest %d\n",si,kalman_latest(kalman));
-}
-#endif
 
 /******************************************************************************/
 /* END OF FILE                                                                */

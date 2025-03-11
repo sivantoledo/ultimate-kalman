@@ -218,7 +218,8 @@ matrix_t* explicit(matrix_t* cov, char type) {
 void kalman_create_ultimate(kalman_t*);
 
 kalman_t* kalman_create() {
-	return kalman_create_options( KALMAN_ALGORITHM_ULTIMATE ); // default
+	//return kalman_create_options( KALMAN_ALGORITHM_ULTIMATE ); // default
+	return kalman_create_options( KALMAN_ALGORITHM_FILTER_SMOOTHER ); // default
 }
 
 kalman_t* kalman_create_options(kalman_options_t options) {
@@ -246,10 +247,12 @@ kalman_t* kalman_create_options(kalman_options_t options) {
 	
 	switch (options & (KALMAN_ALGORITHM_ULTIMATE | KALMAN_ALGORITHM_FILTER_SMOOTHER | KALMAN_ALGORITHM_ODDEVEN | KALMAN_ALGORITHM_ASSOCIATIVE)) {
 		case KALMAN_ALGORITHM_ULTIMATE:
-		printf("calling kalman_ultimate\n");
-		kalman_create_ultimate(kalman);
-		break;
+			printf("calling kalman_ultimate\n");
+			kalman_create_ultimate(kalman);
+			break;
 		case KALMAN_ALGORITHM_FILTER_SMOOTHER:
+			printf("calling kalman_filter_smoother\n");
+			kalman_create_filter_smoother(kalman);
 		break;
 		case KALMAN_ALGORITHM_ODDEVEN:
 		break;
