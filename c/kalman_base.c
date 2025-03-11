@@ -228,7 +228,7 @@ kalman_t* kalman_create() {
 }
 
 kalman_t* kalman_create_options(kalman_options_t options) {
-#ifdef PARALLEL
+#ifdef MOVED_TO_CLIENTS
 	char* nthreads_string = getenv("NTHREADS");
 	int nthreads = 0;
 	if (nthreads_string != NULL && sscanf(nthreads_string,"%d",&nthreads)==1) {

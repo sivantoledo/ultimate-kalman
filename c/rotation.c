@@ -23,6 +23,7 @@
 #include <math.h>
 
 #include "kalman.h"
+#include "parallel.h"
 
 double PI = 3.141592653589793;
 
@@ -95,6 +96,20 @@ int main(int argc, char* argv[]) {
 	printf("rotation starting\n");
 
 	printf("results should be identical to those produced by rotation(UltimateKalman,5,2) in MATLAB\n");
+	
+	char* nthreads_string = getenv("NTHREADS");
+	int nthreads = 0;
+	if (nthreads_string != NULL && sscanf(nthreads_string,"%d",&nthreads)==1) {
+		parallel_set_thread_limit(nthreads);
+		printf("limiting to %d threads/cores\n",nthreads);
+	}
+
+	char* blocksize_string = getenv("TBB_BLOCKSIZE");
+	int blocksize = 0;
+	if (blocksize_string != NULL && sscanf(blocksize_string,"%d",&blocksize)==1) {
+		parallel_set_blocksize(blocksize);
+		printf("setting blocksize to %d\n",blocksize);
+	}
 
 	int i;
 	
