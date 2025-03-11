@@ -1,5 +1,5 @@
 /*
- * kalman_matrix_ops.c
+ * matrix_ops.c
  *
  * (C) Sivan Toledo, 2022-2025
  */
@@ -19,7 +19,7 @@
 
 
 #define KALMAN_MATRIX_SHORT_TYPE
-#include "kalman_matrix_ops.h"
+#include "matrix_ops.h"
 
 #ifdef BUILD_MEX
 #include "mex.h"

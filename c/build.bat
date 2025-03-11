@@ -53,7 +53,7 @@ cl ^
   kalman_oddeven.c ^
   kalman_parallel_sequential.c ^
   kalman_base.c ^
-  kalman_matrix_ops.c ^
+  matrix_ops.c ^
   flexible_arrays.c ^
   %test%.c ^
   %BLAS_LAPACK_LIBS% 

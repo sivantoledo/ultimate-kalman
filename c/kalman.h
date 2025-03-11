@@ -9,7 +9,7 @@
 #include "mex.h"
 #endif
 
-#include "kalman_matrix_ops.h"
+#include "matrix_ops.h"
 #include "flexible_arrays.h"
 
 /******************************************************************************/

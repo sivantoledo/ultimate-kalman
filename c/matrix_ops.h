@@ -1,5 +1,5 @@
-#ifndef KALMAN_MATRIX_OPS
-#define KALMAN_MATRIX_OPS
+#ifndef MATRIX_OPS
+#define MATRIX_OPS
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -223,4 +223,4 @@ kalman_matrix_t* matrix_create_add      (kalman_matrix_t* A, kalman_matrix_t* B)
 /* END OF FILE                                                                */
 /******************************************************************************/
 
-#endif /* ifndef KALMAN_MATRIX_OPS */
+#endif /* ifndef MATRIX_OPS */

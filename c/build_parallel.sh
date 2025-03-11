@@ -78,7 +78,7 @@ gcc -O2 -c rotation.c
 
 gcc -O2 $INCDIR -DPARALLEL -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_base_par.o                    kalman_base.c
 gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_base.o                        kalman_base.c
-gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_matrix_ops.o                  kalman_matrix_ops.c
+gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o matrix_ops.o                         matrix_ops.c
 gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o flexible_arrays.o                    flexible_arrays.c
 
 gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_parallel_sequential.o                    kalman_parallel_sequential.c
@@ -133,7 +133,7 @@ g++ \
     ultimatekalman.o \
     kalman_base.o \
     flexible_arrays.o \
-    kalman_matrix_ops.o \
+    matrix_ops.o \
     $LIBDIR $SEQLIBS
 
 g++ \
@@ -143,7 +143,7 @@ g++ \
     kalman_oddeven.o \
     kalman_base_par.o \
     flexible_arrays.o \
-    kalman_matrix_ops.o \
+    matrix_ops.o \
     kalman_parallel_tbb.o \
     $LIBDIR $PARLIBS
 
@@ -154,7 +154,7 @@ g++ \
     ultimatekalman.o \
     kalman_base.o \
     flexible_arrays.o \
-    kalman_matrix_ops.o \
+    matrix_ops.o \
     kalman_parallel_sequential.o \
     $LIBDIR $SEQLIBS
 
@@ -165,7 +165,7 @@ g++ \
     kalman_filter_smoother.o \
     kalman_base.o \
     flexible_arrays.o \
-    kalman_matrix_ops.o \
+    matrix_ops.o \
     kalman_parallel_sequential.o \
     $LIBDIR $SEQLIBS
 
@@ -176,7 +176,7 @@ g++ \
   kalman_oddeven.o \
   kalman_base_par.o \
   flexible_arrays.o \
-  kalman_matrix_ops.o \
+  matrix_ops.o \
   kalman_parallel_tbb.o \
   $LIBDIR $PARLIBS
 
@@ -187,7 +187,7 @@ g++ \
   kalman_oddeven_seq.o \
   kalman_base.o \
   flexible_arrays.o \
-  kalman_matrix_ops.o \
+  matrix_ops.o \
   kalman_parallel_sequential.o \
   $LIBDIR $SEQLIBS
 
