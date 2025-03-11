@@ -39,6 +39,8 @@ void* local_aligned_alloc(size_t alignment, size_t size) {
 #else
 #define malloc(x) aligned_alloc(64,(x))
 #endif
+
+#define parallel_for_c parallel_for_c_associative
 #endif
 
 #ifdef BUILD_MEX
@@ -60,12 +62,7 @@ static void mex_assert(int c, int line) {
 //static int debug = 0;
 
 #ifdef PARALLEL
-#include <pthread.h>
 
-//#include "parallel_for_c.h"
-int kalman_parallel_init(int number_of_threads);
-void parallel_for_c(void* kalman, void** helper, size_t l, size_t n, size_t block_size, void (*func)(void*, void**, size_t, size_t, size_t));
-void parallel_scan_c(void** input, void** sums, void* create_array , void* (*f)(void*, void*, void*, int, int), int length, int stride);
 #endif
 
 /******************************************************************************/
@@ -324,19 +321,27 @@ static void observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 #endif
 }
 
-typedef struct LockedArray {
-    step_t*** arrays;          
-    int rows;             
-    int columns;    
-#ifdef PARALLEL
-    pthread_mutex_t* locks;
-#endif
-} LockedArray_t;
 
 #ifdef PARALLEL
 /******************************************************************************/
-/* Lock Arrays                                                                */
+/* CONCURRENT SET OF POINTERS                                                 */
 /******************************************************************************/
+
+/*
+ * We define a simple concurrent set data structure, to keep track of steps
+ * that are created during the parallel prefix sum operation (the elements
+ * are structures, not value types) so that we can release them at the end of
+ * the operation.
+ */
+
+#include <pthread.h>
+
+typedef struct concurrent_set_st {
+    step_t*** arrays;          
+    int       rows;             
+    int       columns;    
+    pthread_mutex_t* locks;
+} concurrent_set_t;
 
 #define COLUMNS 10
 //#define BLOCKSIZE 1000
@@ -344,7 +349,7 @@ typedef struct LockedArray {
 
 static 
 void parallelInit(void* la_v, void* *helper, size_t length, size_t start, size_t end){
-    LockedArray_t* la = (LockedArray_t*) la_v;
+    concurrent_set_t* la = (concurrent_set_t*) la_v;
 	for (int i = start; i < end; i++) {
         la->arrays[i] = (step_t**)malloc(COLUMNS * sizeof(step_t*));
         for (int j = 0; j < COLUMNS; j++) {
@@ -357,8 +362,8 @@ void parallelInit(void* la_v, void* *helper, size_t length, size_t start, size_t
 }
 
 static
-LockedArray_t* initLockedArray(int k) {
-    LockedArray_t* la = (LockedArray_t*)malloc(sizeof(LockedArray_t));
+concurrent_set_t* concurrent_set_create(int k) {
+    concurrent_set_t* la = (concurrent_set_t*)malloc(sizeof(concurrent_set_t));
     la->rows = k;
     la->columns = COLUMNS;
     la->arrays = (step_t***)malloc(k * sizeof(step_t**));
@@ -393,7 +398,7 @@ int findEmptyColumn(step_t** row, int columns) {
 
 
 static
-void addElement(LockedArray_t* la, int row, step_t* element) {
+void concurrent_set_insert(concurrent_set_t* la, int row, step_t* element) {
 	assert (row < la->rows);
 
 	if (row == -1){
@@ -412,9 +417,8 @@ void addElement(LockedArray_t* la, int row, step_t* element) {
 #endif
 }
 
-static
-void parallelDestroy(void* la_v, void* *helper, size_t length, size_t start, size_t end){
-    LockedArray_t* la = (LockedArray_t*) la_v;
+static void parallelDestroy(void* la_v, void* *helper, size_t length, size_t start, size_t end){
+    concurrent_set_t* la = (concurrent_set_t*) la_v;
 	for (int i = start; i < end; i++) {
 		for (int j = 0; j < la->columns; j++){
 			if (la->arrays[i][j] != NULL){
@@ -422,24 +426,16 @@ void parallelDestroy(void* la_v, void* *helper, size_t length, size_t start, siz
 			}
 		}
         free(la->arrays[i]);
-#ifdef PARALLEL
+
         pthread_mutex_destroy(&la->locks[i]);
-#endif
     }
 }
 
-static
-void destroyLockedArray(LockedArray_t* la) {
-#ifdef PARALLEL
-	parallel_for_c(la, NULL, 0, la->rows, BLOCKSIZE, parallelDestroy);
-#else
-	parallelDestroy(la, NULL, 0, 0, la->rows); // last argument was l
-#endif
-    free(la->arrays);
-#ifdef PARALLEL
-    free(la->locks);
-#endif
-    free(la);
+static void concurrent_set_free(concurrent_set_t* la) {
+  parallel_for_c(la, NULL, 0, la->rows, BLOCKSIZE, parallelDestroy);
+  free(la->arrays);
+  free(la->locks);
+  free(la);
 }
 
 /******************************************************************************/
@@ -720,26 +716,27 @@ static void buildSmoothingElements(void* kalman_v, void* *helper, size_t l, size
 	}
 }
 
-//step_t* filteringAssociativeOperation(step_t* si, step_t* sj, LockedArray_t* created_steps, int row, int is_final_scan) {
+//step_t* filteringAssociativeOperation(step_t* si, step_t* sj, concurrent_set_t* created_steps, int row, int is_final_scan) {
 static void* filteringAssociativeOperation(void* si_v, void* sj_v, void* created_steps_v, int row, int is_final_scan) {
   step_t* si = (step_t*) si_v;
   step_t* sj = (step_t*) sj_v;
-  LockedArray_t* created_steps = (LockedArray_t*) created_steps_v;
   
-		if (si == NULL){
-			return sj;
-		}
+  if (si == NULL){
+    return sj;
+  }
+  
+  if (sj == NULL){
+    return si;
+  }
 
-		if (sj == NULL){
-			return si;
-		}
 
+  step_t* sij = step_create();
 
-		step_t* sij = step_create();
 #ifdef PARALLEL
-		if (!is_final_scan){
-			addElement(created_steps, row, sij);
-		}
+  concurrent_set_t* created_steps = (concurrent_set_t*) created_steps_v;
+  if (!is_final_scan){
+    concurrent_set_insert(created_steps, row, sij);
+  }
 #endif
 		int ni = matrix_rows(si->b);
 
@@ -824,24 +821,26 @@ static void* filteringAssociativeOperation(void* si_v, void* sj_v, void* created
 }
 
 
-//step_t* smoothingAssociativeOperation(step_t* si, step_t* sj, LockedArray_t* created_steps, int row, int is_final_scan) {
+//step_t* smoothingAssociativeOperation(step_t* si, step_t* sj, concurrent_set_t* created_steps, int row, int is_final_scan) {
 static void* smoothingAssociativeOperation(void* si_v, void* sj_v, void* created_steps_v, int row, int is_final_scan) {
   step_t* si = (step_t*) si_v;
   step_t* sj = (step_t*) sj_v;
-  LockedArray_t* created_steps = (LockedArray_t*) created_steps_v;
-		if (si == NULL){
-			return sj;
-		}
 
-		if (sj == NULL){
-			return si;
-		}
-
-		step_t* sij = step_create();
+  if (si == NULL){
+    return sj;
+  }
+  
+  if (sj == NULL){
+    return si;
+  }
+  
+  step_t* sij = step_create();
 #ifdef PARALLEL
-		if (!is_final_scan){
-			addElement(created_steps, row, sij);
-		}
+  concurrent_set_t* created_steps = (concurrent_set_t*) created_steps_v;
+
+  if (!is_final_scan){
+    concurrent_set_insert(created_steps, row, sij);
+  }
 #endif
 		
 		matrix_t* E = matrix_create_multiply(sj->E,si->E);
@@ -939,9 +938,9 @@ static void smooth(kalman_t* kalman) {
 
 #ifdef PARALLEL
 	step_t** filtered = (step_t**)malloc((l - 1) * sizeof(step_t*));
-	LockedArray_t* filtered_created_steps = initLockedArray(l);
+	concurrent_set_t* filtered_created_steps = concurrent_set_create(l);
 	parallel_scan_c(kalman->steps->elements, (void**) filtered, filtered_created_steps, filteringAssociativeOperation , l - 1, 1);
-	destroyLockedArray(filtered_created_steps);
+	concurrent_set_free(filtered_created_steps);
 #else
 	step_t** filtered = cummulativeSumsSequential(kalman, filteringAssociativeOperation, 1, l - 1, 1);
 #endif
@@ -963,9 +962,9 @@ static void smooth(kalman_t* kalman) {
 
 #ifdef PARALLEL
 	step_t** smoothed = (step_t**)malloc(l * sizeof(step_t*));
-	LockedArray_t* smoothed_created_steps = initLockedArray(l);
+	concurrent_set_t* smoothed_created_steps = concurrent_set_create(l);
 	parallel_scan_c(kalman->steps->elements, (void**) smoothed, smoothed_created_steps, smoothingAssociativeOperation , l, -1);
-	destroyLockedArray(smoothed_created_steps);
+	concurrent_set_free(smoothed_created_steps);
 #else
 	step_t** smoothed = cummulativeSumsSequential(kalman, smoothingAssociativeOperation, l - 1, 0, -1);
 #endif
