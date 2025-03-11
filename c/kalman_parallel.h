@@ -1,8 +1,8 @@
-#ifndef KALMAN_TBB_H
-#define KALMAN_TBB_H
+#ifndef PARALLEL_OPS_H
+#define PARALLEL_OPS_H
 
-int kalman_parallel_init(int number_of_threads);
-int kalman_parallel_blocksize(int blocksize_in);
+void parallel_set_thread_limit(int number_of_threads);
+void parallel_set_blocksize   (int blocksize_in);
 
 void foreach_in_range    (void (*func)(void*,        int, size_t, size_t), void* array ,               int length, size_t n);
 void foreach_in_range_two(void (*func)(void*, void*, int, size_t, size_t), void* array1, void* array2, int length, size_t n);

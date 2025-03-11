@@ -10,18 +10,16 @@ extern "C" {
 	static int nthreads  = 0;
 	static int blocksize = 10;
 
-	int kalman_parallel_init(int number_of_threads) {
+	void parallel_set_thread_limit(int number_of_threads) {
 		if (number_of_threads > 0) {
 			nthreads = number_of_threads;
 		}
-		return 0;
 	}
 
-	int kalman_parallel_blocksize(int blocksize_in) {
+	void parallel_set_blocksize(int blocksize_in) {
 		if (blocksize_in > 0) {
 			blocksize = blocksize_in;
 		}
-		return 0;
 	}
 
     void foreach_in_range(void (*func)(void*, int, size_t, size_t), void* array, int length, size_t n) {
