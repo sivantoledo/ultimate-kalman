@@ -24,16 +24,28 @@ extern "C" {
 		return 0;
 	}
 
-    void foreach_step_in_range(void** step_pointers, int length, size_t n, void (*func)(void*, int, size_t, size_t)) {
+    void foreach_in_range(void* array, int length, size_t n, void (*func)(void*, int, size_t, size_t)) {
     	tbb::global_control control(tbb::global_control::max_allowed_parallelism, nthreads);
 
     	//printf("blocksize = %d\n",blocksize>0 ? blocksize : block_size);
         tbb::parallel_for(tbb::blocked_range<size_t>(0, n, blocksize),
-            [step_pointers, length, func](const tbb::blocked_range<size_t>& subrange) {
-                func(step_pointers, length, subrange.begin(), subrange.end());
+            [array, length, func](const tbb::blocked_range<size_t>& subrange) {
+                func(array, length, subrange.begin(), subrange.end());
             }
         );
     }
+    
+    void foreach_in_range_two(void* array1, void* array2, int length, size_t n, void (*func)(void*, void*, int, size_t, size_t)) {
+    	tbb::global_control control(tbb::global_control::max_allowed_parallelism, nthreads);
+
+    	//printf("blocksize = %d\n",blocksize>0 ? blocksize : block_size);
+        tbb::parallel_for(tbb::blocked_range<size_t>(0, n, blocksize),
+            [array1, array2, length, func](const tbb::blocked_range<size_t>& subrange) {
+                func(array1, array2, length, subrange.begin(), subrange.end());
+            }
+        );
+    }
+
 
 	// this is from oddeven
     void parallel_for_c_oddeven(void* kalman, void* indices, int length, int** helper, size_t n, size_t block_size, void (*func)(void*, void*, int, int**, size_t, size_t)) {

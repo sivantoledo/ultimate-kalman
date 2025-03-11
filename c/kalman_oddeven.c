@@ -23,14 +23,9 @@
 
 #define KALMAN_MATRIX_SHORT_TYPE
 #include "kalman.h"
-
-#ifdef PARALLEL
 #include "kalman_parallel.h"
 
-#define parallel_for_c parallel_for_c_oddeven
-
-// should remove...
-#define BLOCKSIZE 10
+#ifdef PARALLEL
 
 #ifdef MACOS
 void* local_aligned_alloc(size_t alignment, size_t size) {
@@ -337,7 +332,8 @@ void free_and_assign(matrix_t** original, matrix_t* new){
 /* FUNCIONS THAT CAN BE APPLIED IN PARALLEL TO AN ARRAY OF STEPS              */
 /******************************************************************************/
 
-void assign_indices(void* kalman_v, void* indices_v, int length, int** helper, size_t start, size_t end) {
+//void assign_indices(void* kalman_v, void* indices_v, int length, int** helper, size_t start, size_t end) {
+void assign_indices(void* kalman_v, void* indices_v, int length, size_t start, size_t end) {
 	kalman_t* kalman = (kalman_t*) kalman_v;
 	step_t* *indices = (step_t**) indices_v;
 	for (size_t i = start; i < end; ++i) {
@@ -516,7 +512,8 @@ void Variables_Renaming(void** indices_v, int length, size_t start, size_t end){
 	}
 }
 
-void Init_new_indices(void* new_indices_v, void* indices_v, int length, int** helper, size_t start, size_t end){
+//void Init_new_indices(void* new_indices_v, void* indices_v, int length, int** helper, size_t start, size_t end){
+void Init_new_indices(void* new_indices_v, void* indices_v, int length, size_t start, size_t end){
 	step_t** new_indices = (step_t**) new_indices_v;
 	step_t** indices     = (step_t**) indices_v;
 
@@ -524,9 +521,11 @@ void Init_new_indices(void* new_indices_v, void* indices_v, int length, int** he
 		new_indices[i] = indices[2*i + 1];
 	}
 }
-void Solve_Estimates(void* kalman_v, void* indices_v, int length, int** helper, size_t start, size_t end){
+
+//void Solve_Estimates(void* kalman_v, void* indices_v, int length, int** helper, size_t start, size_t end){
+void Solve_Estimates(void* indices_v, int length, size_t start, size_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
-	step_t* *indices = (step_t**)indices_v;
+	step_t** indices = (step_t**) indices_v;
 
 	for (size_t j_ = start; j_ < end; ++j_){
 		size_t j = j_ * 2;
@@ -602,9 +601,10 @@ void Solve_Estimates(void* kalman_v, void* indices_v, int length, int** helper, 
 // Cov Change 4
 // ==========================================
 
-void Convert_LDLT(void* kalman_v, void* indices_v, int length, int** helper, size_t start, size_t end){
+//void Convert_LDLT(void* kalman_v, void* indices_v, int length, int** helper, size_t start, size_t end){
+void Convert_LDLT(void* indices_v, int length, size_t start, size_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
-	step_t* *indices = (step_t**)indices_v;
+	step_t** indices = (step_t**) indices_v;
 
 	for (size_t j_ = start; j_ < end; ++j_){
 		size_t j = j_ * 2;
@@ -640,9 +640,11 @@ void Convert_LDLT(void* kalman_v, void* indices_v, int length, int** helper, siz
 	}
 }
 
-void SelInv(void* kalman_v, void* indices_v, int length, int** converters, size_t start, size_t end){
+//void SelInv(void* kalman_v, void* indices_v, int length, int** converters, size_t start, size_t end){
+void SelInv(void* indices_v, void** converters_v, int length, size_t start, size_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
-	step_t* *indices = (step_t**)indices_v;
+	step_t** indices = (step_t**) indices_v;
+	int** converters = (int**) converters_v;
 
 	int * vtop_n = converters[0];
 	int * ptov_n2 = converters[1];
@@ -886,9 +888,12 @@ void SelInv(void* kalman_v, void* indices_v, int length, int** converters, size_
 // ==========================================
 
 
-void one_layer_converter (void* kalman_v, void* indices_v, int length, int** helper, size_t start, size_t end){
+//void one_layer_converter (void* kalman_v, void* indices_v, int length, int** helper, size_t start, size_t end){
+void one_layer_converter (void* array, int length, size_t start, size_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
-	step_t* *indices = (step_t**)indices_v;
+	//step_t* *indices = (step_t**)indices_v;
+	
+	int** helper = (int**) array;
 	 
 	int* virtual_to_physical = helper[0];
 	int* physical_to_virtual = helper[1];
@@ -911,10 +916,10 @@ void one_layer_converter (void* kalman_v, void* indices_v, int length, int** hel
 	variables[4] = index;
 }
 
-int ** virtual_physical(int n){
+int** virtual_physical(int n) {
 
-	int* virtual_to_physical = (int *)malloc(n * sizeof(int));
-	int* physical_to_virtual = (int *)malloc((n/2) * sizeof(int));
+	int* virtual_to_physical = (int*) malloc(    n * sizeof(int));
+	int* physical_to_virtual = (int*) malloc((n/2) * sizeof(int));
 	
 	int* variables = (int *)malloc(5 * sizeof(int));
 
@@ -938,11 +943,12 @@ int ** virtual_physical(int n){
 		variables[3] = skip;
 		variables[4] = index;
 
-		#ifdef PARALLEL
-		parallel_for_c(NULL, NULL, 0, result, ceil((double)(n - start)/jump),BLOCKSIZE,one_layer_converter);
-		#else
-		one_layer_converter(NULL, NULL, 0, result, 0, ceil((double)(n - start)/jump));
-		#endif
+		//#ifdef PARALLEL
+		//parallel_for_c(NULL, NULL, 0, result, ceil((double)(n - start)/jump),BLOCKSIZE,one_layer_converter);
+		//#else
+		//one_layer_converter(NULL, NULL, 0, result, 0, ceil((double)(n - start)/jump));
+		//#endif
+		foreach_in_range(result, ceil((double)(n - start)/jump) /* ??? */, ceil((double)(n - start)/jump), one_layer_converter);
 
 		index += ceil((double)(n - start)/jump);
 
@@ -1008,7 +1014,7 @@ void smooth_recursive(step_t** indices, int length) {
 	//G_F_to_R_tilde(NULL, indices, length, NULL, 0, (length + 1)/2);
 	//#endif
 
-	foreach_step_in_range(indices, length, (length + 1)/2, G_F_to_R_tilde);
+	foreach_in_range(indices, length, (length + 1)/2, G_F_to_R_tilde);
 
 	//Second part of the algorithm
 	//#ifdef PARALLEL
@@ -1016,7 +1022,7 @@ void smooth_recursive(step_t** indices, int length) {
 	//#else
 	//H_R_tilde_to_R(NULL, indices, length, NULL, 0, (length + 1)/2);
 	//#endif
-	foreach_step_in_range(indices, length, (length + 1)/2, H_R_tilde_to_R);
+	foreach_in_range(indices, length, (length + 1)/2, H_R_tilde_to_R);
 
 	//Third part of the algorithm
 	//#ifdef PARALLEL
@@ -1025,7 +1031,7 @@ void smooth_recursive(step_t** indices, int length) {
 	//H_tilde_G_to_G_tilde(NULL, indices, length, NULL, 0, length/2);
 	//#endif
 	// Sivan March 2025 not sure why this goes to length/2, not as in previous two
-	foreach_step_in_range(indices, length, length/2, H_tilde_G_to_G_tilde);
+	foreach_in_range(indices, length, length/2, H_tilde_G_to_G_tilde);
 	
 	//Fix the last index
 
@@ -1058,17 +1064,18 @@ void smooth_recursive(step_t** indices, int length) {
 	//#else
 	//Variables_Renaming(NULL, indices, length, NULL, 0, length/2);
 	//#endif
-	foreach_step_in_range(indices, length, length/2, Variables_Renaming);
+	foreach_in_range(indices, length, length/2, Variables_Renaming);
 	
 	// The Recursion
 
-	step_t* *new_indices = (step_t**)malloc(length/2 * sizeof(step_t*));
+	step_t** new_indices = (step_t**) malloc(length/2 * sizeof(step_t*));
 
-	#ifdef PARALLEL
-	parallel_for_c(new_indices, indices, length, NULL, length/2,BLOCKSIZE, Init_new_indices);
-	#else
-	Init_new_indices(new_indices, indices, length, NULL, 0, length/2);
-	#endif
+	//#ifdef PARALLEL
+	//parallel_for_c(new_indices, indices, length, NULL, length/2,BLOCKSIZE, Init_new_indices);
+	//#else
+	//Init_new_indices(new_indices, indices, length, NULL, 0, length/2);
+	//#endif
+	foreach_in_range_two(new_indices, indices, length, length/2, Init_new_indices);
 	
 	
 	//smooth_recursive(NULL, new_indices, length/2);
@@ -1076,11 +1083,12 @@ void smooth_recursive(step_t** indices, int length) {
 
 	free(new_indices);
 
-	#ifdef PARALLEL
-	parallel_for_c(NULL, indices, length, NULL, (length + 1)/2, BLOCKSIZE, Solve_Estimates);
-	#else
-	Solve_Estimates(NULL, indices, length, NULL, 0, (length + 1)/2);
-	#endif
+	//#ifdef PARALLEL
+	//parallel_for_c(NULL, indices, length, NULL, (length + 1)/2, BLOCKSIZE, Solve_Estimates);
+	//#else
+	//Solve_Estimates(NULL, indices, length, NULL, 0, (length + 1)/2);
+	//#endif
+	foreach_in_range(indices, length, (length + 1)/2, Solve_Estimates);
 
 	// ==========================================
 	// Change 1
@@ -1089,22 +1097,23 @@ void smooth_recursive(step_t** indices, int length) {
 	// Since the selinv algorithm works with LDL^T matrices, we
 	// start with converting our RR^T to LDL^T
 
-	#ifdef PARALLEL
-	parallel_for_c(NULL, indices, length, NULL, (length + 1)/2, BLOCKSIZE, Convert_LDLT);
-	#else
-	Convert_LDLT(NULL, indices, length, NULL, 0, (length + 1)/2);
-	#endif
+	//#ifdef PARALLEL
+	//parallel_for_c(NULL, indices, length, NULL, (length + 1)/2, BLOCKSIZE, Convert_LDLT);
+	//#else
+	//Convert_LDLT(NULL, indices, length, NULL, 0, (length + 1)/2);
+	//#endif
+	foreach_in_range(indices, length, (length + 1)/2, Convert_LDLT);
 
 	// Now we can start the selinv algrithm for out case
 	
-	int ** result = virtual_physical(length);
-	
+	int** result = virtual_physical(length);
 
-	#ifdef PARALLEL
-	parallel_for_c(NULL, indices, length, result, (length + 1)/2, BLOCKSIZE, SelInv);
-	#else
-	SelInv(NULL, indices, length, result, 0, (length + 1)/2);
-	#endif
+	//#ifdef PARALLEL
+	//parallel_for_c(NULL, indices, length, result, (length + 1)/2, BLOCKSIZE, SelInv);
+	//#else
+	//SelInv(NULL, indices, length, result, 0, (length + 1)/2);
+	//#endif
+	foreach_in_range_two(indices, result, length, (length + 1)/2, SelInv);
 	
 	free(result[0]);
 	free(result[1]);
@@ -1121,11 +1130,12 @@ void kalman_smooth(kalman_t* kalman) {
 	int length = farray_size(kalman->steps);
 	step_t** indices = (step_t**) malloc(length * sizeof(step_t*));
 
-#ifdef PARALLEL
-	parallel_for_c(kalman, indices, length, NULL, length, BLOCKSIZE, assign_indices);
-#else
-	assign_indices(kalman, indices, length, NULL, 0, length);
-#endif
+//#ifdef PARALLEL
+//	parallel_for_c(kalman, indices, length, NULL, length, BLOCKSIZE, assign_indices);
+//#else
+//	assign_indices(kalman, indices, length, NULL, 0, length);
+//#endif
+	foreach_in_range_two(kalman, indices, length, length, assign_indices);
 
 	//for (int i = 0; i < length; ++i) {
 	//	indices[i] = farray_get(kalman->steps,i);
