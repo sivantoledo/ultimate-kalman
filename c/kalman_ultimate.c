@@ -18,7 +18,6 @@
 #endif
 
 #define KALMAN_MATRIX_SHORT_TYPE
-//#include "ultimatekalman.h"
 #include "kalman.h"
 
 #ifdef BUILD_MEX
@@ -67,7 +66,7 @@ typedef struct step_st {
 	kalman_matrix_t* covariance;
 } step_t;
 
-void* step_create() {
+static void* step_create() {
 	step_t* s = malloc(sizeof(step_t));
 	s->step      = -1;
 	s->dimension = -1;
@@ -109,7 +108,6 @@ static void step_rollback(void* v) {
 	matrix_free(s->y);
 }
 
-
 static int64_t step_get_index(void* v) {
 	return ((step_t*) v)->step;
 }
@@ -136,7 +134,7 @@ static char step_get_covariance_type(void* v) {
 
 static void evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, matrix_t* c_i, matrix_t* K_i, char K_type) {
 	step_t* kalman_current;
-	kalman->current = kalman_current = step_create();
+	kalman->current = kalman_current = (step_t*) step_create();
 	kalman_current->dimension = n_i;
 
 	if (farray_size(kalman->steps)==0) {
