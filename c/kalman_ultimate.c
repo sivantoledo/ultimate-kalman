@@ -583,7 +583,7 @@ static void smooth(kalman_t* kalman) {
 
 	//printf("smooth2 %d to %d\n",last,first);
 
-#ifndef NO_COVARIANCE_ESTIMATES
+	if ((kalman->options & KALMAN_NO_COVARIANCE) == 0) {
 	matrix_t* R;
 	int32_t n_i, n_ipo;
 	for (si=last; si>=first; si--) {
@@ -608,7 +608,7 @@ static void smooth(kalman_t* kalman) {
 			n_ipo = n_i;
 		}
 	}
-#endif
+	} /* end of if not NO_COVARIANCE */
 }
 
 void kalman_create_ultimate(kalman_t* kalman) {

@@ -967,7 +967,7 @@ static int** virtual_physical(int n) {
 // ==========================================
 
 //void smooth_recursive(kalman_t* kalman, step_t* *steps, int length) {
-static void smooth_recursive(step_t** steps, int length) {
+static void smooth_recursive(kalman_options_t options, step_t** steps, int length) {
 	
     if (length == 1) {
 
@@ -1080,7 +1080,7 @@ static void smooth_recursive(step_t** steps, int length) {
 	
 	
 	//smooth_recursive(NULL, new_steps, length/2);
-	smooth_recursive(recursion_steps, length/2);
+	smooth_recursive(options, recursion_steps, length/2);
 
 	free(recursion_steps);
 
@@ -1095,6 +1095,7 @@ static void smooth_recursive(step_t** steps, int length) {
 	// Change 1
 	// ==========================================
 
+	if ((options & KALMAN_NO_COVARIANCE) == 0) {
 	// Since the selinv algorithm works with LDL^T matrices, we
 	// start with converting our RR^T to LDL^T
 
@@ -1119,6 +1120,8 @@ static void smooth_recursive(step_t** steps, int length) {
 	free(result[0]);
 	free(result[1]);
 	free(result);
+	
+	}
 	// % ==========================================
 	// % End Change 1
 	// % ==========================================
@@ -1130,7 +1133,7 @@ static void smooth(kalman_t* kalman) {
 
 	int length = farray_size(kalman->steps);
 	step_t** steps = (step_t**) malloc(length * sizeof(step_t*));
-
+	
 //#ifdef PARALLEL
 //	parallel_for_c(kalman, steps, length, NULL, length, BLOCKSIZE, assign_steps);
 //#else
@@ -1144,7 +1147,7 @@ static void smooth(kalman_t* kalman) {
 
 	//parallel_smooth(kalman, steps, length);
 	//smooth_recursive(NULL, steps, length);
-	smooth_recursive(steps, length);
+	smooth_recursive(kalman->options, steps, length);
 
 	free(steps);
 }

@@ -221,7 +221,8 @@ void kalman_create_oddeven        (kalman_t*);
 
 kalman_t* kalman_create() {
 	//return kalman_create_options( KALMAN_ALGORITHM_ULTIMATE ); // default
-	return kalman_create_options( KALMAN_ALGORITHM_ODDEVEN ); // default
+	//return kalman_create_options( KALMAN_ALGORITHM_ULTIMATE | KALMAN_NO_COVARIANCE ); // default
+	return kalman_create_options( KALMAN_ALGORITHM_ODDEVEN | KALMAN_NO_COVARIANCE ); // default
 }
 
 kalman_t* kalman_create_options(kalman_options_t options) {
