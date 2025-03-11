@@ -24,7 +24,7 @@ extern "C" {
 		return 0;
 	}
 
-    void foreach_in_range(void* array, int length, size_t n, void (*func)(void*, int, size_t, size_t)) {
+    void foreach_in_range(void (*func)(void*, int, size_t, size_t), void* array, int length, size_t n) {
     	tbb::global_control control(tbb::global_control::max_allowed_parallelism, nthreads);
 
     	//printf("blocksize = %d\n",blocksize>0 ? blocksize : block_size);
@@ -35,7 +35,7 @@ extern "C" {
         );
     }
     
-    void foreach_in_range_two(void* array1, void* array2, int length, size_t n, void (*func)(void*, void*, int, size_t, size_t)) {
+    void foreach_in_range_two(void (*func)(void*, void*, int, size_t, size_t), void* array1, void* array2, int length, size_t n) {
     	tbb::global_control control(tbb::global_control::max_allowed_parallelism, nthreads);
 
     	//printf("blocksize = %d\n",blocksize>0 ? blocksize : block_size);

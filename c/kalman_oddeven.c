@@ -948,7 +948,7 @@ int** virtual_physical(int n) {
 		//#else
 		//one_layer_converter(NULL, NULL, 0, result, 0, ceil((double)(n - start)/jump));
 		//#endif
-		foreach_in_range(result, ceil((double)(n - start)/jump) /* ??? */, ceil((double)(n - start)/jump), one_layer_converter);
+		foreach_in_range(one_layer_converter, result, ceil((double)(n - start)/jump) /* ??? */, ceil((double)(n - start)/jump));
 
 		index += ceil((double)(n - start)/jump);
 
@@ -1014,7 +1014,7 @@ void smooth_recursive(step_t** indices, int length) {
 	//G_F_to_R_tilde(NULL, indices, length, NULL, 0, (length + 1)/2);
 	//#endif
 
-	foreach_in_range(indices, length, (length + 1)/2, G_F_to_R_tilde);
+	foreach_in_range(G_F_to_R_tilde, indices, length, (length + 1)/2);
 
 	//Second part of the algorithm
 	//#ifdef PARALLEL
@@ -1022,7 +1022,7 @@ void smooth_recursive(step_t** indices, int length) {
 	//#else
 	//H_R_tilde_to_R(NULL, indices, length, NULL, 0, (length + 1)/2);
 	//#endif
-	foreach_in_range(indices, length, (length + 1)/2, H_R_tilde_to_R);
+	foreach_in_range(H_R_tilde_to_R, indices, length, (length + 1)/2);
 
 	//Third part of the algorithm
 	//#ifdef PARALLEL
@@ -1031,7 +1031,7 @@ void smooth_recursive(step_t** indices, int length) {
 	//H_tilde_G_to_G_tilde(NULL, indices, length, NULL, 0, length/2);
 	//#endif
 	// Sivan March 2025 not sure why this goes to length/2, not as in previous two
-	foreach_in_range(indices, length, length/2, H_tilde_G_to_G_tilde);
+	foreach_in_range(H_tilde_G_to_G_tilde, indices, length, length/2);
 	
 	//Fix the last index
 
@@ -1064,7 +1064,7 @@ void smooth_recursive(step_t** indices, int length) {
 	//#else
 	//Variables_Renaming(NULL, indices, length, NULL, 0, length/2);
 	//#endif
-	foreach_in_range(indices, length, length/2, Variables_Renaming);
+	foreach_in_range(Variables_Renaming, indices, length, length/2);
 	
 	// The Recursion
 
@@ -1075,7 +1075,7 @@ void smooth_recursive(step_t** indices, int length) {
 	//#else
 	//Init_new_indices(new_indices, indices, length, NULL, 0, length/2);
 	//#endif
-	foreach_in_range_two(new_indices, indices, length, length/2, Init_new_indices);
+	foreach_in_range_two(Init_new_indices, new_indices, indices, length, length/2);
 	
 	
 	//smooth_recursive(NULL, new_indices, length/2);
@@ -1088,7 +1088,7 @@ void smooth_recursive(step_t** indices, int length) {
 	//#else
 	//Solve_Estimates(NULL, indices, length, NULL, 0, (length + 1)/2);
 	//#endif
-	foreach_in_range(indices, length, (length + 1)/2, Solve_Estimates);
+	foreach_in_range(Solve_Estimates, indices, length, (length + 1)/2);
 
 	// ==========================================
 	// Change 1
@@ -1102,7 +1102,7 @@ void smooth_recursive(step_t** indices, int length) {
 	//#else
 	//Convert_LDLT(NULL, indices, length, NULL, 0, (length + 1)/2);
 	//#endif
-	foreach_in_range(indices, length, (length + 1)/2, Convert_LDLT);
+	foreach_in_range(Convert_LDLT, indices, length, (length + 1)/2);
 
 	// Now we can start the selinv algrithm for out case
 	
@@ -1113,7 +1113,7 @@ void smooth_recursive(step_t** indices, int length) {
 	//#else
 	//SelInv(NULL, indices, length, result, 0, (length + 1)/2);
 	//#endif
-	foreach_in_range_two(indices, result, length, (length + 1)/2, SelInv);
+	foreach_in_range_two(SelInv, indices, result, length, (length + 1)/2);
 	
 	free(result[0]);
 	free(result[1]);
@@ -1135,7 +1135,7 @@ void kalman_smooth(kalman_t* kalman) {
 //#else
 //	assign_indices(kalman, indices, length, NULL, 0, length);
 //#endif
-	foreach_in_range_two(kalman, indices, length, length, assign_indices);
+	foreach_in_range_two(assign_indices, kalman, indices, length, length);
 
 	//for (int i = 0; i < length; ++i) {
 	//	indices[i] = farray_get(kalman->steps,i);
