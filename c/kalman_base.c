@@ -215,7 +215,13 @@ matrix_t* explicit(matrix_t* cov, char type) {
 /* KALMAN                                                                     */
 /******************************************************************************/
 
+void kalman_create_ultimate(kalman_t*);
+
 kalman_t* kalman_create() {
+	return kalman_create_options( KALMAN_ALGORITHM_ULTIMATE ); // default
+}
+
+kalman_t* kalman_create_options(kalman_options_t options) {
 #ifdef PARALLEL
 	char* nthreads_string = getenv("NTHREADS");
 	int nthreads = 0;
@@ -236,6 +242,20 @@ kalman_t* kalman_create() {
 	assert( kalman != NULL );
 	kalman->steps   = farray_create();
 	kalman->current = NULL;
+	
+	switch (options & (KALMAN_ALGORITHM_ULTIMATE | KALMAN_ALGORITHM_FILTER_SMOOTHER | KALMAN_ALGORITHM_ODDEVEN | KALMAN_ALGORITHM_ASSOCIATIVE)) {
+		case KALMAN_ALGORITHM_ULTIMATE:
+		printf("calling kalman_ultimate\n");
+		kalman_create_ultimate(kalman);
+		break;
+		case KALMAN_ALGORITHM_FILTER_SMOOTHER:
+		break;
+		case KALMAN_ALGORITHM_ODDEVEN:
+		break;
+		case KALMAN_ALGORITHM_ASSOCIATIVE:
+		break;
+	}
+	
 	return kalman;
 }
 
@@ -244,7 +264,7 @@ void kalman_free(kalman_t* kalman) {
 
 	while (farray_size(kalman->steps) > 0) {
 		void* i = farray_drop_last(kalman->steps);
-		step_free(i);
+		(*(kalman->step_free))(i);
 	}
 
 	farray_free( kalman->steps );
@@ -257,7 +277,7 @@ int64_t   kalman_earliest(kalman_t* kalman) {
 	//step_t* s = farray_get_first(kalman->steps);
 	//return s->step;
 	void* s = farray_get_first(kalman->steps);
-	return step_get_step(s);
+	return (*(kalman->step_get_index))(s);
 }
 
 int64_t   kalman_latest(kalman_t* kalman) {
@@ -265,8 +285,22 @@ int64_t   kalman_latest(kalman_t* kalman) {
 	//step_t* s = farray_get_last(kalman->steps);
 	//return s->step;
 	void* s = farray_get_last(kalman->steps);
-	return step_get_step(s);
+	return (*(kalman->step_get_index))(s);
 }
+
+
+void kalman_evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, matrix_t* c_i, matrix_t* K_i, char K_type) {
+	(*(kalman->evolve)) (kalman, n_i, H_i, F_i, c_i, K_i, K_type);
+}
+
+void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_i, char C_type) {
+	(*(kalman->observe)) (kalman, G_i, o_i, C_i, C_type);
+}
+
+void kalman_smooth(kalman_t* kalman) {
+	(*(kalman->smooth)) (kalman);
+}
+
 
 matrix_t* kalman_estimate(kalman_t* kalman, int64_t si) {
 #ifdef BUILD_DEBUG_PRINTOUTS
@@ -277,10 +311,10 @@ matrix_t* kalman_estimate(kalman_t* kalman, int64_t si) {
 
 	if (si < 0) si = farray_last_index(kalman->steps);
 	void* step = farray_get(kalman->steps,si);
-	matrix_t* state = step_get_state(step);
+	matrix_t* state = (*(kalman->step_get_state))(step);
 
 	if (state == NULL) {
-		int32_t dim = step_get_dimension(step);
+		int32_t dim = (*(kalman->step_get_dimension))(step);
 		return matrix_create_constant(dim,1,NaN);
 	}
 
@@ -307,7 +341,7 @@ void kalman_forget(kalman_t* kalman, int64_t si) {
 
 	while (farray_first_index(kalman->steps) <= si) {
 		void* step = farray_drop_first(kalman->steps);
-		step_free(step);
+		(*(kalman->step_free))(step);
 #ifdef BUILD_DEBUG_PRINTOUTS
 		printf("forget new first %d\n",(int) farray_first_index(kalman->steps));
 #endif
@@ -329,7 +363,7 @@ void kalman_rollback(kalman_t* kalman, int64_t si) {
 	int64_t sj;
 	do {
 		step = farray_drop_last(kalman->steps);
-		sj = step_get_step(step);
+		sj = (*(kalman->step_get_index))(step);
 		if (sj == si) {
 		  //printf("rollback got to %d\n",si);
 
@@ -341,14 +375,14 @@ void kalman_rollback(kalman_t* kalman, int64_t si) {
 			matrix_free( step->covariance);
 			*/
 			
-			step_rollback(step);
+			(*(kalman->step_rollback))(step);
 			
 			kalman->current = step;
 
 		} else {
 		  //printf("rollback dropped step %d\n",step_get_step(step));
 			// don't we need to free the step? Sivan March 2025
-		  step_free(step);
+		  (*(kalman->step_free))(step);
 		}
 	} while (sj > si);
 
@@ -357,7 +391,7 @@ void kalman_rollback(kalman_t* kalman, int64_t si) {
 }
 
 char kalman_covariance_type(kalman_t* kalman, int64_t si) { 
-	return step_get_covariance_type(NULL); // currently the same for all steps 
+	return (*(kalman->step_get_covariance_type))(); // currently the same for all steps 
 }
 
 matrix_t* kalman_covariance(kalman_t* kalman, int64_t si) {
@@ -373,10 +407,10 @@ matrix_t* kalman_covariance(kalman_t* kalman, int64_t si) {
 
 	matrix_t* cov = NULL;
 
-	if (step_get_covariance(step) != NULL) {
-		cov = matrix_create_copy(step_get_covariance(step));
+	if ((*(kalman->step_get_covariance))(step) != NULL) {
+		cov = matrix_create_copy((*(kalman->step_get_covariance))(step));
 	} else {
-		int32_t n_i = step_get_dimension(step);
+		int32_t n_i = (*(kalman->step_get_dimension))(step);
 		cov = matrix_create_constant(n_i,n_i,NaN);
 	}
 
