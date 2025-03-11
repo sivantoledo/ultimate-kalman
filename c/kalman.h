@@ -50,8 +50,9 @@ typedef enum {
 struct kalman_st;
 
 typedef struct kalman_st {
-	farray_t* steps;
-	void*   current; // really a pointer to step_t, but step_t varies among implementations
+	farray_t*        steps;
+	void*            current; // really a pointer to step_t, but step_t varies among implementations
+	kalman_options_t options;
 	
 	// implementation-specific operations
 	void             (*evolve)  (struct kalman_st* kalman, int32_t n_i, kalman_matrix_t* H_i, kalman_matrix_t* F_i, kalman_matrix_t* c_i, kalman_matrix_t* K_i, char K_type);
