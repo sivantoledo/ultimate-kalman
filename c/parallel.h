@@ -1,5 +1,5 @@
-#ifndef PARALLEL_OPS_H
-#define PARALLEL_OPS_H
+#ifndef PARALLEL_H
+#define PARALLEL_H
 
 void parallel_set_thread_limit(int number_of_threads);
 void parallel_set_blocksize   (int blocksize_in);
