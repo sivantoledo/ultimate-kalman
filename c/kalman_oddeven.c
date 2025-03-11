@@ -23,7 +23,7 @@
 
 #define KALMAN_MATRIX_SHORT_TYPE
 #include "kalman.h"
-#include "kalman_parallel.h"
+#include "parallel.h"
 
 #ifdef PARALLEL
 
