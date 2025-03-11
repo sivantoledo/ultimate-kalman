@@ -54,6 +54,7 @@ cl ^
   kalman_filter_smoother.c ^
   kalman_parallel_sequential.c ^
   kalman_oddeven.c ^
+  kalman_associative.c ^
   kalman_base.c ^
   matrix_ops.c ^
   flexible_arrays.c ^
