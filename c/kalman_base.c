@@ -215,11 +215,13 @@ matrix_t* explicit(matrix_t* cov, char type) {
 /* KALMAN                                                                     */
 /******************************************************************************/
 
-void kalman_create_ultimate(kalman_t*);
+void kalman_create_ultimate       (kalman_t*);
+void kalman_create_filter_smoother(kalman_t*);
+void kalman_create_oddeven        (kalman_t*);
 
 kalman_t* kalman_create() {
 	//return kalman_create_options( KALMAN_ALGORITHM_ULTIMATE ); // default
-	return kalman_create_options( KALMAN_ALGORITHM_FILTER_SMOOTHER ); // default
+	return kalman_create_options( KALMAN_ALGORITHM_ODDEVEN ); // default
 }
 
 kalman_t* kalman_create_options(kalman_options_t options) {
@@ -255,6 +257,8 @@ kalman_t* kalman_create_options(kalman_options_t options) {
 			kalman_create_filter_smoother(kalman);
 		break;
 		case KALMAN_ALGORITHM_ODDEVEN:
+			printf("calling kalman_oddeven\n");
+			kalman_create_oddeven(kalman);
 		break;
 		case KALMAN_ALGORITHM_ASSOCIATIVE:
 		break;

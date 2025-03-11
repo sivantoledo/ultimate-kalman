@@ -98,7 +98,7 @@ typedef struct step_st {
 	kalman_matrix_t* covariance;
 } step_t;
 
-void* step_create() {
+static void* step_create() {
 	step_t* s = malloc(sizeof(step_t));
 	s->step      = -1;
 	s->dimension = -1;
@@ -130,7 +130,7 @@ void* step_create() {
 	return s;
 }
 
-void step_free(void* v) {
+static void step_free(void* v) {
 	step_t* s = (step_t*) v;
 	
 	matrix_free(s->H);
@@ -158,7 +158,7 @@ void step_free(void* v) {
 	free(s);
 }
 
-void step_rollback(void* v) {
+static void step_rollback(void* v) {
 	step_t* s = (step_t*) v;
 	
 	matrix_free(s->G);
@@ -180,23 +180,23 @@ void step_rollback(void* v) {
 	matrix_free(s->covariance);
 }
 
-int64_t step_get_step(void* v) {
+static int64_t step_get_index(void* v) {
 	return ((step_t*) v)->step;
 }
 
-int32_t step_get_dimension(void* v) {
+static int32_t step_get_dimension(void* v) {
 	return ((step_t*) v)->dimension;
 }
 
-kalman_matrix_t* step_get_state(void* v) {
+static kalman_matrix_t* step_get_state(void* v) {
 	return ((step_t*) v)->state;
 }
 
-kalman_matrix_t* step_get_covariance(void* v) {
+static kalman_matrix_t* step_get_covariance(void* v) {
 	return ((step_t*) v)->covariance;
 }
 
-char step_get_covariance_type(void* v) {
+static char step_get_covariance_type(void* v) {
 	return 'C';
 }
 
@@ -211,7 +211,7 @@ char step_get_covariance_type(void* v) {
  * unification with associative evolve and observe!)
  */
 
-void kalman_evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, matrix_t* c_i, matrix_t* K_i, char K_type) {
+static void evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, matrix_t* c_i, matrix_t* K_i, char K_type) {
 	step_t* kalman_current;
 	kalman->current = kalman_current = step_create();
 	kalman_current->dimension = n_i;
@@ -254,7 +254,7 @@ void kalman_evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, 
 	kalman_current->c  = V_i_c_i;
 }
 
-void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_i, char C_type) {
+static void observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_i, char C_type) {
 
 #ifdef BUILD_DEBUG_PRINTOUTS
 	printf("observe!\n");
@@ -307,7 +307,7 @@ void kalman_observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 /* ADDITIONAL MATRIX OPERATIONS                                               */
 /******************************************************************************/
 
-void apply_Q_on_block_matrix (matrix_t* R, matrix_t* Q, matrix_t** upper, matrix_t** lower) {
+static void apply_Q_on_block_matrix (matrix_t* R, matrix_t* Q, matrix_t** upper, matrix_t** lower) {
 	matrix_t* concat = matrix_create_vconcat(*upper, *lower);
 	matrix_mutate_apply_qt(R, Q, concat);
 	matrix_t *new_upper = matrix_create_sub(concat,0,matrix_rows(*upper), 0, matrix_cols(concat));
@@ -321,7 +321,7 @@ void apply_Q_on_block_matrix (matrix_t* R, matrix_t* Q, matrix_t** upper, matrix
 	*lower = new_lower;
 }
 
-void free_and_assign(matrix_t** original, matrix_t* new){
+static void free_and_assign(matrix_t** original, matrix_t* new){
 	if (*original != NULL){
 		matrix_free(*original);
 	}
@@ -333,7 +333,7 @@ void free_and_assign(matrix_t** original, matrix_t* new){
 /******************************************************************************/
 
 //void assign_steps(void* kalman_v, void* steps_v, int length, int** helper, size_t start, size_t end) {
-void create_steps_array(void* kalman_v, void* steps_v, int length, size_t start, size_t end) {
+static void create_steps_array(void* kalman_v, void* steps_v, int length, size_t start, size_t end) {
 	kalman_t* kalman = (kalman_t*) kalman_v;
 	step_t** steps = (step_t**) steps_v;
 	
@@ -343,7 +343,7 @@ void create_steps_array(void* kalman_v, void* steps_v, int length, size_t start,
 }
 
 //void G_F_to_R_tilde(void* kalman_v, void* steps_v, int length, int** helper, size_t start, size_t end){
-void G_F_to_R_tilde(void** steps_v, int length, size_t start, size_t end){
+static void G_F_to_R_tilde(void** steps_v, int length, size_t start, size_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
 	step_t* *steps = (step_t**)steps_v;
 
@@ -396,7 +396,7 @@ void G_F_to_R_tilde(void** steps_v, int length, size_t start, size_t end){
 }
 
 //void H_R_tilde_to_R(void* kalman_v, void* steps_v, int length, int** helper, size_t start, size_t end){
-void H_R_tilde_to_R(void** steps_v, int length, size_t start, size_t end){
+static void H_R_tilde_to_R(void** steps_v, int length, size_t start, size_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
 	step_t* *steps = (step_t**)steps_v;
 
@@ -445,7 +445,7 @@ void H_R_tilde_to_R(void** steps_v, int length, size_t start, size_t end){
 }
 
 //void H_tilde_G_to_G_tilde(void* kalman_v, void* steps_v, int length, int** helper, size_t start, size_t end){
-void H_tilde_G_to_G_tilde(void** steps_v, int length, size_t start, size_t end){
+static void H_tilde_G_to_G_tilde(void** steps_v, int length, size_t start, size_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
 	step_t* *steps = (step_t**)steps_v;
 
@@ -477,7 +477,7 @@ void H_tilde_G_to_G_tilde(void** steps_v, int length, size_t start, size_t end){
 }
 
 //void Variables_Renaming(void* kalman_v, void* steps_v, int length, int** helper, size_t start, size_t end){
-void Variables_Renaming(void** steps_v, int length, size_t start, size_t end){
+static void Variables_Renaming(void** steps_v, int length, size_t start, size_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
 	step_t* *steps = (step_t**)steps_v;
 
@@ -514,7 +514,7 @@ void Variables_Renaming(void** steps_v, int length, size_t start, size_t end){
 }
 
 //void Init_new_steps(void* new_steps_v, void* steps_v, int length, int** helper, size_t start, size_t end){
-void extract_recursion_steps(void* new_steps_v, void* steps_v, int length, size_t start, size_t end){
+static void extract_recursion_steps(void* new_steps_v, void* steps_v, int length, size_t start, size_t end){
 	step_t** new_steps = (step_t**) new_steps_v;
 	step_t** steps     = (step_t**) steps_v;
 
@@ -524,7 +524,7 @@ void extract_recursion_steps(void* new_steps_v, void* steps_v, int length, size_
 }
 
 //void Solve_Estimates(void* kalman_v, void* steps_v, int length, int** helper, size_t start, size_t end){
-void Solve_Estimates(void* steps_v, int length, size_t start, size_t end){
+static void Solve_Estimates(void* steps_v, int length, size_t start, size_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
 	step_t** steps = (step_t**) steps_v;
 
@@ -603,7 +603,7 @@ void Solve_Estimates(void* steps_v, int length, size_t start, size_t end){
 // ==========================================
 
 //void Convert_LDLT(void* kalman_v, void* steps_v, int length, int** helper, size_t start, size_t end){
-void Convert_LDLT(void* steps_v, int length, size_t start, size_t end){
+static void Convert_LDLT(void* steps_v, int length, size_t start, size_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
 	step_t** steps = (step_t**) steps_v;
 
@@ -642,7 +642,7 @@ void Convert_LDLT(void* steps_v, int length, size_t start, size_t end){
 }
 
 //void SelInv(void* kalman_v, void* steps_v, int length, int** converters, size_t start, size_t end){
-void SelInv(void* steps_v, void** converters_v, int length, size_t start, size_t end){
+static void SelInv(void* steps_v, void** converters_v, int length, size_t start, size_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
 	step_t** steps = (step_t**) steps_v;
 	int** converters = (int**) converters_v;
@@ -890,7 +890,7 @@ void SelInv(void* steps_v, void** converters_v, int length, size_t start, size_t
 
 
 //void one_layer_converter (void* kalman_v, void* steps_v, int length, int** helper, size_t start, size_t end){
-void one_layer_converter (void* array, int length, size_t start, size_t end){
+static void one_layer_converter (void* array, int length, size_t start, size_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
 	//step_t* *steps = (step_t**)steps_v;
 	
@@ -917,7 +917,7 @@ void one_layer_converter (void* array, int length, size_t start, size_t end){
 	variables[4] = index;
 }
 
-int** virtual_physical(int n) {
+static int** virtual_physical(int n) {
 
 	int* virtual_to_physical = (int*) malloc(    n * sizeof(int));
 	int* physical_to_virtual = (int*) malloc((n/2) * sizeof(int));
@@ -967,7 +967,7 @@ int** virtual_physical(int n) {
 // ==========================================
 
 //void smooth_recursive(kalman_t* kalman, step_t* *steps, int length) {
-void smooth_recursive(step_t** steps, int length) {
+static void smooth_recursive(step_t** steps, int length) {
 	
     if (length == 1) {
 
@@ -1126,7 +1126,7 @@ void smooth_recursive(step_t** steps, int length) {
 
 }
 
-void kalman_smooth(kalman_t* kalman) {
+static void smooth(kalman_t* kalman) {
 
 	int length = farray_size(kalman->steps);
 	step_t** steps = (step_t**) malloc(length * sizeof(step_t*));
@@ -1149,6 +1149,20 @@ void kalman_smooth(kalman_t* kalman) {
 	free(steps);
 }
 
+void kalman_create_oddeven(kalman_t* kalman) {
+	kalman->evolve  = evolve;	
+	kalman->observe = observe;	
+	kalman->smooth  = smooth;	
+	
+	kalman->step_create        = step_create;
+	kalman->step_free          = step_free;
+	kalman->step_rollback      = step_rollback;
+	kalman->step_get_index     = step_get_index;
+	kalman->step_get_dimension = step_get_dimension;
+	kalman->step_get_state     = step_get_state;
+	kalman->step_get_covariance      = step_get_covariance;
+	kalman->step_get_covariance_type = step_get_covariance_type;
+}
 /******************************************************************************/
 /* END OF FILE                                                                */
 /******************************************************************************/
