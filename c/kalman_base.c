@@ -242,6 +242,7 @@ kalman_t* kalman_create_options(kalman_options_t options) {
 	assert( kalman != NULL );
 	kalman->steps   = farray_create();
 	kalman->current = NULL;
+	kalman->options = options;
 	
 	switch (options & (KALMAN_ALGORITHM_ULTIMATE | KALMAN_ALGORITHM_FILTER_SMOOTHER | KALMAN_ALGORITHM_ODDEVEN | KALMAN_ALGORITHM_ASSOCIATIVE)) {
 		case KALMAN_ALGORITHM_ULTIMATE:
