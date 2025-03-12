@@ -347,8 +347,8 @@ typedef struct concurrent_set_st {
 //#define BLOCKSIZE 1000
 #define BLOCKSIZE 10
 
-static 
-void parallelInit(void* la_v, void* *helper, size_t length, size_t start, size_t end){
+//static void parallelInit(void* la_v, void* *helper, size_t length, size_t start, size_t end){
+static void concurrent_set_parallel_init(void* la_v, int length, size_t start, size_t end){
     concurrent_set_t* la = (concurrent_set_t*) la_v;
 	for (int i = start; i < end; i++) {
         la->arrays[i] = (step_t**)malloc(COLUMNS * sizeof(step_t*));
@@ -368,7 +368,8 @@ concurrent_set_t* concurrent_set_create(int k) {
     la->arrays = (step_t***)malloc(k * sizeof(step_t**));
     la->locks = (pthread_mutex_t*)malloc(k * sizeof(pthread_mutex_t));
 
-    parallel_for_c(la, NULL, 0, k, BLOCKSIZE, parallelInit);
+    //parallel_for_c(la, NULL, 0, k, BLOCKSIZE, parallelInit);
+    foreach_in_range(concurrent_set_parallel_init, la, k, k);
 
     return la;
 }
