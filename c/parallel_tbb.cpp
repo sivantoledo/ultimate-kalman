@@ -86,7 +86,8 @@ extern "C" {
 
         tbb::parallel_scan(
             tbb::blocked_range<size_t>(0, length),
-            (void*) NULL,
+            (void*) NULL, /* starting value (identity elements) */
+            // now define the scan operation
             [input, sums, create_array, f, length, stride](const tbb::blocked_range<size_t>& r, void* sum, bool is_final_scan) {
                 void* temp = sum;
                 for (size_t i = r.begin(); i != r.end(); ++i) {
@@ -103,7 +104,9 @@ extern "C" {
                 }
                 return temp;
             },
+            // and now the combining operation
             [f, create_array](void* left, void* right) { return f(left, right, create_array, -1, 0); }
+            // there is also a version with an explicit is_final flag
         );
     }
     

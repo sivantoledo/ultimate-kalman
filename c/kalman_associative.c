@@ -321,27 +321,118 @@ static void observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 #endif
 }
 
-
+#ifdef PARALLEL
 /******************************************************************************/
 /* CONCURRENT SET OF POINTERS                                                 */
 /******************************************************************************/
-#ifdef PARALLEL
-
 /*
  * We define a simple concurrent set data structure, to keep track of steps
  * that are created during the parallel prefix sum operation (the elements
  * are structures, not value types) so that we can release them at the end of
  * the operation.
  */
+ 
+ #include <stdint.h>
 
-#include <pthread.h>
+/*
+ * FNV-1a hash of an address, to generate a random integer
+ */
 
+uint32_t hash_uint32(uint32_t value) {
+    const uint32_t FNV_PRIME = 16777619u;
+    const uint32_t FNV_OFFSET = 3141592653u; // Different offset for distinctness
+
+    uint32_t hash = FNV_OFFSET;
+    for (size_t i = 0; i < sizeof(uint32_t); i++) {
+        hash ^= (value & 0xFF);
+        hash *= FNV_PRIME;
+        value >>= 8;
+    }
+    return hash;
+}
+
+//#include <pthread.h>
+
+typedef struct concurrent_set_st {
+  int    size;
+  void** pointers;          
+  pthread_mutex_t* locks;
+  void   (*foreach)(void*);
+} concurrent_set_t;
+
+//static void parallelInit(void* la_v, void* *helper, size_t length, size_t start, size_t end){
+static void concurrent_set_parallel_init(void* set_v, int length, size_t start, size_t end){
+    concurrent_set_t* set = (concurrent_set_t*) set_v;
+	for (int i = start; i < end; i++) {
+        (set->pointers)[i] = NULL;
+        pthread_mutex_init(&((set->locks)[i]), NULL);
+    }
+}
+
+static void concurrent_set_parallel_destroy(void* set_v, int length, size_t start, size_t end){
+    concurrent_set_t* set = (concurrent_set_t*) set_v;
+	for (int i = start; i < end; i++) {
+        pthread_mutex_destroy(&((set->locks)[i]));
+    }
+}
+
+static void concurrent_set_parallel_foreach(void* set_v, int length, size_t start, size_t end){
+    concurrent_set_t* set = (concurrent_set_t*) set_v;
+	for (int i = start; i < end; i++) {
+        (*(set->foreach))((set->pointers)[i]);
+    }
+}
+
+static concurrent_set_t* concurrent_set_create(int capacity, void (*foreach)(void*)) {
+    concurrent_set_t* set = (concurrent_set_t*) malloc(sizeof(concurrent_set_t));
+    set->size = k * 10; // expansion to reduce contention
+    set->foreach = foreach;
+    set->pointers = (void**)           malloc( (set->size) * sizeof(void*));
+    set->locks    = (pthread_mutex_t*) malloc( (set->size) * sizeof(pthread_mutex_t));
+
+    //parallel_for_c(la, NULL, 0, k, BLOCKSIZE, parallelInit);
+    foreach_in_range(concurrent_set_parallel_init, set, set->size, set->size);
+
+    return set;
+}
+
+static void concurrent_set_free(concurrent_set_t* set) {
+  foreach_in_range(concurrent_set_parallel_destroy, set, set->size, set->size);
+  //parallel_for_c(la, NULL, 0, la->rows, BLOCKSIZE, parallelDestroy);
+  free(set->locks);
+  free(set->pointers);
+  free(set);
+}
+
+static void concurrent_set_insert(concurrent_set_t* set, int row, void* element) {
+	uint32_t inserted = 0;
+	uint32_t h = (uintptr_t) element;
+	uint32_t i;
+	do {
+		h = hash_uint32(h);
+		i = h % (set->size);
+		
+	  	pthread_mutex_lock(&(set->locks)[i]);
+	  	if ((set->pointers)[i] == NULL) {
+			(set->pointers)[i] = element;
+			inserted = 1;
+		}
+	} while (!inserted);
+}
+
+static void concurrent_set_foreach(concurrent_set_t* set) {
+  foreach_in_range(concurrent_set_parallel_foreach, set, set->size, set->size);
+}
+
+#ifdef ORIGINAL_CONCURRENT_SET
 typedef struct concurrent_set_st {
     step_t*** arrays;          
     int       rows;             
     int       columns;    
     pthread_mutex_t* locks;
 } concurrent_set_t;
+
+
 
 #define COLUMNS 10
 //#define BLOCKSIZE 1000
@@ -362,10 +453,10 @@ static void concurrent_set_parallel_init(void* la_v, int length, size_t start, s
 
 static
 concurrent_set_t* concurrent_set_create(int k) {
-    concurrent_set_t* la = (concurrent_set_t*)malloc(sizeof(concurrent_set_t));
+    concurrent_set_t* la = (concurrent_set_t*) malloc(sizeof(concurrent_set_t));
     la->rows = k;
     la->columns = COLUMNS;
-    la->arrays = (step_t***)malloc(k * sizeof(step_t**));
+    la->arrays = (step_t***) malloc(k * sizeof(step_t**));
     la->locks = (pthread_mutex_t*)malloc(k * sizeof(pthread_mutex_t));
 
     //parallel_for_c(la, NULL, 0, k, BLOCKSIZE, parallelInit);
@@ -427,6 +518,7 @@ static void concurrent_set_free(concurrent_set_t* la) {
   free(la->locks);
   free(la);
 }
+#endif
 #endif /* ifdef PARALLEL */
 
 /******************************************************************************/
@@ -861,7 +953,7 @@ static void filtered_to_state(void* kalman_v, void* filtered_v, size_t l, size_t
 		step_t* filtered_i = filtered[i];
 		step_j->state = matrix_create_copy(filtered_i->b);
 		step_j->covariance = matrix_create_copy(filtered_i->Z);		
-		if (i != 0){
+		if (i != 0) {
 			step_free(filtered_i);
 		}
 		i++;
@@ -887,28 +979,54 @@ static void smoothed_to_state(void* kalman_v, void* smoothed_v, size_t l, size_t
 
 //step_t** cummulativeSumsSequential(kalman_t* kalman, step_t* (*f)(step_t*, step_t*), int s, int e, int stride) {
 static step_t** cummulativeSumsSequential(kalman_t* kalman, void* (*f)(void*, void*, void*, int, int), int s, int e, int stride) {
-		step_t** sums = (step_t**)malloc((abs(e-s) + 1)*sizeof(step_t*));
-		int i = 0;
-		step_t** a = (step_t**)kalman->steps->elements;
-		step_t* sum = a[s];
-		sums[i] = sum;
-		i++;
+	step_t** sums = (step_t**)malloc((abs(e-s) + 1)*sizeof(step_t*));
+	int i = 0;
+	step_t** a = (step_t**)kalman->steps->elements;
+	step_t* sum = a[s];
+	sums[i] = sum;
+	i++;
 
-		if (s > e) {
-			for (int j=s+stride; j>=e; j+=stride) {
-			        sum = (step_t*) f(sum,a[j], NULL, -1, -1);
-				sums[i] = sum;
-				i++;
-			}
-		}else{
-			for (int j=s+stride; j<=e; j+=stride) {
-				sum = (step_t*) f(sum,a[j], NULL, -1, -1);
-				sums[i] = sum;
-				i++;
-			}
+	if (s > e) {
+		for (int j=s+stride; j>=e; j+=stride) {
+		        sum = (step_t*) f(sum,a[j], NULL, -1, -1);
+			sums[i] = sum;
+			i++;
 		}
-		return sums;
+	} else {
+		for (int j=s+stride; j<=e; j+=stride) {
+			sum = (step_t*) f(sum,a[j], NULL, -1, -1);
+			sums[i] = sum;
+			i++;
+		}
+	}
+	return sums;
 }
+
+static void prefix_sums_sequential(void* (*f)(void*, void*, void*, int, int), void** a, void** sums, int s, int e, int stride) {
+	//step_t** sums = (step_t**)malloc((abs(e-s) + 1)*sizeof(step_t*));
+	int i = 0;
+	//step_t** a = (step_t**)kalman->steps->elements;
+	//step_t* sum = a[s];
+	void* sum = a[s];
+	sums[i] = sum;
+	i++;
+
+	if (s > e) {
+		for (int j=s+stride; j>=e; j+=stride) {
+		    sum = f(sum,a[j], NULL, -1, -1);
+			sums[i] = sum;
+			i++;
+		}
+	} else {
+		for (int j=s+stride; j<=e; j+=stride) {
+			sum = f(sum,a[j], NULL, -1, -1);
+			sums[i] = sum;
+			i++;
+		}
+	}
+	return sums;
+}
+
 
 static void smooth(kalman_t* kalman) {
 	int l = farray_size(kalman->steps);
@@ -923,15 +1041,15 @@ static void smooth(kalman_t* kalman) {
 
 
 
+	step_t** filtered = (step_t**) malloc((l-1) * sizeof(step_t*));
 #ifdef PARALLEL
-	step_t** filtered = (step_t**)malloc((l - 1) * sizeof(step_t*));
 	concurrent_set_t* filtered_created_steps = concurrent_set_create(l);
 	parallel_scan_c(kalman->steps->elements, (void**) filtered, filtered_created_steps, filteringAssociativeOperation , l - 1, 1);
 	concurrent_set_free(filtered_created_steps);
 #else
-	step_t** filtered = cummulativeSumsSequential(kalman, filteringAssociativeOperation, 1, l - 1, 1);
+	//step_t** filtered = cummulativeSumsSequential(kalman, filteringAssociativeOperation, 1, l - 1, 1);
+	prefix_sums_sequential(filteringAssociativeOperation, kalman->steps->elements, filtered, 1, l-1, 1);
 #endif
-	
 
 //#ifdef PARALLEL
 //	parallel_for_c(kalman, (void**) filtered, l, l - 1, BLOCKSIZE, filtered_to_state);
@@ -950,13 +1068,14 @@ static void smooth(kalman_t* kalman) {
 	foreach_in_range(build_smoothing_elements, kalman, l, l);
 
 
+	step_t** smoothed = (step_t**) malloc(l * sizeof(step_t*));
 #ifdef PARALLEL
-	step_t** smoothed = (step_t**)malloc(l * sizeof(step_t*));
 	concurrent_set_t* smoothed_created_steps = concurrent_set_create(l);
 	parallel_scan_c(kalman->steps->elements, (void**) smoothed, smoothed_created_steps, smoothingAssociativeOperation , l, -1);
 	concurrent_set_free(smoothed_created_steps);
 #else
-	step_t** smoothed = cummulativeSumsSequential(kalman, smoothingAssociativeOperation, l - 1, 0, -1);
+	//step_t** smoothed = cummulativeSumsSequential(kalman, smoothingAssociativeOperation, l - 1, 0, -1);
+	prefix_sums_sequential(smoothingAssociativeOperation, kalman->steps->elements, smoothed, l-1, 0, -1);
 #endif
 
 //#ifdef PARALLEL
