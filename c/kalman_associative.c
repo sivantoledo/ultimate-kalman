@@ -40,7 +40,7 @@ void* local_aligned_alloc(size_t alignment, size_t size) {
 #define malloc(x) aligned_alloc(64,(x))
 #endif
 
-#define parallel_for_c parallel_for_c_associative
+//#define parallel_for_c parallel_for_c_associative
 #endif
 
 #ifdef BUILD_MEX
@@ -433,7 +433,7 @@ static void concurrent_set_free(concurrent_set_t* la) {
 /* Associative Smoother                                                       */
 /******************************************************************************/
 
-static void buildFilteringElement(kalman_t* kalman, int i) {
+static void build_filtering_element(kalman_t* kalman, int i) {
 	/*
 		we denote by Z the matrix denoted by C in the article,
 		because we already use C for the covariance of the
@@ -625,7 +625,7 @@ static void buildFilteringElement(kalman_t* kalman, int i) {
 }
 
 static
-void buildSmoothingElement(kalman_t* kalman, int i) {
+void build_smoothing_element(kalman_t* kalman, int i) {
 
 	if (i == farray_size(kalman->steps) - 1) {
 		step_t* step_i = farray_get(kalman->steps,i);
@@ -685,18 +685,19 @@ void buildSmoothingElement(kalman_t* kalman, int i) {
 	}
 }
 
-static void buildFilteringElements(void* kalman_v, void* *helper, size_t l, size_t start, size_t end){
-  kalman_t* kalman = (kalman_t*) kalman_v;
+static void build_filtering_elements(void* kalman_v, int l, size_t start, size_t end) {
+    kalman_t* kalman = (kalman_t*) kalman_v;
+    
 	for (int j=start; j < end; j++) {
-		buildFilteringElement(kalman,j);
+		build_filtering_element(kalman,j);
 	}
 }
 
-static void buildSmoothingElements(void* kalman_v, void* *helper, size_t l, size_t start, size_t end){
-  kalman_t* kalman = (kalman_t*) kalman_v;
+static void build_smoothing_elements(void* kalman_v, int l, size_t start, size_t end) {
+    kalman_t* kalman = (kalman_t*) kalman_v;
 	
 	for (int j=start; j < end; j++) {
-		buildSmoothingElement(kalman,j);
+		build_smoothing_element(kalman,j);
 	}
 }
 
@@ -850,9 +851,9 @@ static void* smoothingAssociativeOperation(void* si_v, void* sj_v, void* created
 }
 
 
-static void filtered_to_state(void* kalman_v, void* *filtered_v, size_t l, size_t start, size_t end){
-  kalman_t* kalman = (kalman_t*) kalman_v;
-  step_t* *filtered = (step_t**) filtered_v;
+static void filtered_to_state(void* kalman_v, void* filtered_v, size_t l, size_t start, size_t end){
+  kalman_t* kalman   = (kalman_t*) kalman_v;
+  step_t**  filtered = (step_t**)  filtered_v;
 
 	int i = start;
 	for (int j = start + 1; j < end + 1; j++) {
@@ -867,9 +868,10 @@ static void filtered_to_state(void* kalman_v, void* *filtered_v, size_t l, size_
 	}
 }
 
-static void smoothed_to_state(void* kalman_v, void* *smoothed_v, size_t l, size_t start, size_t end){
-  kalman_t* kalman = (kalman_t*) kalman_v;
-  step_t* *smoothed = (step_t**) smoothed_v;
+static void smoothed_to_state(void* kalman_v, void* smoothed_v, size_t l, size_t start, size_t end){
+  kalman_t* kalman   = (kalman_t*) kalman_v;
+  step_t**  smoothed = (step_t**)  smoothed_v;
+  
 	int i = 0;
 	for (int j = start; j < end; j++) {
 		i = l - 2 - j + 1;
@@ -912,11 +914,12 @@ static void smooth(kalman_t* kalman) {
 	int l = farray_size(kalman->steps);
 
 	
-#ifdef PARALLEL
-	parallel_for_c(kalman, NULL, l, l, BLOCKSIZE, buildFilteringElements);
-#else
-	buildFilteringElements(kalman, NULL, l, 0, l);
-#endif
+//#ifdef PARALLEL
+//	parallel_for_c(kalman, NULL, l, l, BLOCKSIZE, buildFilteringElements);
+//#else
+//	buildFilteringElements(kalman, NULL, l, 0, l);
+//#endif
+	foreach_in_range(build_filtering_elements, kalman, l, l);
 
 
 
@@ -930,19 +933,22 @@ static void smooth(kalman_t* kalman) {
 #endif
 	
 
-#ifdef PARALLEL
-	parallel_for_c(kalman, (void**) filtered, l, l - 1, BLOCKSIZE, filtered_to_state);
-#else
-	filtered_to_state(kalman, (void**) filtered, l, 0, l - 1);
-#endif
+//#ifdef PARALLEL
+//	parallel_for_c(kalman, (void**) filtered, l, l - 1, BLOCKSIZE, filtered_to_state);
+//#else
+//	filtered_to_state(kalman, (void**) filtered, l, 0, l - 1);
+//#endif
+	foreach_in_range_two(filtered_to_state, kalman, filtered, l, l-1);
 
 	free(filtered);
 
-#ifdef PARALLEL
-	parallel_for_c(kalman, NULL, l, l, BLOCKSIZE, buildSmoothingElements);
-#else
-	buildSmoothingElements(kalman, NULL, l, 0, l);
-#endif
+//#ifdef PARALLEL
+//	parallel_for_c(kalman, NULL, l, l, BLOCKSIZE, buildSmoothingElements);
+//#else
+//	buildSmoothingElements(kalman, NULL, l, 0, l);
+//#endif
+	foreach_in_range(build_smoothing_elements, kalman, l, l);
+
 
 #ifdef PARALLEL
 	step_t** smoothed = (step_t**)malloc(l * sizeof(step_t*));
@@ -953,11 +959,12 @@ static void smooth(kalman_t* kalman) {
 	step_t** smoothed = cummulativeSumsSequential(kalman, smoothingAssociativeOperation, l - 1, 0, -1);
 #endif
 
-#ifdef PARALLEL
-	parallel_for_c(kalman, (void**) smoothed, l, l - 1, BLOCKSIZE, smoothed_to_state);
-#else
-	smoothed_to_state(kalman, (void**) smoothed, l, 0, l - 1);
-#endif
+//#ifdef PARALLEL
+//	parallel_for_c(kalman, (void**) smoothed, l, l - 1, BLOCKSIZE, smoothed_to_state);
+//#else
+//	smoothed_to_state(kalman, (void**) smoothed, l, 0, l - 1);
+//#endif
+	foreach_in_range_two(smoothed_to_state, kalman, smoothed, l, l-1);
 
 	free(smoothed);
 }

@@ -44,7 +44,7 @@ extern "C" {
         );
     }
 
-
+#ifdef OBSOLETE
 	// this is from oddeven
     void parallel_for_c_oddeven(void* kalman, void* indices, int length, int** helper, size_t n, size_t block_size, void (*func)(void*, void*, int, int**, size_t, size_t)) {
     	tbb::global_control control(tbb::global_control::max_allowed_parallelism, nthreads);
@@ -79,6 +79,7 @@ extern "C" {
             }
         );
     }
+#endif 
     
     void parallel_scan_c(void** input, void** sums, void* create_array , void* (*f)(void*, void*, void*, int, int), int length, int stride){
     	tbb::global_control control(tbb::global_control::max_allowed_parallelism, nthreads);
