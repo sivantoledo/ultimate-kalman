@@ -379,13 +379,15 @@ static void concurrent_set_parallel_destroy(void* set_v, int length, size_t star
 static void concurrent_set_parallel_foreach(void* set_v, int length, size_t start, size_t end){
     concurrent_set_t* set = (concurrent_set_t*) set_v;
 	for (int i = start; i < end; i++) {
-        (*(set->foreach))((set->pointers)[i]);
+	  if ( (set->pointers)[i] != NULL ) {
+	    (*(set->foreach))((set->pointers)[i]);
+	  }
     }
 }
 
 static concurrent_set_t* concurrent_set_create(int capacity, void (*foreach)(void*)) {
     concurrent_set_t* set = (concurrent_set_t*) malloc(sizeof(concurrent_set_t));
-    set->size = k * 10; // expansion to reduce contention
+    set->size = capacity * 10; // expansion to reduce contention
     set->foreach = foreach;
     set->pointers = (void**)           malloc( (set->size) * sizeof(void*));
     set->locks    = (pthread_mutex_t*) malloc( (set->size) * sizeof(pthread_mutex_t));
@@ -1043,8 +1045,9 @@ static void smooth(kalman_t* kalman) {
 
 	step_t** filtered = (step_t**) malloc((l-1) * sizeof(step_t*));
 #ifdef PARALLEL
-	concurrent_set_t* filtered_created_steps = concurrent_set_create(l);
+	concurrent_set_t* filtered_created_steps = concurrent_set_create(l, step_free);
 	parallel_scan_c(kalman->steps->elements, (void**) filtered, filtered_created_steps, filteringAssociativeOperation , l - 1, 1);
+	concurrent_set_foreach(filtered_created_steps);
 	concurrent_set_free(filtered_created_steps);
 #else
 	//step_t** filtered = cummulativeSumsSequential(kalman, filteringAssociativeOperation, 1, l - 1, 1);
@@ -1070,8 +1073,9 @@ static void smooth(kalman_t* kalman) {
 
 	step_t** smoothed = (step_t**) malloc(l * sizeof(step_t*));
 #ifdef PARALLEL
-	concurrent_set_t* smoothed_created_steps = concurrent_set_create(l);
+	concurrent_set_t* smoothed_created_steps = concurrent_set_create(l, step_free);
 	parallel_scan_c(kalman->steps->elements, (void**) smoothed, smoothed_created_steps, smoothingAssociativeOperation , l, -1);
+	concurrent_set_foreach(smoothed_created_steps);
 	concurrent_set_free(smoothed_created_steps);
 #else
 	//step_t** smoothed = cummulativeSumsSequential(kalman, smoothingAssociativeOperation, l - 1, 0, -1);
