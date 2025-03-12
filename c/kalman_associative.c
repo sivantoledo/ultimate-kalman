@@ -405,7 +405,8 @@ void concurrent_set_insert(concurrent_set_t* la, int row, step_t* element) {
   pthread_mutex_unlock(&la->locks[row]);
 }
 
-static void parallelDestroy(void* la_v, void* *helper, size_t length, size_t start, size_t end){
+//static void parallelDestroy(void* la_v, void* *helper, size_t length, size_t start, size_t end){
+static void concurrent_set_parallel_destroy(void* la_v, int length, size_t start, size_t end){
   concurrent_set_t* la = (concurrent_set_t*) la_v;
   for (int i = start; i < end; i++) {
     for (int j = 0; j < la->columns; j++){
@@ -420,7 +421,8 @@ static void parallelDestroy(void* la_v, void* *helper, size_t length, size_t sta
 }
 
 static void concurrent_set_free(concurrent_set_t* la) {
-  parallel_for_c(la, NULL, 0, la->rows, BLOCKSIZE, parallelDestroy);
+  foreach_in_range(concurrent_set_parallel_destroy, la, la->rows, la->rows);
+  //parallel_for_c(la, NULL, 0, la->rows, BLOCKSIZE, parallelDestroy);
   free(la->arrays);
   free(la->locks);
   free(la);
