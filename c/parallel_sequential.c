@@ -15,7 +15,7 @@ void foreach_in_range_two(void (*f)(void*, void*, int, size_t, size_t), void* ar
 	(*f)( array1, array2, length, 0, n );
 }
 
-void parallel_scan_c(void* (*f)(void*, void*), void** input, void** sums, concurrent_set_t* created_elements , int length, int stride) {
+void prefix_sums_pointers(void* (*f)(void*, void*), void** input, void** sums, concurrent_set_t* created_elements , int length, int stride) {
 	int i, j;
 	void* sum = NULL; // neutral element when operating on pointers
 	
