@@ -3,6 +3,10 @@
  *
  * A TBB-based implementation of the parallel primitives.
  *
+ * Note that the type argument to tbb::blocked_range is always size_t; it
+ * is normally 32-bit on 32-bit systems and 64 bit on 64-bit systems, so
+ * there should be no issue or but if it is different from parallel_index_t.
+ *
  * Copyright (c) 2024-2025 Sivan Toledo and Shahaf Gargir
  */
 
