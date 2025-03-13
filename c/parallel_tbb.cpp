@@ -60,47 +60,6 @@ void foreach_in_range(void (*func)(void*, parallel_index_t, parallel_index_t, pa
     );
   }
 
-  //void parallel_scan_c(void** input, void** sums, void* created_elements , void* (*f)(void*, void*, void*, int), int length, int stride){
-  void prefix_sums_pointers(void* (*f)(void*, void*), void** input, void** sums, concurrent_set_t* created_elements , parallel_index_t length, int stride) {
-    tbb::global_control control(tbb::global_control::max_allowed_parallelism, nthreads);
-
-    tbb::parallel_scan(
-        tbb::blocked_range<parallel_index_t>(0, length, blocksize),
-        (void*) NULL, /* starting value (identity elements) */
-        // now define the scan operation
-        [input, sums, created_elements, f, length, stride](const tbb::blocked_range<size_t>& r, void* sum, bool is_final_scan) {
-          void* temp = sum;
-          for (parallel_index_t i = r.begin(); i != r.end(); ++i) {
-            //int j = i + 1;
-            int j = i;
-            if (stride == -1) {
-              j = length - 1 - i;
-            }
-
-            //temp = f(temp, input[j], created_elements, is_final_scan);
-            int is_created = (temp != NULL) && (input[j] != NULL);// otherwise one of them is returned
-            temp = f(temp, input[j]);
-
-            if (is_final_scan) {
-              sums[i] = temp;
-            } //else {
-            if (is_created) concurrent_set_insert( created_elements, temp );
-            //}
-          }
-          return temp;
-        },
-        // and now the combining operation
-        //[f, created_elements](void* left, void* right) { return f(left, right, created_elements, 0); }
-        [f, created_elements](void* left, void* right) {
-          int is_created = (left != NULL) && (right != NULL); // otherwise one of them is returned
-          void* temp = f(left, right);
-          if (is_created) concurrent_set_insert( created_elements, temp );
-          return temp;
-        }
-        // there is also a version with an explicit is_final flag
-    );
-  }
-
   spin_mutex_t* spin_mutex_create() {
     spin_mutex_t* wrapper = (spin_mutex_t*) malloc(sizeof(spin_mutex_t));
     if (wrapper) {
