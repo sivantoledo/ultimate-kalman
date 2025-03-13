@@ -828,6 +828,8 @@ static void smooth(kalman_t* kalman) {
 	step_t** filtered = (step_t**) malloc((l-1) * sizeof(step_t*));
 #ifdef PARALLEL
 	concurrent_set_t* filtered_created_steps = concurrent_set_create(l, step_free);
+	// we skip the first step
+	//parallel_scan_c(filteringAssociativeOperation, &((kalman->steps->elements)[1]), (void**) filtered, filtered_created_steps,  l - 1, 1);
 	parallel_scan_c(filteringAssociativeOperation, kalman->steps->elements, (void**) filtered, filtered_created_steps,  l - 1, 1);
 	concurrent_set_foreach(filtered_created_steps);
 	concurrent_set_free(filtered_created_steps);

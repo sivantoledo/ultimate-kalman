@@ -63,13 +63,14 @@ extern "C" {
             [input, sums, created_elements, f, length, stride](const tbb::blocked_range<size_t>& r, void* sum, bool is_final_scan) {
                 void* temp = sum;
                 for (size_t i = r.begin(); i != r.end(); ++i) {
-                    int j = i + 1;
+                    //int j = i + 1;
+                    int j = i;
                     if (stride == -1){
                         j = length - 1 - i;
                     }
 
                     //temp = f(temp, input[j], created_elements, is_final_scan);
-		    int is_created = (temp != NULL) && (input[j] != NULL); // otherwise one of them is returned
+				    int is_created = (temp != NULL) && (input[j] != NULL); // otherwise one of them is returned
                     temp = f(temp, input[j]);
 
                     if (is_final_scan) {
