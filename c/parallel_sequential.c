@@ -7,13 +7,60 @@
 void parallel_set_thread_limit(int number_of_threads) {}
 void parallel_set_blocksize   (int blocksize_in)      {}
 
-void foreach_in_range(void (*func)(void*, int, size_t, size_t), void* array, int length, size_t n) {
-	(*func)( array, length, 0, n );
+void foreach_in_range(void (*f)(void*, int, size_t, size_t), void* array, int length, size_t n) {
+	(*f)( array, length, 0, n );
 }
 
-void foreach_in_range_two(void (*func)(void*, void*, int, size_t, size_t), void* array1, void* array2, int length, size_t n) {
-	(*func)( array1, array2, length, 0, n );
+void foreach_in_range_two(void (*f)(void*, void*, int, size_t, size_t), void* array1, void* array2, int length, size_t n) {
+	(*f)( array1, array2, length, 0, n );
 }
+
+void parallel_scan_c(void* (*f)(void*, void*), void** input, void** sums, concurrent_set_t* created_elements , int length, int stride) {
+	int i, j;
+	void* sum = NULL; // neutral element when operating on pointers
+	
+	for (i=0; i<length; i++) {
+		if (stride==1) {
+			j = i;
+		} else {
+			j = length-1 - i;
+		}
+		fprintf(stderr,">>> %d %d\n",i,j);
+		void* temp = f(sum, input[j]);
+		//if (i>0) concurrent_set_insert( created_elements, temp ); // the first element is combined with NULL so f returns it, not a new element
+		sums[i] = temp;
+	}
+}
+
+
+static void prefix_sums_sequential(void* (*f)(void*, void*), void** a, void** sums, int s, int e, int stride) {
+	//step_t** sums = (step_t**)malloc((abs(e-s) + 1)*sizeof(step_t*));
+	int i = 0;
+	//step_t** a = (step_t**)kalman->steps->elements;
+	//step_t* sum = a[s];
+	void* sum = a[s];
+	sums[i] = sum;
+	i++;
+
+	/* The two blocks look similar, but the termination condition of the loop is different */
+	if (s > e) {
+		for (int j=s+stride; j>=e; j+=stride) {
+		    //sum = f(sum,a[j], NULL, -1, -1);
+		    sum = f(sum,a[j]);
+			sums[i] = sum;
+			i++;
+		}
+	} else {
+		for (int j=s+stride; j<=e; j+=stride) {
+		    //sum = f(sum,a[j], NULL, -1, -1);
+			sum = f(sum,a[j]);
+			sums[i] = sum;
+			i++;
+		}
+	}
+}
+
+
 
 spin_mutex_t* spin_mutex_create ()                    { return NULL; }
 void          spin_mutex_lock   (spin_mutex_t* mutex) {}

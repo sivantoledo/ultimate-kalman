@@ -74,10 +74,10 @@ extern "C" {
                     temp = f(temp, input[j]);
 
                     if (is_final_scan) {
-		      sums[i] = temp;
-                    } else {
+		      			sums[i] = temp;
+                    } //else {
 		      if (is_created) concurrent_set_insert( created_elements, temp );
-		    }
+		    //}
                 }
                 return temp;
             },

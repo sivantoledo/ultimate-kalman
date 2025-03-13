@@ -732,9 +732,9 @@ static void filtered_to_state(void* kalman_v, void* filtered_v, size_t l, size_t
 		step_t* filtered_i = filtered[i];
 		step_j->state = matrix_create_copy(filtered_i->b);
 		step_j->covariance = matrix_create_copy(filtered_i->Z);		
-		if (i != 0) {
-			step_free(filtered_i);
-		}
+		//if (i != 0) {
+		//	step_free(filtered_i);
+		//}
 		i++;
 	}
 }
@@ -824,19 +824,24 @@ static void smooth(kalman_t* kalman) {
 	foreach_in_range(build_filtering_elements, kalman, l, l);
 
 
-
+fprintf(stderr,"1\n");
 	step_t** filtered = (step_t**) malloc((l-1) * sizeof(step_t*));
-#ifdef PARALLEL
+//#ifdef PARALLEL
+fprintf(stderr,"1\n");
 	concurrent_set_t* filtered_created_steps = concurrent_set_create(l, step_free);
 	// we skip the first step
-	//parallel_scan_c(filteringAssociativeOperation, &((kalman->steps->elements)[1]), (void**) filtered, filtered_created_steps,  l - 1, 1);
-	parallel_scan_c(filteringAssociativeOperation, kalman->steps->elements, (void**) filtered, filtered_created_steps,  l - 1, 1);
+fprintf(stderr,"1\n");
+	parallel_scan_c(filteringAssociativeOperation, &((kalman->steps->elements)[1]), (void**) filtered, filtered_created_steps,  l-1, 1);
+	//parallel_scan_c(filteringAssociativeOperation, kalman->steps->elements, (void**) filtered, filtered_created_steps,  l - 1, 1);
+fprintf(stderr,"1\n");
 	concurrent_set_foreach(filtered_created_steps);
+fprintf(stderr,"1\n");
 	concurrent_set_free(filtered_created_steps);
-#else
+fprintf(stderr,"6\n");
+//#else
 	//step_t** filtered = cummulativeSumsSequential(kalman, filteringAssociativeOperation, 1, l - 1, 1);
-	prefix_sums_sequential(filteringAssociativeOperation, kalman->steps->elements, filtered, 1, l-1, 1);
-#endif
+//	prefix_sums_sequential(filteringAssociativeOperation, kalman->steps->elements, filtered, 1, l-1, 1);
+//#endif
 
 //#ifdef PARALLEL
 //	parallel_for_c(kalman, (void**) filtered, l, l - 1, BLOCKSIZE, filtered_to_state);
@@ -844,8 +849,10 @@ static void smooth(kalman_t* kalman) {
 //	filtered_to_state(kalman, (void**) filtered, l, 0, l - 1);
 //#endif
 	foreach_in_range_two(filtered_to_state, kalman, filtered, l, l-1);
+fprintf(stderr,"7\n");
 
 	free(filtered);
+fprintf(stderr,"8\n");
 
 //#ifdef PARALLEL
 //	parallel_for_c(kalman, NULL, l, l, BLOCKSIZE, buildSmoothingElements);
