@@ -51,13 +51,14 @@ cl ^
   %BLAS_LAPACK_FLAGS% ^
   -DBUILD_WIN32_GETTIMEOFDAY ^
   kalman_ultimate.c ^
-  kalman_filter_smoother.c ^
-  kalman_parallel_sequential.c ^
-  kalman_oddeven.c ^
-  kalman_associative.c ^
+  kalman_conventional.c ^
+  kalman_oddeven_smoother.c ^
+  kalman_associative_smoother.c ^
   kalman_base.c ^
   matrix_ops.c ^
   flexible_arrays.c ^
+  concurrent_set.c ^
+  parallel_sequential.c ^
   %test%.c ^
   %BLAS_LAPACK_LIBS% 
 
