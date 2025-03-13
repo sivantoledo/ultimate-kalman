@@ -588,8 +588,6 @@ static void build_smoothing_elements(void* kalman_v, int l, size_t start, size_t
 	}
 }
 
-//step_t* filteringAssociativeOperation(step_t* si, step_t* sj, concurrent_set_t* created_steps, int row, int is_final_scan) {
-//static void* filteringAssociativeOperation(void* si_v, void* sj_v, void* created_steps_v, int is_final_scan) {
 static void* filteringAssociativeOperation(void* si_v, void* sj_v) {
   step_t* si = (step_t*) si_v;
   step_t* sj = (step_t*) sj_v;
@@ -605,12 +603,6 @@ static void* filteringAssociativeOperation(void* si_v, void* sj_v) {
 
   step_t* sij = step_create();
 
-#ifdef PARALLEL_OBSOLETE
-  concurrent_set_t* created_steps = (concurrent_set_t*) created_steps_v;
-  if (!is_final_scan){
-    concurrent_set_insert(created_steps, sij);
-  }
-#endif
 		int ni = matrix_rows(si->b);
 
 		matrix_t* eye_ni = matrix_create_identity(ni,ni);
@@ -693,9 +685,6 @@ static void* filteringAssociativeOperation(void* si_v, void* sj_v) {
 
 }
 
-
-//step_t* smoothingAssociativeOperation(step_t* si, step_t* sj, concurrent_set_t* created_steps, int row, int is_final_scan) {
-//static void* smoothingAssociativeOperation(void* si_v, void* sj_v, void* created_steps_v, int is_final_scan) {
 static void* smoothingAssociativeOperation(void* si_v, void* sj_v) {
   step_t* si = (step_t*) si_v;
   step_t* sj = (step_t*) sj_v;
@@ -709,13 +698,6 @@ static void* smoothingAssociativeOperation(void* si_v, void* sj_v) {
   }
   
   step_t* sij = step_create();
-#ifdef PARALLEL_OBSOLETE
-  concurrent_set_t* created_steps = (concurrent_set_t*) created_steps_v;
-
-  if (!is_final_scan){
-    concurrent_set_insert(created_steps, sij);
-  }
-#endif
 		
 		matrix_t* E = matrix_create_multiply(sj->E,si->E);
 		sij->E = E;
@@ -846,7 +828,7 @@ static void smooth(kalman_t* kalman) {
 	step_t** filtered = (step_t**) malloc((l-1) * sizeof(step_t*));
 #ifdef PARALLEL
 	concurrent_set_t* filtered_created_steps = concurrent_set_create(l, step_free);
-	parallel_scan_c(kalman->steps->elements, (void**) filtered, filtered_created_steps, filteringAssociativeOperation , l - 1, 1);
+	parallel_scan_c(filteringAssociativeOperation, kalman->steps->elements, (void**) filtered, filtered_created_steps,  l - 1, 1);
 	concurrent_set_foreach(filtered_created_steps);
 	concurrent_set_free(filtered_created_steps);
 #else
@@ -874,7 +856,7 @@ static void smooth(kalman_t* kalman) {
 	step_t** smoothed = (step_t**) malloc(l * sizeof(step_t*));
 #ifdef PARALLEL
 	concurrent_set_t* smoothed_created_steps = concurrent_set_create(l, step_free);
-	parallel_scan_c(kalman->steps->elements, (void**) smoothed, smoothed_created_steps, smoothingAssociativeOperation , l, -1);
+	parallel_scan_c(smoothingAssociativeOperation, kalman->steps->elements, (void**) smoothed, smoothed_created_steps, l, -1);
 	concurrent_set_foreach(smoothed_created_steps);
 	concurrent_set_free(smoothed_created_steps);
 #else
