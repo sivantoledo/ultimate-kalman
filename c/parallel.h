@@ -13,4 +13,12 @@ void foreach_in_range_two(void (*func)(void*, void*, int, size_t, size_t), void*
 
 void parallel_scan_c(void** input, void** sums, void* create_array , void* (*f)(void*, void*, void*, int, int), int length, int stride);
 
+// Opaque pointer to the mutex
+typedef struct spin_mutex spin_mutex_t;
+
+spin_mutex_t* spin_mutex_create ();
+void          spin_mutex_lock   (spin_mutex_t* mutex);
+void          spin_mutex_unlock (spin_mutex_t* mutex);
+void          spin_mutex_destroy(spin_mutex_t* mutex);
+
 #endif

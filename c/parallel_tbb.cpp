@@ -4,8 +4,14 @@
 #include <tbb/blocked_range.h>
 #include <tbb/global_control.h>
 #include <tbb/parallel_scan.h>
+#include <tbb/spin_mutex.h>
 
-// Define the parallel function with C linkage
+#include "parallel.h"
+
+struct tbb_spin_mutex {
+    tbb::spin_mutex mutex;
+};
+
 extern "C" {
 	static int nthreads  = 0;
 	static int blocksize = 10;
@@ -109,5 +115,34 @@ extern "C" {
             // there is also a version with an explicit is_final flag
         );
     }
+   
+   
+spin_mutex_t* spin_mutex_create() {
+    spin_mutex_t* wrapper = (spin_mutex_t*) malloc(sizeof(spin_mutex_t));
+    if (wrapper) {
+        // Construct the spin_mutex in place
+        new (&wrapper->mutex) tbb::spin_mutex();
+    }
+    return wrapper;
+}
+
+void spin_mutex_lock(spin_mutex_t* mutex) {
+    if (mutex) {
+        mutex->mutex.lock();
+    }
+}
+
+void spin_mutex_unlock(spin_mutex_t* mutex) {
+    if (mutex) {
+        mutex->mutex.unlock();
+    }
+}
+
+void spin_mutex_destroy(spin_mutex_t* mutex) {
+    if (mutex) {
+        mutex->mutex.~spin_mutex();
+        free(mutex);
+    }
+}
     
 }

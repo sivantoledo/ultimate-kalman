@@ -59,12 +59,6 @@ static void mex_assert(int c, int line) {
 #include <assert.h>
 #endif
 
-//static int debug = 0;
-
-#ifdef PARALLEL
-
-#endif
-
 /******************************************************************************/
 /* UTILITIES                                                                  */
 /******************************************************************************/
@@ -321,7 +315,6 @@ static void observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 #endif
 }
 
-#ifdef PARALLEL
 /******************************************************************************/
 /* CONCURRENT SET OF POINTERS                                                 */
 /******************************************************************************/
@@ -332,7 +325,6 @@ static void observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
  * the operation.
  */
  
- #include <stdint.h>
 
 /*
  * FNV-1a hash of an address, to generate a random integer
@@ -351,12 +343,10 @@ uint32_t hash_uint32(uint32_t value) {
     return hash;
 }
 
-//#include <pthread.h>
-
 typedef struct concurrent_set_st {
-  int    size;
-  void** pointers;          
-  pthread_mutex_t* locks;
+  int            size;
+  void**         pointers;          
+  spin_mutex_t** locks; // pointers to locks, to allow locks of any type
   void   (*foreach)(void*);
 } concurrent_set_t;
 
@@ -365,14 +355,14 @@ static void concurrent_set_parallel_init(void* set_v, int length, size_t start, 
     concurrent_set_t* set = (concurrent_set_t*) set_v;
 	for (int i = start; i < end; i++) {
         (set->pointers)[i] = NULL;
-        pthread_mutex_init(&((set->locks)[i]), NULL);
+        (set->locks)[i] = spin_mutex_create();
     }
 }
 
 static void concurrent_set_parallel_destroy(void* set_v, int length, size_t start, size_t end){
     concurrent_set_t* set = (concurrent_set_t*) set_v;
 	for (int i = start; i < end; i++) {
-        pthread_mutex_destroy(&((set->locks)[i]));
+        spin_mutex_destroy((set->locks)[i]);
     }
 }
 
@@ -389,8 +379,8 @@ static concurrent_set_t* concurrent_set_create(int capacity, void (*foreach)(voi
     concurrent_set_t* set = (concurrent_set_t*) malloc(sizeof(concurrent_set_t));
     set->size = capacity * 10; // expansion to reduce contention
     set->foreach = foreach;
-    set->pointers = (void**)           malloc( (set->size) * sizeof(void*));
-    set->locks    = (pthread_mutex_t*) malloc( (set->size) * sizeof(pthread_mutex_t));
+    set->pointers = (void**)         malloc( (set->size) * sizeof(void*));
+    set->locks    = (spin_mutex_t**) malloc( (set->size) * sizeof(spin_mutex_t*));
 
     //parallel_for_c(la, NULL, 0, k, BLOCKSIZE, parallelInit);
     foreach_in_range(concurrent_set_parallel_init, set, set->size, set->size);
@@ -414,11 +404,12 @@ static void concurrent_set_insert(concurrent_set_t* set, int row, void* element)
 		h = hash_uint32(h);
 		i = h % (set->size);
 		
-	  	pthread_mutex_lock(&(set->locks)[i]);
+	  	spin_mutex_lock((set->locks)[i]);
 	  	if ((set->pointers)[i] == NULL) {
 			(set->pointers)[i] = element;
 			inserted = 1;
 		}
+	  	spin_mutex_unlock((set->locks)[i]);
 	} while (!inserted);
 }
 
@@ -521,7 +512,6 @@ static void concurrent_set_free(concurrent_set_t* la) {
   free(la);
 }
 #endif
-#endif /* ifdef PARALLEL */
 
 /******************************************************************************/
 /* Associative Smoother                                                       */
