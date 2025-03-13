@@ -195,10 +195,11 @@ matrix_t* kalman_covariance_matrix_explicit(matrix_t *cov, char type) {
 /* KALMAN                                                                     */
 /******************************************************************************/
 
-void kalman_create_ultimate(kalman_t*);
-void kalman_create_filter_smoother(kalman_t*);
-void kalman_create_oddeven(kalman_t*);
-void kalman_create_associative(kalman_t*);
+/* algorithm-specific constructors */
+void kalman_create_ultimate    (kalman_t*);
+void kalman_create_conventional(kalman_t*);
+void kalman_create_oddeven     (kalman_t*);
+void kalman_create_associative (kalman_t*);
 
 kalman_t* kalman_create() {
   //return kalman_create_options( KALMAN_ALGORITHM_ULTIMATE ); // default
