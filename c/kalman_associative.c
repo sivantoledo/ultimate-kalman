@@ -396,7 +396,7 @@ static void concurrent_set_free(concurrent_set_t* set) {
   free(set);
 }
 
-static void concurrent_set_insert(concurrent_set_t* set, int row, void* element) {
+static void concurrent_set_insert(concurrent_set_t* set, void* element) {
 	uint32_t inserted = 0;
 	uint32_t h = (uintptr_t) element;
 	uint32_t i;
@@ -690,7 +690,7 @@ static void build_smoothing_elements(void* kalman_v, int l, size_t start, size_t
 }
 
 //step_t* filteringAssociativeOperation(step_t* si, step_t* sj, concurrent_set_t* created_steps, int row, int is_final_scan) {
-static void* filteringAssociativeOperation(void* si_v, void* sj_v, void* created_steps_v, int row, int is_final_scan) {
+static void* filteringAssociativeOperation(void* si_v, void* sj_v, void* created_steps_v, int is_final_scan) {
   step_t* si = (step_t*) si_v;
   step_t* sj = (step_t*) sj_v;
   
@@ -708,7 +708,7 @@ static void* filteringAssociativeOperation(void* si_v, void* sj_v, void* created
 #ifdef PARALLEL
   concurrent_set_t* created_steps = (concurrent_set_t*) created_steps_v;
   if (!is_final_scan){
-    concurrent_set_insert(created_steps, row, sij);
+    concurrent_set_insert(created_steps, sij);
   }
 #endif
 		int ni = matrix_rows(si->b);
@@ -795,7 +795,7 @@ static void* filteringAssociativeOperation(void* si_v, void* sj_v, void* created
 
 
 //step_t* smoothingAssociativeOperation(step_t* si, step_t* sj, concurrent_set_t* created_steps, int row, int is_final_scan) {
-static void* smoothingAssociativeOperation(void* si_v, void* sj_v, void* created_steps_v, int row, int is_final_scan) {
+static void* smoothingAssociativeOperation(void* si_v, void* sj_v, void* created_steps_v, int is_final_scan) {
   step_t* si = (step_t*) si_v;
   step_t* sj = (step_t*) sj_v;
 
@@ -812,7 +812,7 @@ static void* smoothingAssociativeOperation(void* si_v, void* sj_v, void* created
   concurrent_set_t* created_steps = (concurrent_set_t*) created_steps_v;
 
   if (!is_final_scan){
-    concurrent_set_insert(created_steps, row, sij);
+    concurrent_set_insert(created_steps, sij);
   }
 #endif
 		
