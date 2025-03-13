@@ -43,27 +43,27 @@ void farray_free(farray_t *a) {
   free(a);
 }
 
-int64_t farray_size(farray_t *a) {
+farray_index_t farray_size(farray_t *a) {
   if (a->end < a->start)
     return 0;
   return (a->end) - (a->start) + 1;
 }
 
-int64_t farray_first_index(farray_t *a) {
+farray_index_t farray_first_index(farray_t *a) {
   return (a->first);
 }
 
-int64_t farray_last_index(farray_t *a) {
+farray_index_t farray_last_index(farray_t *a) {
   return (a->first) + farray_size(a) - 1;
 }
 
-void* farray_get(farray_t *a, int64_t i) {
+void* farray_get(farray_t *a, farray_index_t i) {
 
   assert(i >= a->first);
   assert(i < (a->first) + farray_size(a));
 
-  int64_t offset = i - (a->first);
-  int64_t physical = (a->start) + offset;
+  farray_index_t offset = i - (a->first);
+  farray_index_t physical = (a->start) + offset;
 
   return (a->elements)[physical];
 }
@@ -77,13 +77,13 @@ void* farray_get_last(farray_t *a) {
 }
 
 void farray_append(farray_t *a, void *v) {
-  int64_t i;
+  farray_index_t i;
 
   if (a->end >= (a->array_size) - 1) {
     // shift back or extend
 
-    int64_t logical_size = farray_size(a);
-    int64_t array_size = a->array_size;
+    farray_index_t logical_size = farray_size(a);
+    farray_index_t array_size = a->array_size;
 
     // if (debug) printf("append l=%lld p=%lld\n",logical_size,array_size);
 

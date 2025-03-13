@@ -16,6 +16,8 @@ extern double kalman_nan;
 
 typedef int64_t kalman_step_index_t;
 
+typedef kalman_step_index_t farray_index_t;
+
 /******************************************************************************/
 /* COVARIANCE MATRICES                                                        */
 /******************************************************************************/
