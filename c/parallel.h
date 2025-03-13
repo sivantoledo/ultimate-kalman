@@ -1,3 +1,11 @@
+/*
+ * parallel.h
+ *
+ * Definitions of the parallel primitives.
+ *
+ * Copyright (c) 2024-2025 Sivan Toledo and Shahaf Gargir
+ */
+
 #ifndef PARALLEL_H
 #define PARALLEL_H
 

@@ -1,3 +1,11 @@
+/*
+ * parallel_tbb.cpp
+ *
+ * A TBB-based implementation of the parallel primitives.
+ *
+ * Copyright (c) 2024-2025 Sivan Toledo and Shahaf Gargir
+ */
+
 #include <cstddef>
 #include <cstdint>
 #include <tbb/parallel_for.h>
