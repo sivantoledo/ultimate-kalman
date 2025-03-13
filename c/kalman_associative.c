@@ -845,7 +845,7 @@ static void smooth(kalman_t* kalman) {
 	step_t** smoothed = (step_t**) malloc(l * sizeof(step_t*));
 	concurrent_set_t* smoothed_created_steps = concurrent_set_create(l, step_free);
 
-	parallel_scan_c(smoothingAssociativeOperation, kalman->steps->elements, (void**) smoothed, smoothed_created_steps, l, -1);
+	prefix_sums_pointers(smoothingAssociativeOperation, kalman->steps->elements, (void**) smoothed, smoothed_created_steps, l, -1);
 	//prefix_sums_sequential(smoothingAssociativeOperation, kalman->steps->elements, smoothed, l-1, 0, -1);
 	foreach_in_range_two(smoothed_to_state, kalman, smoothed, l, l-1);
 
