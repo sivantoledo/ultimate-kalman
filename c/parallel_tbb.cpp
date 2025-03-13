@@ -38,7 +38,7 @@ void parallel_set_blocksize(int blocksize_in) {
   }
 }
 
-void foreach_in_range(void (*func)(void*, int, parallel_index_t, parallel_index_t), void* array, parallel_index_t length, parallel_index_t n) {
+void foreach_in_range(void (*func)(void*, parallel_index_t, parallel_index_t, parallel_index_t), void* array, parallel_index_t length, parallel_index_t n) {
   tbb::global_control control(tbb::global_control::max_allowed_parallelism, nthreads);
 
   //printf("blocksize = %d\n",blocksize>0 ? blocksize : block_size);
@@ -49,7 +49,7 @@ void foreach_in_range(void (*func)(void*, int, parallel_index_t, parallel_index_
     );
   }
 
-  void foreach_in_range_two(void (*func)(void*, void*, int, parallel_index_t, parallel_index_t), void* array1, void* array2, parallel_index_t length, siparallel_index_tze_t n) {
+  void foreach_in_range_two(void (*func)(void*, void*, parallel_index_t, parallel_index_t, parallel_index_t), void* array1, void* array2, parallel_index_t length, siparallel_index_tze_t n) {
     tbb::global_control control(tbb::global_control::max_allowed_parallelism, nthreads);
 
     //printf("blocksize = %d\n",blocksize>0 ? blocksize : block_size);
