@@ -7,14 +7,11 @@
 #include <tbb/spin_mutex.h>
 
 
+typedef struct spin_mutex_st {
+  tbb::spin_mutex mutex;
+} spin_mutex_t;
+
 extern "C" {
-	#include "parallel.h"
-
-	struct tbb_spin_mutex {
-    	tbb::spin_mutex mutex;
-	};
-
-
 	static int nthreads  = 0;
 	static int blocksize = 10;
 
