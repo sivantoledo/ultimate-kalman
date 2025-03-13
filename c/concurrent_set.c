@@ -6,19 +6,19 @@
  *
  * Copyright (c) Sivan Toledo and Shahaf Gargir 2024-2025
  */
- 
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
- 
+
 #include "parallel.h"
 #include "concurrent_set.h"
- 
+
 typedef struct concurrent_set_st {
-  int            size;
-  void**         pointers;          
-  spin_mutex_t** locks; // pointers to locks, to allow locks of any type
-  void   (*foreach)(void*);
+  int size;
+  void **pointers;
+  spin_mutex_t **locks; // pointers to locks, to allow locks of any type
+  void (*foreach)(void*);
 } concurrent_set_t;
 
 /*
@@ -40,44 +40,44 @@ static uint32_t hash_uint32(uint32_t value) {
   return hash;
 }
 
-static void concurrent_set_parallel_init(void* set_v, int length, size_t start, size_t end){
-  concurrent_set_t* set = (concurrent_set_t*) set_v;
+static void concurrent_set_parallel_init(void *set_v, int length, size_t start, size_t end) {
+  concurrent_set_t *set = (concurrent_set_t*) set_v;
   for (int i = start; i < end; i++) {
     (set->pointers)[i] = NULL;
-    (set->locks)[i]    = spin_mutex_create();
+    (set->locks)[i] = spin_mutex_create();
   }
 }
 
-static void concurrent_set_parallel_destroy(void* set_v, int length, size_t start, size_t end){
-  concurrent_set_t* set = (concurrent_set_t*) set_v;
+static void concurrent_set_parallel_destroy(void *set_v, int length, size_t start, size_t end) {
+  concurrent_set_t *set = (concurrent_set_t*) set_v;
   for (int i = start; i < end; i++) {
     spin_mutex_destroy((set->locks)[i]);
   }
 }
 
-static void concurrent_set_parallel_foreach(void* set_v, int length, size_t start, size_t end){
-  concurrent_set_t* set = (concurrent_set_t*) set_v;
+static void concurrent_set_parallel_foreach(void *set_v, int length, size_t start, size_t end) {
+  concurrent_set_t *set = (concurrent_set_t*) set_v;
   for (int i = start; i < end; i++) {
-    if ( (set->pointers)[i] != NULL ) {
+    if ((set->pointers)[i] != NULL) {
       (*(set->foreach))((set->pointers)[i]);
     }
   }
 }
 
 concurrent_set_t* concurrent_set_create(int capacity, void (*foreach)(void*)) {
-    concurrent_set_t* set = (concurrent_set_t*) malloc(sizeof(concurrent_set_t));
-    set->size = capacity * 10; // expansion to reduce contention
-    set->foreach = foreach;
-    set->pointers = (void**)         malloc( (set->size) * sizeof(void*) );
-    set->locks    = (spin_mutex_t**) malloc( (set->size) * sizeof(spin_mutex_t*) );
+  concurrent_set_t *set = (concurrent_set_t*) malloc(sizeof(concurrent_set_t));
+  set->size = capacity * 10; // expansion to reduce contention
+  set->foreach = foreach;
+  set->pointers = (void**) malloc((set->size) * sizeof(void*));
+  set->locks = (spin_mutex_t**) malloc((set->size) * sizeof(spin_mutex_t*));
 
-    //parallel_for_c(la, NULL, 0, k, BLOCKSIZE, parallelInit);
-    foreach_in_range(concurrent_set_parallel_init, set, set->size, set->size);
+  //parallel_for_c(la, NULL, 0, k, BLOCKSIZE, parallelInit);
+  foreach_in_range(concurrent_set_parallel_init, set, set->size, set->size);
 
-    return set;
+  return set;
 }
 
-void concurrent_set_free(concurrent_set_t* set) {
+void concurrent_set_free(concurrent_set_t *set) {
   foreach_in_range(concurrent_set_parallel_destroy, set, set->size, set->size);
   //parallel_for_c(la, NULL, 0, la->rows, BLOCKSIZE, parallelDestroy);
   free(set->locks);
@@ -85,24 +85,24 @@ void concurrent_set_free(concurrent_set_t* set) {
   free(set);
 }
 
-void concurrent_set_insert(concurrent_set_t* set, void* element) {
-	uint32_t inserted = 0;
-	uint32_t h = (uintptr_t) element;
-	uint32_t i;
-	do {
-		h = hash_uint32(h);
-		i = h % (set->size);
-		
-	  	spin_mutex_lock((set->locks)[i]);
-	  	if ((set->pointers)[i] == NULL) {
-		  (set->pointers)[i] = element;
-		  inserted = 1;
-		}
-	  	spin_mutex_unlock((set->locks)[i]);
-	} while (!inserted);
+void concurrent_set_insert(concurrent_set_t *set, void *element) {
+  uint32_t inserted = 0;
+  uint32_t h = (uintptr_t) element;
+  uint32_t i;
+  do {
+    h = hash_uint32(h);
+    i = h % (set->size);
+
+    spin_mutex_lock((set->locks)[i]);
+    if ((set->pointers)[i] == NULL) {
+      (set->pointers)[i] = element;
+      inserted = 1;
+    }
+    spin_mutex_unlock((set->locks)[i]);
+  } while (!inserted);
 }
 
-void concurrent_set_foreach(concurrent_set_t* set) {
+void concurrent_set_foreach(concurrent_set_t *set) {
   foreach_in_range(concurrent_set_parallel_foreach, set, set->size, set->size);
 }
 

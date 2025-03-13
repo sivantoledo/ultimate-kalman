@@ -15,10 +15,10 @@
 #include <math.h>
 
 #ifndef BUILD_MEX
-#error "You must define -DBUILD_MEX to build the mex version of ultimatekalman"
+#error "You must define -DBUILD_MEX to build the mex version of UltimateKalman"
 #endif
 
-#include "ultimatekalman.h"
+#include "kalman.h"
 
 static double NaN = 0.0 / 0.0;
 
@@ -372,8 +372,7 @@ static void mexPerfTest(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs
 
 /* The gateway function */
 void mexFunction( int nlhs, mxArray *plhs[],
-                  int nrhs, const mxArray *prhs[])
-{
+                  int nrhs, const mxArray *prhs[]) {
     double multiplier;              /* input scalar */
     double *inMatrix;               /* 1xN input matrix */
     size_t ncols;                   /* size of matrix */
@@ -399,3 +398,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
     else if (selector("perftest"   ,nrhs,prhs)) { mexPerfTest  (nlhs,plhs,nrhs,prhs); return; }
     else mexErrMsgIdAndTxt("sivantoledo:UltimateKalman:invalidSelector","invalid selector");
 }
+
+/******************************************************************************/
+/* END OF FILE                                                                */
+/******************************************************************************/
