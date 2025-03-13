@@ -49,14 +49,14 @@ extern "C" {
         );
     }
 
-    void parallel_scan_c(void** input, void** sums, void* create_array , void* (*f)(void*, void*, void*, int), int length, int stride){
+    void parallel_scan_c(void** input, void** sums, void* created_elements , void* (*f)(void*, void*, void*, int), int length, int stride){
     	tbb::global_control control(tbb::global_control::max_allowed_parallelism, nthreads);
 
         tbb::parallel_scan(
             tbb::blocked_range<size_t>(0, length, blocksize),
             (void*) NULL, /* starting value (identity elements) */
             // now define the scan operation
-            [input, sums, create_array, f, length, stride](const tbb::blocked_range<size_t>& r, void* sum, bool is_final_scan) {
+            [input, sums, created_elements, f, length, stride](const tbb::blocked_range<size_t>& r, void* sum, bool is_final_scan) {
                 void* temp = sum;
                 for (size_t i = r.begin(); i != r.end(); ++i) {
                     int j = i + 1;
@@ -64,7 +64,7 @@ extern "C" {
                         j = length - 1 - i;
                     }
 
-                    temp = f(temp, input[j], create_array, is_final_scan);
+                    temp = f(temp, input[j], created_elements, is_final_scan);
 
                     if (is_final_scan) {
                         sums[i] = temp;
@@ -73,7 +73,7 @@ extern "C" {
                 return temp;
             },
             // and now the combining operation
-            [f, create_array](void* left, void* right) { return f(left, right, create_array, 0); }
+            [f, created_elements](void* left, void* right) { return f(left, right, created_elements, 0); }
             // there is also a version with an explicit is_final flag
         );
     }

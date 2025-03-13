@@ -1,5 +1,5 @@
-#ifndef MATRIX_OPS
-#define MATRIX_OPS
+#ifndef MATRIX_OPS_H
+#define MATRIX_OPS_H
 
 #include <stdio.h>
 #include <stdlib.h>

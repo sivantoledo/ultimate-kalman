@@ -15,7 +15,7 @@ void foreach_in_range_two(void (*func)(void*, void*, int, size_t, size_t), void*
 	(*func)( array1, array2, length, 0, n );
 }
 
-spin_mutex_t* spin_mutex_craete ()                    { return NULL; }
+spin_mutex_t* spin_mutex_create ()                    { return NULL; }
 void          spin_mutex_lock   (spin_mutex_t* mutex) {}
 void          spin_mutex_unlock (spin_mutex_t* mutex) {}
 void          spin_mutex_destroy(spin_mutex_t* mutex) {}
