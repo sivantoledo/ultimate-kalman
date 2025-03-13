@@ -223,4 +223,4 @@ kalman_matrix_t* matrix_create_add      (kalman_matrix_t* A, kalman_matrix_t* B)
 /* END OF FILE                                                                */
 /******************************************************************************/
 
-#endif /* ifndef MATRIX_OPS */
+#endif /* ifndef MATRIX_OPS_H */

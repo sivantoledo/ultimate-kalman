@@ -105,3 +105,7 @@ void concurrent_set_insert(concurrent_set_t* set, void* element) {
 void concurrent_set_foreach(concurrent_set_t* set) {
   foreach_in_range(concurrent_set_parallel_foreach, set, set->size, set->size);
 }
+
+/******************************************************************************/
+/* END OF FILE                                                                */
+/******************************************************************************/

@@ -38,3 +38,6 @@ void          spin_mutex_lock   (spin_mutex_t* mutex) {}
 void          spin_mutex_unlock (spin_mutex_t* mutex) {}
 void          spin_mutex_destroy(spin_mutex_t* mutex) {}
 
+/******************************************************************************/
+/* END OF FILE                                                                */
+/******************************************************************************/
