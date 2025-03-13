@@ -21,6 +21,7 @@
 #endif
 
 #ifdef BUILD_BLAS_INT
+#undef blas_int_t
 #define blas_int_t BUILD_BLAS_INT
 #define HAS_BLAS_INT
 #endif
@@ -28,6 +29,7 @@
 #ifdef BUILD_MKL
 #define HAS_BLAS_H
 #define HAS_LAPACK_H
+#undef blas_int_t
 #define blas_int_t MKL_INT
 #define HAS_BLAS_INT
 #ifdef BUILD_BLAS_UNDERSCORE
@@ -37,6 +39,7 @@
 #endif
 
 #ifndef HAS_BLAS_INT
+#undef blas_int_t
 #define blas_int_t int32_t
 #define HAS_BLAS_INT
 #endif
