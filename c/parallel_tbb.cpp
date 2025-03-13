@@ -6,19 +6,17 @@
 #include <tbb/parallel_scan.h>
 #include <tbb/spin_mutex.h>
 
-
-
 extern "C" {
-
+  
 #include "parallel.h"
 #include "concurrent_set.h"
 
-struct spin_mutex_st {
-  tbb::spin_mutex mutex;
-};
+  struct spin_mutex_st {
+    tbb::spin_mutex mutex;
+  };
 
-        static int nthreads  = 0;
-	static int blocksize = 10;
+  static int nthreads  = 0;
+  static int blocksize = 10;
 
 	void parallel_set_thread_limit(int number_of_threads) {
 		if (number_of_threads > 0) {
@@ -71,19 +69,25 @@ struct spin_mutex_st {
                     }
 
                     //temp = f(temp, input[j], created_elements, is_final_scan);
+		    int is_created = (temp != NULL) && (input[j] != NULL); // otherwise one of them is returned
                     temp = f(temp, input[j]);
 
                     if (is_final_scan) {
-                        sums[i] = temp;
+		      sums[i] = temp;
                     } else {
-						concurrent_set_insert( created_elements, temp );
-					}
+		      if (is_created) concurrent_set_insert( created_elements, temp );
+		    }
                 }
                 return temp;
             },
             // and now the combining operation
             //[f, created_elements](void* left, void* right) { return f(left, right, created_elements, 0); }
-            [f](void* left, void* right) { return f(left, right); }
+            [f, created_elements](void* left, void* right) {
+	      int is_created = (left != NULL) && (right != NULL); // otherwise one of them is returned
+	      void* temp = f(left, right);
+	      if (is_created) concurrent_set_insert( created_elements, temp );
+	      return temp;
+	    }
             // there is also a version with an explicit is_final flag
         );
     }
