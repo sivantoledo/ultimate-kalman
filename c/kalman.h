@@ -18,8 +18,8 @@ extern double kalman_nan;
 /* COVARIANCE MATRICES                                                        */
 /******************************************************************************/
 
-kalman_matrix_t* cov_weigh(kalman_matrix_t *cov, char cov_type, kalman_matrix_t *A);
-kalman_matrix_t* explicit(kalman_matrix_t* cov, char type);
+kalman_matrix_t* kalman_covariance_matrix_weigh   (kalman_matrix_t *cov, char cov_type, kalman_matrix_t *A);
+kalman_matrix_t* kalman_covariance_matrix_explicit(kalman_matrix_t* cov, char type);
 
 /******************************************************************************/
 /* STEPS                                                                      */

@@ -214,9 +214,9 @@ static void evolve(kalman_t *kalman, int32_t n_i, matrix_t *H_i, matrix_t *F_i, 
   assert(c_i != NULL);
   //assert(K_i!=NULL);
 
-  // matrix_t* V_i_H_i = cov_weigh(K_i,K_type,H_i);
-  // matrix_t* V_i_F_i = cov_weigh(K_i,K_type,F_i);
-  // matrix_t* V_i_c_i = cov_weigh(K_i,K_type,c_i);
+  // matrix_t* V_i_H_i = kalman_covariance_matrix_weigh(K_i,K_type,H_i);
+  // matrix_t* V_i_F_i = kalman_covariance_matrix_weigh(K_i,K_type,F_i);
+  // matrix_t* V_i_c_i = kalman_covariance_matrix_weigh(K_i,K_type,c_i);
 
   // matrix_mutate_scale(V_i_F_i,-1.0);
 
@@ -255,8 +255,8 @@ static void observe(kalman_t *kalman, matrix_t *G_i, matrix_t *o_i, matrix_t *C_
 		printf("o_i ");
 		matrix_print(o_i,"%.3e");
 #endif
-    // W_i_G_i = cov_weigh(C_i,C_type,G_i);
-    // W_i_o_i = cov_weigh(C_i,C_type,o_i);
+    // W_i_G_i = kalman_covariance_matrix_weigh(C_i,C_type,G_i);
+    // W_i_o_i = kalman_covariance_matrix_weigh(C_i,C_type,o_i);
 
     kalman_current->G = matrix_create_copy(G_i);
     kalman_current->o = matrix_create_copy(o_i);
@@ -306,8 +306,8 @@ static void build_filtering_element(kalman_t *kalman, int i) {
 
     char C_type = step_i->C_type;
 
-    matrix_t *W_i_G_i = cov_weigh(C_i, C_type, G_i);
-    matrix_t *W_i_o_i = cov_weigh(C_i, C_type, o_i);
+    matrix_t *W_i_G_i = kalman_covariance_matrix_weigh(C_i, C_type, G_i);
+    matrix_t *W_i_o_i = kalman_covariance_matrix_weigh(C_i, C_type, o_i);
 
     matrix_t *R = matrix_create_copy(W_i_G_i);
     matrix_t *Q = matrix_create_mutate_qr(R);
@@ -336,7 +336,7 @@ static void build_filtering_element(kalman_t *kalman, int i) {
 
   matrix_t *F_i = step_i->F;
   matrix_t *c_i = step_i->c;
-  matrix_t *K_i = explicit(step_i->K, step_i->K_type);
+  matrix_t *K_i = kalman_covariance_matrix_explicit(step_i->K, step_i->K_type);
 
   if (step == 1) {
     step_t *step_1 = farray_get(kalman->steps, 0);
@@ -369,7 +369,7 @@ static void build_filtering_element(kalman_t *kalman, int i) {
   } else { // there are observations
     matrix_t *G_i = step_i->G;
     matrix_t *o_i = step_i->o;
-    matrix_t *C_i = explicit(step_i->C, step_i->C_type);
+    matrix_t *C_i = kalman_covariance_matrix_explicit(step_i->C, step_i->C_type);
 
     matrix_t *G_iT = matrix_create_transpose(G_i);
     matrix_t *KGT = matrix_create_multiply(K_i, G_iT);
@@ -483,10 +483,10 @@ void build_smoothing_element(kalman_t *kalman, int i) {
   } else {
     step_t *step_i = farray_get(kalman->steps, i);
     matrix_t *x = step_i->state;
-    matrix_t *P = explicit(step_i->covariance, 'C');
+    matrix_t *P = kalman_covariance_matrix_explicit(step_i->covariance, 'C');
     step_t *step_ip1 = farray_get(kalman->steps, i + 1);
     matrix_t *F = step_ip1->F;
-    matrix_t *Q = explicit(step_ip1->K, step_ip1->K_type);
+    matrix_t *Q = kalman_covariance_matrix_explicit(step_ip1->K, step_ip1->K_type);
     matrix_t *c = step_ip1->c;
 
     matrix_t *FT = matrix_create_transpose(F);

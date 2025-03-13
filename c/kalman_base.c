@@ -59,7 +59,7 @@ int gettimeofday(struct timeval * tp, struct timezone * tzp)
 /* COVARIANCE MATRICES                                                        */
 /******************************************************************************/
 
-matrix_t* cov_weigh(matrix_t *cov, char cov_type, matrix_t *A) {
+matrix_t* kalman_covariance_matrix_weigh(matrix_t *cov, char cov_type, matrix_t *A) {
   blas_int_t M, N, K, LDA, LDB, LDC, NRHS, INFO;
   double ALPHA, BETA;
 
@@ -160,7 +160,7 @@ matrix_t* cov_weigh(matrix_t *cov, char cov_type, matrix_t *A) {
 }
 
 // SUPPORT 'W','C' only
-matrix_t* explicit(matrix_t *cov, char type) {
+matrix_t* kalman_covariance_matrix_explicit(matrix_t *cov, char type) {
   assert(type == 'W' || type == 'C' || type == 'U' || type == 'F');
   if (type == 'W') {
     matrix_t *WT = matrix_create_transpose(cov);

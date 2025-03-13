@@ -198,7 +198,7 @@ static void evolve(kalman_t *kalman, int32_t n_i, matrix_t *H_i, matrix_t *F_i, 
   kalman_current->predictedState = matrix_create_add(predictedState, c_i);
   matrix_free(predictedState);
 
-  matrix_t *K_i_explicit = explicit(K_i, K_type);
+  matrix_t *K_i_explicit = kalman_covariance_matrix_explicit(K_i, K_type);
 
   matrix_t *t4 = matrix_create_multiply(F_i, imo->assimilatedCovariance);
   matrix_t *F_iTrans = matrix_create_transpose(F_i);
@@ -234,8 +234,8 @@ static void observe(kalman_t *kalman, matrix_t *G_i, matrix_t *o_i, matrix_t *C_
 
   if (kalman_current->step == 0) {
     //printf("filter_smoother step 0 observation cov-type %c\n",C_type);
-    matrix_t *W_i_G_i = cov_weigh(C_i, C_type, G_i);
-    matrix_t *W_i_o_i = cov_weigh(C_i, C_type, o_i);
+    matrix_t *W_i_G_i = kalman_covariance_matrix_weigh(C_i, C_type, G_i);
+    matrix_t *W_i_o_i = kalman_covariance_matrix_weigh(C_i, C_type, o_i);
 
     //matrix_print(W_i_G_i,"%.3e");
     //matrix_print(W_i_o_i,"%.3e");
@@ -283,15 +283,15 @@ static void observe(kalman_t *kalman, matrix_t *G_i, matrix_t *o_i, matrix_t *C_
 		printf("o_i ");
 		matrix_print(o_i,"%.3e");
 #endif
-    // W_i_G_i = cov_weigh(C_i,C_type,G_i);
-    // W_i_o_i = cov_weigh(C_i,C_type,o_i);
+    // W_i_G_i = kalman_covariance_matrix_weigh(C_i,C_type,G_i);
+    // W_i_o_i = kalman_covariance_matrix_weigh(C_i,C_type,o_i);
 
     matrix_t *predictedObservations = matrix_create_multiply(G_i, kalman_current->predictedState);
 
     matrix_t *G_i_trans = matrix_create_transpose(G_i);
     matrix_t *t1 = matrix_create_multiply(G_i, kalman_current->predictedCovariance);
     matrix_t *t2 = matrix_create_multiply(t1, G_i_trans);
-    matrix_t *C_i_explicit = explicit(C_i, C_type);
+    matrix_t *C_i_explicit = kalman_covariance_matrix_explicit(C_i, C_type);
     matrix_t *S = matrix_create_add(t2, C_i_explicit);
 
     matrix_t *t4 = matrix_create_multiply(kalman_current->predictedCovariance, G_i_trans);

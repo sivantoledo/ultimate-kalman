@@ -146,9 +146,9 @@ static void evolve(kalman_t *kalman, int32_t n_i, matrix_t *H_i, matrix_t *F_i, 
   //if (debug) matrix_print(F_i,NULL);
 
 #if 1
-  matrix_t *V_i_H_i = cov_weigh(K_i, K_type, H_i);
-  matrix_t *V_i_F_i = cov_weigh(K_i, K_type, F_i);
-  matrix_t *V_i_c_i = cov_weigh(K_i, K_type, c_i);
+  matrix_t *V_i_H_i = kalman_covariance_matrix_weigh(K_i, K_type, H_i);
+  matrix_t *V_i_F_i = kalman_covariance_matrix_weigh(K_i, K_type, F_i);
+  matrix_t *V_i_c_i = kalman_covariance_matrix_weigh(K_i, K_type, c_i);
 #else
 	matrix_t* V_i_H_i = matrix_create_copy(H_i);
 	matrix_t* V_i_F_i = matrix_create_copy(F_i);
@@ -346,8 +346,8 @@ static void observe(kalman_t *kalman, matrix_t *G_i, matrix_t *o_i, matrix_t *C_
 #endif
 
 #if 1
-    W_i_G_i = cov_weigh(C_i, C_type, G_i);
-    W_i_o_i = cov_weigh(C_i, C_type, o_i);
+    W_i_G_i = kalman_covariance_matrix_weigh(C_i, C_type, G_i);
+    W_i_o_i = kalman_covariance_matrix_weigh(C_i, C_type, o_i);
 #else
 		W_i_G_i = matrix_create_copy(G_i);
 		W_i_o_i = matrix_create_copy(o_i);
