@@ -6,13 +6,14 @@
 #include <tbb/parallel_scan.h>
 #include <tbb/spin_mutex.h>
 
-#include "parallel.h"
 
 struct tbb_spin_mutex {
     tbb::spin_mutex mutex;
 };
 
 extern "C" {
+	#include "parallel.h"
+
 	static int nthreads  = 0;
 	static int blocksize = 10;
 
