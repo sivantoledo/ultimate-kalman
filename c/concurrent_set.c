@@ -13,6 +13,13 @@
 #include "parallel.h"
 #include "concurrent_set.h"
  
+typedef struct concurrent_set_st {
+  int            size;
+  void**         pointers;          
+  spin_mutex_t** locks; // pointers to locks, to allow locks of any type
+  void   (*foreach)(void*);
+} concurrent_set_t;
+
 /*
  * FNV-1a hash of an address, to generate a random integer
  * 

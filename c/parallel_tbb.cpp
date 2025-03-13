@@ -7,12 +7,17 @@
 #include <tbb/spin_mutex.h>
 
 
-typedef struct spin_mutex_st {
-  tbb::spin_mutex mutex;
-} spin_mutex_t;
 
 extern "C" {
-	static int nthreads  = 0;
+
+#include "parallel.h"
+#include "concurrent_set.h"
+
+struct spin_mutex_st {
+  tbb::spin_mutex mutex;
+};
+
+        static int nthreads  = 0;
 	static int blocksize = 10;
 
 	void parallel_set_thread_limit(int number_of_threads) {
@@ -49,10 +54,8 @@ extern "C" {
         );
     }
     
-    #include "concurrent_set.h"
-
     //void parallel_scan_c(void** input, void** sums, void* created_elements , void* (*f)(void*, void*, void*, int), int length, int stride){
-    void parallel_scan_c(void** input, void** sums, void* created_elements , void* (*f)(void*, void*), int length, int stride){
+    void parallel_scan_c(void** input, void** sums, concurrent_set_t* created_elements , void* (*f)(void*, void*), int length, int stride){
     	tbb::global_control control(tbb::global_control::max_allowed_parallelism, nthreads);
 
         tbb::parallel_scan(

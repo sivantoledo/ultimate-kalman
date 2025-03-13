@@ -80,6 +80,7 @@ gcc -O2 $INCDIR -DPARALLEL -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_base_par.o     
 gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_base.o                        kalman_base.c
 gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o matrix_ops.o                         matrix_ops.c
 gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o flexible_arrays.o                    flexible_arrays.c
+gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o concurrent_set.o                     concurrent_set.c
 
 gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o parallel_sequential.o                parallel_sequential.c
 g++     $INCDIR            -std=c++11               -c                                         parallel_tbb.cpp
@@ -138,6 +139,7 @@ g++ \
     kalman_associative_seq.o \
     kalman_base.o \
     flexible_arrays.o \
+    concurrent_set.o \
     matrix_ops.o \
     parallel_sequential.o \
     $LIBDIR $SEQLIBS
@@ -152,6 +154,7 @@ g++ \
     kalman_associative_seq.o \
     kalman_base.o \
     flexible_arrays.o \
+    concurrent_set.o \
     matrix_ops.o \
     parallel_sequential.o \
     $LIBDIR $SEQLIBS
@@ -166,6 +169,7 @@ g++ \
     kalman_associative.o \
     kalman_base_par.o \
     flexible_arrays.o \
+    concurrent_set.o \
     matrix_ops.o \
     parallel_tbb.o \
     $LIBDIR $PARLIBS
@@ -181,6 +185,7 @@ g++ \
     kalman_associative.o \
     kalman_base_par.o \
     flexible_arrays.o \
+    concurrent_set.o \
     matrix_ops.o \
     parallel_tbb.o \
     $LIBDIR $PARLIBS
