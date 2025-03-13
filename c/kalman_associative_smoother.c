@@ -283,7 +283,7 @@ static void observe(kalman_t *kalman, matrix_t *G_i, matrix_t *o_i, matrix_t *C_
 /* Associative Smoother                                                       */
 /******************************************************************************/
 
-static void build_filtering_element(kalman_t *kalman, int i) {
+static void build_filtering_element(kalman_t *kalman, kalman_step_index_t i) {
   /*
    we denote by Z the matrix denoted by C in the article,
    because we already use C for the covariance of the
@@ -291,8 +291,8 @@ static void build_filtering_element(kalman_t *kalman, int i) {
    */
 
   step_t *step_i = farray_get(kalman->steps, i);
-  int n_i = step_i->dimension;
-  int step = step_i->step;
+  int32_t n_i = step_i->dimension;
+  kalman_step_index_t step = step_i->step;
 
   if (step == 0) {
     return;
@@ -472,11 +472,11 @@ static void build_filtering_element(kalman_t *kalman, int i) {
 }
 
 static
-void build_smoothing_element(kalman_t *kalman, int i) {
+void build_smoothing_element(kalman_t *kalman, kalman_step_index_t i) {
 
   if (i == farray_size(kalman->steps) - 1) {
     step_t *step_i = farray_get(kalman->steps, i);
-    int ni = step_i->dimension;
+    int32_t ni = step_i->dimension;
     step_i->E = matrix_create_constant(ni, ni, 0.0);
     step_i->g = matrix_create_copy(step_i->state);
     step_i->L = matrix_create_copy(step_i->covariance);
@@ -531,18 +531,18 @@ void build_smoothing_element(kalman_t *kalman, int i) {
   }
 }
 
-static void build_filtering_elements(void *kalman_v, int l, size_t start, size_t end) {
+static void build_filtering_elements(void *kalman_v, kalman_step_index_t l, kalman_step_index_t start, kalman_step_index_t end) {
   kalman_t *kalman = (kalman_t*) kalman_v;
 
-  for (int j = start; j < end; j++) {
+  for (kalman_step_index_t j = start; j < end; j++) {
     build_filtering_element(kalman, j);
   }
 }
 
-static void build_smoothing_elements(void *kalman_v, int l, size_t start, size_t end) {
+static void build_smoothing_elements(void *kalman_v, kalman_step_index_t l, kalman_step_index_t start, kalman_step_index_t end) {
   kalman_t *kalman = (kalman_t*) kalman_v;
 
-  for (int j = start; j < end; j++) {
+  for (kalman_step_index_t j = start; j < end; j++) {
     build_smoothing_element(kalman, j);
   }
 }
@@ -561,7 +561,7 @@ static void* filteringAssociativeOperation(void *si_v, void *sj_v) {
 
   step_t *sij = step_create();
 
-  int ni = matrix_rows(si->b);
+  int32_t ni = matrix_rows(si->b); // maybe blas_index_t
 
   matrix_t *eye_ni = matrix_create_identity(ni, ni);
   matrix_t *siZ_sjJ = matrix_create_multiply(si->Z, sj->J);
@@ -676,12 +676,12 @@ static void* smoothingAssociativeOperation(void *si_v, void *sj_v) {
   return sij;
 }
 
-static void filtered_to_state(void *kalman_v, void *filtered_v, size_t l, size_t start, size_t end) {
+static void filtered_to_state(void *kalman_v, void *filtered_v, kalman_step_index_t l, kalman_step_index_t start, kalman_step_index_t end) {
   kalman_t *kalman = (kalman_t*) kalman_v;
   step_t **filtered = (step_t**) filtered_v;
 
-  int i = start;
-  for (int j = start + 1; j < end + 1; j++) {
+  kalman_step_index_t i = start;
+  for (kalman_step_index_t j = start + 1; j < end + 1; j++) {
     step_t *step_j = farray_get(kalman->steps, j);
     step_t *filtered_i = filtered[i];
     step_j->state = matrix_create_copy(filtered_i->b);
@@ -693,12 +693,12 @@ static void filtered_to_state(void *kalman_v, void *filtered_v, size_t l, size_t
   }
 }
 
-static void smoothed_to_state(void *kalman_v, void *smoothed_v, size_t l, size_t start, size_t end) {
+static void smoothed_to_state(void *kalman_v, void *smoothed_v, kalman_step_index_t l, kalman_step_index_t start, kalman_step_index_t end) {
   kalman_t *kalman = (kalman_t*) kalman_v;
   step_t **smoothed = (step_t**) smoothed_v;
 
-  int i = 0;
-  for (int j = start; j < end; j++) {
+  kalman_step_index_t i = 0;
+  for (kalman_step_index_t j = start; j < end; j++) {
     i = l - 2 - j + 1;
     step_t *step_j = farray_get(kalman->steps, j);
     step_t *smoothed_i = smoothed[i];
@@ -768,7 +768,7 @@ static void prefix_sums_sequential(void* (*f)(void*, void*), void** a, void** su
 #endif
 
 static void smooth(kalman_t *kalman) {
-  int l = farray_size(kalman->steps);
+  kalman_step_index_t l = farray_size(kalman->steps);
 
 //#ifdef PARALLEL
 //	parallel_for_c(kalman, NULL, l, l, BLOCKSIZE, buildFilteringElements);

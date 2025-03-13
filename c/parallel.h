@@ -9,15 +9,31 @@
 #ifndef PARALLEL_H
 #define PARALLEL_H
 
+#ifdef PARALLEL_TYPE_INT32
+typedef int32_t parallel_index_t;
+#endif
+
+#ifdef PARALLEL_INDEX_TYPE_UINT32
+typedef uint32_t parallel_index_t;
+#endif
+
+#ifdef PARALLEL_INDEX_TYPE_INT64
+typedef int64_t parallel_index_t;
+#endif
+
+#ifdef PARALLEL_INDEX_TYPE_UINT64
+typedef uint64_t parallel_index_t;
+#endif
+
 #include "concurrent_set.h"
 
 void parallel_set_thread_limit(int number_of_threads);
 void parallel_set_blocksize   (int blocksize_in);
 
-void foreach_in_range    (void (*func)(void*,        int, size_t, size_t), void* array ,               int length, size_t n);
-void foreach_in_range_two(void (*func)(void*, void*, int, size_t, size_t), void* array1, void* array2, int length, size_t n);
+void foreach_in_range    (void (*func)(void*,        parallel_index_t, parallel_index_t, parallel_index_t), void* array ,               parallel_index_t length, parallel_index_t n);
+void foreach_in_range_two(void (*func)(void*, void*, parallel_index_t, parallel_index_t, parallel_index_t), void* array1, void* array2, parallel_index_t length, parallel_index_t n);
 
-void prefix_sums_pointers(void* (*f)(void*, void*), void** input, void** sums, concurrent_set_t* create_array , int length, int stride);
+void prefix_sums_pointers(void* (*f)(void*, void*), void** input, void** sums, concurrent_set_t* create_array , parallel_index_t length, int stride);
 
 // Opaque pointer for clients
 struct spin_mutex_st;

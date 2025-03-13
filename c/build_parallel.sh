@@ -72,25 +72,28 @@ case "$(uname)" in
         ;;
 esac
 
+INT_TYPES="-DKALMAN_STEP_INDEX_TYPE_INT32 -DFARRAY_INDEX_TYPE_INT32 -DPARALLEL_INDEX_TYPE_INT32"
+INT_TYPES="-DKALMAN_STEP_INDEX_TYPE_INT64 -DFARRAY_INDEX_TYPE_INT64 -DPARALLEL_INDEX_TYPE_INT64"
+
 # gcc -O2 -DBUILD_MKL -DBUILD_DEBUG_PRINTOUTSx -c performance.c ultimatekalman.c
-gcc -O2 -c performance.c 
-gcc -O2 -c rotation.c 
+gcc -O2 $INT_TYPES -c performance.c 
+gcc -O2 $INT_TYPES -c rotation.c 
 
-gcc -O2 $INCDIR -DPARALLEL -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_base_par.o                    kalman_base.c
-gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_base.o                        kalman_base.c
-gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o matrix_ops.o                         matrix_ops.c
-gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o flexible_arrays.o                    flexible_arrays.c
-gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o concurrent_set.o                     concurrent_set.c
+gcc -O2 $INCDIR $INT_TYPES -DPARALLEL -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_base_par.o                    kalman_base.c
+gcc -O2 $INCDIR $INT_TYPES            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_base.o                        kalman_base.c
+gcc -O2 $INCDIR $INT_TYPES            -DBUILD_DEBUG_PRINTOUTSx -c -o matrix_ops.o                         matrix_ops.c
+gcc -O2 $INCDIR $INT_TYPES            -DBUILD_DEBUG_PRINTOUTSx -c -o flexible_arrays.o                    flexible_arrays.c
+gcc -O2 $INCDIR $INT_TYPES            -DBUILD_DEBUG_PRINTOUTSx -c -o concurrent_set.o                     concurrent_set.c
 
-gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o parallel_sequential.o                parallel_sequential.c
-g++     $INCDIR            -std=c++11               -c                                         parallel_tbb.cpp
+gcc -O2 $INCDIR $INT_TYPES            -DBUILD_DEBUG_PRINTOUTSx -c -o parallel_sequential.o                parallel_sequential.c
+g++     $INCDIR $INT_TYPES            -std=c++11               -c                                         parallel_tbb.cpp
 
-gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_ultimate.o                    kalman_ultimate.c
-gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_conventional.o                kalman_conventional.c
-gcc -O2 $INCDIR -DPARALLEL -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_oddeven_smoother.o            kalman_oddeven_smoother.c
-gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_oddeven_smoother_seq.o        kalman_oddeven_smoother.c
-gcc -O2 $INCDIR -DPARALLEL -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_associative_smoother.o        kalman_associative_smoother.c
-gcc -O2 $INCDIR            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_associative_smoother_seq.o    kalman_associative_smoother.c
+gcc -O2 $INCDIR $INT_TYPES            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_ultimate.o                    kalman_ultimate.c
+gcc -O2 $INCDIR $INT_TYPES            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_conventional.o                kalman_conventional.c
+gcc -O2 $INCDIR $INT_TYPES -DPARALLEL -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_oddeven_smoother.o            kalman_oddeven_smoother.c
+gcc -O2 $INCDIR $INT_TYPES            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_oddeven_smoother_seq.o        kalman_oddeven_smoother.c
+gcc -O2 $INCDIR $INT_TYPES -DPARALLEL -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_associative_smoother.o        kalman_associative_smoother.c
+gcc -O2 $INCDIR $INT_TYPES            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_associative_smoother_seq.o    kalman_associative_smoother.c
 
 
 #gcc -O2 $INCDIR -DNO_COVARIANCE_ESTIMATES \

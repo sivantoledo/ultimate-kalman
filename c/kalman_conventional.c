@@ -352,7 +352,9 @@ static void smooth(kalman_t *kalman) {
   i->state = i->smoothedState;
   i->covariance = i->smoothedCovariance;
 
+#ifdef BUILD_DEBUG_PRINTOUTS
   printf("smooth first:last = %lld:%lld\n", first, last);
+#endif
   step_t *ipo = i;
   for (si = last - 1; si >= first; si--) {
     i = farray_get(kalman->steps, si);

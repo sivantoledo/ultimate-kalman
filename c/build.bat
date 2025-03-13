@@ -50,6 +50,9 @@ cl ^
   -I. ^
   %BLAS_LAPACK_FLAGS% ^
   -DBUILD_WIN32_GETTIMEOFDAY ^
+  -DKALMAN_STEP_INDEX_TYPE_INT32 ^
+  -DFARRAY_INDEX_TYPE_INT32 ^
+  -DPARALLEL_INDEX_TYPE_INT32 ^
   kalman_ultimate.c ^
   kalman_conventional.c ^
   kalman_oddeven_smoother.c ^

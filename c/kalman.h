@@ -13,8 +13,6 @@ extern double kalman_nan;
 #include "matrix_ops.h"
 #include "flexible_arrays.h"
 
-typedef int64_t kalman_step_index_t;
-
 #ifdef KALMAN_STEP_INDEX_TYPE_INT32
 typedef int32_t kalman_step_index_t;
 #endif

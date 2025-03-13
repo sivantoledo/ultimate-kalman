@@ -4,6 +4,10 @@
  * are structures, not value types) so that we can release them at the end of
  * the operation.
  *
+ * The current code may fail if the representation uses an array whose indexes
+ * cannot be represented by 32-bit integers, because it will try to put all
+ * the elements in the first 2 billion or so cells.
+ *
  * Copyright (c) Sivan Toledo and Shahaf Gargir 2024-2025
  */
 
@@ -12,13 +16,12 @@
 #include <stdio.h>
 
 #include "parallel.h"
-#include "concurrent_set.h"
 
 typedef struct concurrent_set_st {
-  int size;
-  void **pointers;
-  spin_mutex_t **locks; // pointers to locks, to allow locks of any type
-  void (*foreach)(void*);
+  parallel_index_t size;
+  void**           pointers;
+  spin_mutex_t**   locks; // pointers to locks, to allow locks of any type
+  void             (*foreach)(void*);
 } concurrent_set_t;
 
 /*
@@ -40,31 +43,31 @@ static uint32_t hash_uint32(uint32_t value) {
   return hash;
 }
 
-static void concurrent_set_parallel_init(void *set_v, int length, size_t start, size_t end) {
+static void concurrent_set_parallel_init(void *set_v, parallel_index_t length, parallel_index_t start, parallel_index_t end) {
   concurrent_set_t *set = (concurrent_set_t*) set_v;
-  for (int i = start; i < end; i++) {
+  for (parallel_index_t i = start; i < end; i++) {
     (set->pointers)[i] = NULL;
     (set->locks)[i] = spin_mutex_create();
   }
 }
 
-static void concurrent_set_parallel_destroy(void *set_v, int length, size_t start, size_t end) {
+static void concurrent_set_parallel_destroy(void *set_v, parallel_index_t length, parallel_index_t start, parallel_index_t end) {
   concurrent_set_t *set = (concurrent_set_t*) set_v;
-  for (int i = start; i < end; i++) {
+  for (parallel_index_t i = start; i < end; i++) {
     spin_mutex_destroy((set->locks)[i]);
   }
 }
 
-static void concurrent_set_parallel_foreach(void *set_v, int length, size_t start, size_t end) {
+static void concurrent_set_parallel_foreach(void *set_v, parallel_index_t length, parallel_index_t start, parallel_index_t end) {
   concurrent_set_t *set = (concurrent_set_t*) set_v;
-  for (int i = start; i < end; i++) {
+  for (parallel_index_t i = start; i < end; i++) {
     if ((set->pointers)[i] != NULL) {
       (*(set->foreach))((set->pointers)[i]);
     }
   }
 }
 
-concurrent_set_t* concurrent_set_create(int capacity, void (*foreach)(void*)) {
+concurrent_set_t* concurrent_set_create(parallel_index_t capacity, void (*foreach)(void*)) {
   concurrent_set_t *set = (concurrent_set_t*) malloc(sizeof(concurrent_set_t));
   set->size = capacity * 10; // expansion to reduce contention
   set->foreach = foreach;
@@ -87,7 +90,7 @@ void concurrent_set_free(concurrent_set_t *set) {
 
 void concurrent_set_insert(concurrent_set_t *set, void *element) {
   uint32_t inserted = 0;
-  uint32_t h = (uintptr_t) element;
+  uint32_t h = (uint32_t) (uintptr_t) element;
   uint32_t i;
   do {
     h = hash_uint32(h);

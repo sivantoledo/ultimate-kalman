@@ -38,22 +38,22 @@ void parallel_set_blocksize(int blocksize_in) {
   }
 }
 
-void foreach_in_range(void (*func)(void*, int, size_t, size_t), void* array, int length, size_t n) {
+void foreach_in_range(void (*func)(void*, int, parallel_index_t, parallel_index_t), void* array, parallel_index_t length, parallel_index_t n) {
   tbb::global_control control(tbb::global_control::max_allowed_parallelism, nthreads);
 
   //printf("blocksize = %d\n",blocksize>0 ? blocksize : block_size);
-    tbb::parallel_for(tbb::blocked_range<size_t>(0, n, blocksize),
+    tbb::parallel_for(tbb::blocked_range<parallel_index_t>(0, n, blocksize),
         [array, length, func](const tbb::blocked_range<size_t>& subrange) {
           func(array, length, subrange.begin(), subrange.end());
         }
     );
   }
 
-  void foreach_in_range_two(void (*func)(void*, void*, int, size_t, size_t), void* array1, void* array2, int length, size_t n) {
+  void foreach_in_range_two(void (*func)(void*, void*, int, parallel_index_t, parallel_index_t), void* array1, void* array2, parallel_index_t length, siparallel_index_tze_t n) {
     tbb::global_control control(tbb::global_control::max_allowed_parallelism, nthreads);
 
     //printf("blocksize = %d\n",blocksize>0 ? blocksize : block_size);
-    tbb::parallel_for(tbb::blocked_range<size_t>(0, n, blocksize),
+    tbb::parallel_for(tbb::blocked_range<parallel_index_t>(0, n, blocksize),
         [array1, array2, length, func](const tbb::blocked_range<size_t>& subrange) {
           func(array1, array2, length, subrange.begin(), subrange.end());
         }
@@ -61,16 +61,16 @@ void foreach_in_range(void (*func)(void*, int, size_t, size_t), void* array, int
   }
 
   //void parallel_scan_c(void** input, void** sums, void* created_elements , void* (*f)(void*, void*, void*, int), int length, int stride){
-  void prefix_sums_pointers(void* (*f)(void*, void*), void** input, void** sums, concurrent_set_t* created_elements , int length, int stride) {
+  void prefix_sums_pointers(void* (*f)(void*, void*), void** input, void** sums, concurrent_set_t* created_elements , parallel_index_t length, parallel_index_t stride) {
     tbb::global_control control(tbb::global_control::max_allowed_parallelism, nthreads);
 
     tbb::parallel_scan(
-        tbb::blocked_range<size_t>(0, length, blocksize),
+        tbb::blocked_range<parallel_index_t>(0, length, blocksize),
         (void*) NULL, /* starting value (identity elements) */
         // now define the scan operation
         [input, sums, created_elements, f, length, stride](const tbb::blocked_range<size_t>& r, void* sum, bool is_final_scan) {
           void* temp = sum;
-          for (size_t i = r.begin(); i != r.end(); ++i) {
+          for (parallel_index_t i = r.begin(); i != r.end(); ++i) {
             //int j = i + 1;
             int j = i;
             if (stride == -1) {

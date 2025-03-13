@@ -289,23 +289,23 @@ static void free_and_assign(matrix_t** original, matrix_t* new){
 /* FUNCIONS THAT CAN BE APPLIED IN PARALLEL TO AN ARRAY OF STEPS              */
 /******************************************************************************/
 
-//void assign_steps(void* kalman_v, void* steps_v, int length, int** helper, size_t start, size_t end) {
-static void create_steps_array(void* kalman_v, void* steps_v, int length, size_t start, size_t end) {
+//void assign_steps(void* kalman_v, void* steps_v, int length, int** helper, kalman_step_index_t start, kalman_step_index_t end) {
+static void create_steps_array(void* kalman_v, void* steps_v, kalman_step_index_t length, kalman_step_index_t start, kalman_step_index_t end) {
 	kalman_t* kalman = (kalman_t*) kalman_v;
 	step_t** steps = (step_t**) steps_v;
 	
-	for (size_t i = start; i < end; ++i) {
+	for (kalman_step_index_t i = start; i < end; ++i) {
 		steps[i] = farray_get(kalman->steps,i);
 	}
 }
 
-//void G_F_to_R_tilde(void* kalman_v, void* steps_v, int length, int** helper, size_t start, size_t end){
-static void G_F_to_R_tilde(void** steps_v, int length, size_t start, size_t end){
+//void G_F_to_R_tilde(void* kalman_v, void* steps_v, kalman_step_index_t length, int** helper, kalman_step_index_t start, kalman_step_index_t end){
+static void G_F_to_R_tilde(void** steps_v, kalman_step_index_t length, kalman_step_index_t start, kalman_step_index_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
 	step_t* *steps = (step_t**)steps_v;
 
-	for (size_t j_ = start; j_ < end; ++j_) {
-		size_t j = j_ * 2;
+	for (kalman_step_index_t j_ = start; j_ < end; ++j_) {
+		kalman_step_index_t j = j_ * 2;
 
 		step_t* step_i = steps[j];
 		matrix_t* G_i = step_i->G;
@@ -352,13 +352,13 @@ static void G_F_to_R_tilde(void** steps_v, int length, size_t start, size_t end)
 	}//Done first part of the algorithm
 }
 
-//void H_R_tilde_to_R(void* kalman_v, void* steps_v, int length, int** helper, size_t start, size_t end){
-static void H_R_tilde_to_R(void** steps_v, int length, size_t start, size_t end){
+//void H_R_tilde_to_R(void* kalman_v, void* steps_v, int length, int** helper, kalman_step_index_t start, kalman_step_index_t end){
+static void H_R_tilde_to_R(void** steps_v, kalman_step_index_t length, kalman_step_index_t start, kalman_step_index_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
 	step_t* *steps = (step_t**)steps_v;
 
-	for (size_t j_ = start; j_ < end; j_++){
-		size_t j = j_ * 2;
+	for (kalman_step_index_t j_ = start; j_ < end; j_++){
+		kalman_step_index_t j = j_ * 2;
 
 		step_t* step_i = steps[j];
 		if (j == 0){ //First index
@@ -401,13 +401,13 @@ static void H_R_tilde_to_R(void** steps_v, int length, size_t start, size_t end)
 
 }
 
-//void H_tilde_G_to_G_tilde(void* kalman_v, void* steps_v, int length, int** helper, size_t start, size_t end){
-static void H_tilde_G_to_G_tilde(void** steps_v, int length, size_t start, size_t end){
+//void H_tilde_G_to_G_tilde(void* kalman_v, void* steps_v, int length, int** helper, kalman_step_index_t start, kalman_step_index_t end){
+static void H_tilde_G_to_G_tilde(void** steps_v, kalman_step_index_t length, kalman_step_index_t start, kalman_step_index_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
 	step_t* *steps = (step_t**)steps_v;
 
-	for (size_t j_ = start; j_ < end; j_++){
-		size_t j = j_ * 2;
+	for (kalman_step_index_t j_ = start; j_ < end; j_++){
+		kalman_step_index_t j = j_ * 2;
 		// Sivan Feb 2025 wrong type and seens not to be used, commenting out
 		//int i = steps[j];
 
@@ -433,13 +433,13 @@ static void H_tilde_G_to_G_tilde(void** steps_v, int length, size_t start, size_
 	}//Done third part of the algorithm
 }
 
-//void Variables_Renaming(void* kalman_v, void* steps_v, int length, int** helper, size_t start, size_t end){
-static void Variables_Renaming(void** steps_v, int length, size_t start, size_t end){
+//void Variables_Renaming(void* kalman_v, void* steps_v, int length, int** helper, kalman_step_index_t start, kalman_step_index_t end){
+static void Variables_Renaming(void** steps_v, kalman_step_index_t length, kalman_step_index_t start, kalman_step_index_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
 	step_t* *steps = (step_t**)steps_v;
 
-	for (size_t j_ = start; j_ < end; ++j_){
-		size_t j = j_ * 2;
+	for (kalman_step_index_t j_ = start; j_ < end; ++j_){
+		kalman_step_index_t j = j_ * 2;
 		// int i = steps[j];
 		// int ipo = steps[j + 1];
 		step_t* step_ipo = steps[j + 1];
@@ -470,23 +470,23 @@ static void Variables_Renaming(void** steps_v, int length, size_t start, size_t 
 	}
 }
 
-//void Init_new_steps(void* new_steps_v, void* steps_v, int length, int** helper, size_t start, size_t end){
-static void extract_recursion_steps(void* new_steps_v, void* steps_v, int length, size_t start, size_t end){
+//void Init_new_steps(void* new_steps_v, void* steps_v, int length, int** helper, kalman_step_index_t start, kalman_step_index_t end){
+static void extract_recursion_steps(void* new_steps_v, void* steps_v, kalman_step_index_t length, kalman_step_index_t start, kalman_step_index_t end){
 	step_t** new_steps = (step_t**) new_steps_v;
 	step_t** steps     = (step_t**) steps_v;
 
-    for (size_t i = start; i < end; ++i) {
+    for (kalman_step_index_t i = start; i < end; ++i) {
 		new_steps[i] = steps[2*i + 1];
 	}
 }
 
-//void Solve_Estimates(void* kalman_v, void* steps_v, int length, int** helper, size_t start, size_t end){
-static void Solve_Estimates(void* steps_v, int length, size_t start, size_t end){
+//void Solve_Estimates(void* kalman_v, void* steps_v, int length, int** helper, kalman_step_index_t start, kalman_step_index_t end){
+static void Solve_Estimates(void* steps_v, kalman_step_index_t length, kalman_step_index_t start, kalman_step_index_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
 	step_t** steps = (step_t**) steps_v;
 
-	for (size_t j_ = start; j_ < end; ++j_){
-		size_t j = j_ * 2;
+	for (kalman_step_index_t j_ = start; j_ < end; ++j_){
+		kalman_step_index_t j = j_ * 2;
 
 		step_t* step_i = steps[j];
 		matrix_t* R = step_i->R;
@@ -559,13 +559,13 @@ static void Solve_Estimates(void* steps_v, int length, size_t start, size_t end)
 // Cov Change 4
 // ==========================================
 
-//void Convert_LDLT(void* kalman_v, void* steps_v, int length, int** helper, size_t start, size_t end){
-static void Convert_LDLT(void* steps_v, int length, size_t start, size_t end){
+//void Convert_LDLT(void* kalman_v, void* steps_v, int length, int** helper, kalman_step_index_t start, kalman_step_index_t end){
+static void Convert_LDLT(void* steps_v, kalman_step_index_t length, kalman_step_index_t start, kalman_step_index_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
 	step_t** steps = (step_t**) steps_v;
 
-	for (size_t j_ = start; j_ < end; ++j_){
-		size_t j = j_ * 2;
+	for (kalman_step_index_t j_ = start; j_ < end; ++j_){
+		kalman_step_index_t j = j_ * 2;
 
 		step_t* step = steps[j];
 		matrix_t* R = step->R;
@@ -598,17 +598,17 @@ static void Convert_LDLT(void* steps_v, int length, size_t start, size_t end){
 	}
 }
 
-//void SelInv(void* kalman_v, void* steps_v, int length, int** converters, size_t start, size_t end){
-static void SelInv(void* steps_v, void** converters_v, int length, size_t start, size_t end){
+//void SelInv(void* kalman_v, void* steps_v, int length, int** converters, kalman_step_index_t start, kalman_step_index_t end){
+static void SelInv(void* steps_v, void** converters_v, kalman_step_index_t length, kalman_step_index_t start, kalman_step_index_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
 	step_t** steps = (step_t**) steps_v;
-	int** converters = (int**) converters_v;
+	kalman_step_index_t** converters = (kalman_step_index_t**) converters_v;
 
-	int * vtop_n = converters[0];
-	int * ptov_n2 = converters[1];
+	kalman_step_index_t * vtop_n = converters[0];
+	kalman_step_index_t * ptov_n2 = converters[1];
 	
-	for (size_t j_ = start; j_ < end; ++j_){
-		size_t j = j_ * 2;
+	for (kalman_step_index_t j_ = start; j_ < end; ++j_){
+		kalman_step_index_t j = j_ * 2;
 
 		step_t* step = steps[j];
 	// 	Ainv(inz,j) = -Ainv(inz,inz) * L(inz,j);
@@ -616,13 +616,13 @@ static void SelInv(void* steps_v, void** converters_v, int length, size_t start,
 	// 	Ainv(j,j) = 1/D(j,j) - Ainv(j,inz) * L(inz,j);
 		
 		if (j == 0){
-			int inz1 = 0;
+			kalman_step_index_t inz1 = 0;
 			
-			int physical_column = (int) ceil(((double)length)/2) + ptov_n2[inz1];
+			kalman_step_index_t physical_column = (kalman_step_index_t) ceil(((double)length)/2) + ptov_n2[inz1];
 			matrix_t* L_j_inz = step->X;
 
 			step_t *physical_step = steps[vtop_n[physical_column]];
-			int physical_row = physical_step->step;
+			kalman_step_index_t physical_row = physical_step->step;
 
 			matrix_t* Ainv_inz_inz = physical_step->R;
 
@@ -651,14 +651,14 @@ static void SelInv(void* steps_v, void** converters_v, int length, size_t start,
 			step->R = Ainv_j_j;
 
 		}else if (j != length - 1){
-			int inz1 = j/2 - 1;
-			int inz2 = j/2;
+			kalman_step_index_t inz1 = j/2 - 1;
+			kalman_step_index_t inz2 = j/2;
 
-			int physical_column1 = ceil(((double)length)/2) + ptov_n2[inz1];
+			kalman_step_index_t physical_column1 = (kalman_step_index_t) ceil(((double)length)/2) + ptov_n2[inz1];
 
-			int physical_column2 = ceil(((double)length)/2) + ptov_n2[inz2];
+			kalman_step_index_t physical_column2 = (kalman_step_index_t) ceil(((double)length)/2) + ptov_n2[inz2];
 
-			int regular_order = 1;
+			kalman_step_index_t regular_order = 1;
 
 	// 		We have two cases here: Y,F_tilde and F_tilde,Y 
 	// 		and the order is matter.
@@ -680,9 +680,9 @@ static void SelInv(void* steps_v, void** converters_v, int length, size_t start,
 				matrix_free(L_j_inz_t);
 
 				physical_step1 = steps[vtop_n[physical_column1]];
-				int physical_row1 = physical_step1->step;
+				kalman_step_index_t physical_row1 = physical_step1->step;
 				physical_step2 = steps[vtop_n[physical_column2]];
-				int physical_row2 = physical_step2->step;
+				kalman_step_index_t physical_row2 = physical_step2->step;
 			}else{
 				regular_order = 0;
 
@@ -695,21 +695,21 @@ static void SelInv(void* steps_v, void** converters_v, int length, size_t start,
 				matrix_free(Y_t);
 				matrix_free(L_j_inz_t);
 					
-				int tmp = physical_column1;
+				kalman_step_index_t tmp = physical_column1;
 				physical_column1 = physical_column2;
 				physical_column2 = tmp;
 
 				physical_step1 = steps[vtop_n[physical_column1]];
-				int physical_row1 = physical_step1->step;
+				kalman_step_index_t physical_row1 = physical_step1->step;
 				physical_step2 = steps[vtop_n[physical_column2]];
-				int physical_row2 = physical_step2->step;	
+				kalman_step_index_t physical_row2 = physical_step2->step;
 			}
 
 			
 	// 		Now we have to do the same process in row 2 but
 	// 		column 2. but we can't call virtual_physical
 
-			int start_index = ceil(((double)length)/2);
+			kalman_step_index_t start_index = (kalman_step_index_t) ceil(((double)length)/2);
 
 			matrix_t* top_right;
 	// 		again we have 3 cases:
@@ -717,10 +717,10 @@ static void SelInv(void* steps_v, void** converters_v, int length, size_t start,
 				top_right = physical_step1->X;
 			}else if (start_index + ceil(floor(((double)length)/2)/2) > physical_column1 + 1 || (length/2)%2 == 0){
 	
-				int source_index = floor(((double)vtop_n[physical_column2])/4);
+				kalman_step_index_t source_index = (kalman_step_index_t) floor(((double)vtop_n[physical_column2])/4);
 
 	// 			Now lets check the source of F_tilde and Y of this row
-				int F_tilde_location = physical_column1 - start_index - 1;
+				kalman_step_index_t F_tilde_location = physical_column1 - start_index - 1;
 				if (source_index == F_tilde_location){	
 					top_right = physical_step1->F_tilde;
 				}else{
@@ -772,8 +772,8 @@ static void SelInv(void* steps_v, void** converters_v, int length, size_t start,
 			
 			if (regular_order){ //This is the ragular order
 
-				int F_tilde_cols = matrix_cols(step->F_tilde);
-				int Y_cols = matrix_cols(step->Y);
+				int32_t F_tilde_cols = matrix_cols(step->F_tilde);
+				int32_t Y_cols = matrix_cols(step->Y);
 
 				matrix_free(step->F_tilde);
 				step->F_tilde = matrix_create_sub(Ainv_j_inz, 0, matrix_rows(Ainv_j_inz), 0, F_tilde_cols);
@@ -781,8 +781,8 @@ static void SelInv(void* steps_v, void** converters_v, int length, size_t start,
 				matrix_free(step->Y);
 				step->Y = matrix_create_sub(Ainv_j_inz, 0, matrix_rows(Ainv_j_inz), F_tilde_cols, matrix_cols(Ainv_j_inz) - F_tilde_cols);	
 			}else{
-				int F_tilde_cols = matrix_cols(step->F_tilde);
-				int Y_cols = matrix_cols(step->Y);
+			    int32_t F_tilde_cols = matrix_cols(step->F_tilde);
+			    int32_t Y_cols = matrix_cols(step->Y);
 
 				matrix_free(step->Y);
 				step->Y = matrix_create_sub(Ainv_j_inz, 0, matrix_rows(Ainv_j_inz), 0, Y_cols);
@@ -795,14 +795,14 @@ static void SelInv(void* steps_v, void** converters_v, int length, size_t start,
 			step->R = Ainv_j_j;
 
 		}else{
-			int inz1 = j/2 - 1;			
+			kalman_step_index_t inz1 = j/2 - 1;
 
-			int physical_column = ceil(((double)length)/2) + ptov_n2[inz1];
+			kalman_step_index_t physical_column = (kalman_step_index_t) ceil(((double)length)/2) + ptov_n2[inz1];
 
 			matrix_t* L_j_inz = step->F_tilde;
 
 			step_t *physical_step = steps[vtop_n[physical_column]];
-			int physical_row = physical_step->step;
+			kalman_step_index_t physical_row = physical_step->step;
 
 			matrix_t* Ainv_inz_inz = physical_step->R;
 
@@ -846,49 +846,49 @@ static void SelInv(void* steps_v, void** converters_v, int length, size_t start,
 // ==========================================
 
 
-//void one_layer_converter (void* kalman_v, void* steps_v, int length, int** helper, size_t start, size_t end){
-static void one_layer_converter (void* array, int length, size_t start, size_t end){
+//void one_layer_converter (void* kalman_v, void* steps_v, int length, int** helper, kalman_step_index_t start, kalman_step_index_t end){
+static void one_layer_converter (void* array, kalman_step_index_t length, kalman_step_index_t start, kalman_step_index_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
 	//step_t* *steps = (step_t**)steps_v;
 	
-	int** helper = (int**) array;
+	kalman_step_index_t** helper = (kalman_step_index_t**) array;
 	 
-	int* virtual_to_physical = helper[0];
-	int* physical_to_virtual = helper[1];
-	int* variables = helper[2];
+	kalman_step_index_t* virtual_to_physical = helper[0];
+	kalman_step_index_t* physical_to_virtual = helper[1];
+	kalman_step_index_t* variables = helper[2];
 
-	int n = variables[0];
-	int start_ = variables[1];
-	int jump = variables[2];
-	int skip = variables[3];
-	int index = variables[4];
+	kalman_step_index_t n = variables[0];
+	kalman_step_index_t start_ = variables[1];
+	kalman_step_index_t jump = variables[2];
+	kalman_step_index_t skip = variables[3];
+	kalman_step_index_t index = variables[4];
 
-	for (int j_ = start; j_ < end; ++j_){
-		int i = j_ * jump + start_;
+	for (kalman_step_index_t j_ = start; j_ < end; ++j_){
+		kalman_step_index_t i = j_ * jump + start_;
 
 		virtual_to_physical[index + j_] = i;
 		if (!skip){
-			physical_to_virtual[i/2] = (index + j_) - ceil(((double)n)/2);
+			physical_to_virtual[i/2] = (index + j_) - (kalman_step_index_t) ceil(((double)n)/2);
 		}
 	}
 	variables[4] = index;
 }
 
-static int** virtual_physical(int n) {
+static kalman_step_index_t** virtual_physical(kalman_step_index_t n) {
 
-	int* virtual_to_physical = (int*) malloc(    n * sizeof(int));
-	int* physical_to_virtual = (int*) malloc((n/2) * sizeof(int));
+	kalman_step_index_t* virtual_to_physical = (kalman_step_index_t*) malloc(    n * sizeof(kalman_step_index_t));
+	kalman_step_index_t* physical_to_virtual = (kalman_step_index_t*) malloc((n/2) * sizeof(kalman_step_index_t));
 	
-	int* variables = (int *)malloc(5 * sizeof(int));
+	kalman_step_index_t* variables = (kalman_step_index_t *)malloc(5 * sizeof(kalman_step_index_t));
 
-	int start = 0;
-	int jump = 2;
+	kalman_step_index_t start = 0;
+	kalman_step_index_t jump = 2;
 
-	int index = 0;
+	kalman_step_index_t index = 0;
 
-	int skip = 1;
+	kalman_step_index_t skip = 1;
 
-	int ** result = (int **)malloc(3 * sizeof(int *));
+	kalman_step_index_t ** result = (kalman_step_index_t **)malloc(3 * sizeof(kalman_step_index_t *));
 	result[0] = virtual_to_physical;
 	result[1] = physical_to_virtual;
 	result[2] = variables;
@@ -906,9 +906,9 @@ static int** virtual_physical(int n) {
 		//#else
 		//one_layer_converter(NULL, NULL, 0, result, 0, ceil((double)(n - start)/jump));
 		//#endif
-		foreach_in_range(one_layer_converter, result, ceil((double)(n - start)/jump) /* ??? */, ceil((double)(n - start)/jump));
+		foreach_in_range(one_layer_converter, result, (kalman_step_index_t) ceil((double)(n - start)/jump), (kalman_step_index_t) ceil((double)(n - start)/jump));
 
-		index += ceil((double)(n - start)/jump);
+		index += (kalman_step_index_t) ceil((double)(n - start)/jump);
 
 		skip = 0;
 
@@ -924,7 +924,7 @@ static int** virtual_physical(int n) {
 // ==========================================
 
 //void smooth_recursive(kalman_t* kalman, step_t* *steps, int length) {
-static void smooth_recursive(kalman_options_t options, step_t** steps, int length) {
+static void smooth_recursive(kalman_options_t options, step_t** steps, kalman_step_index_t length) {
 	
     if (length == 1) {
 
@@ -1065,7 +1065,7 @@ static void smooth_recursive(kalman_options_t options, step_t** steps, int lengt
 
 	// Now we can start the selinv algrithm for out case
 	
-	int** result = virtual_physical(length);
+	kalman_step_index_t** result = virtual_physical(length);
 
 	//#ifdef PARALLEL
 	//parallel_for_c(NULL, steps, length, result, (length + 1)/2, BLOCKSIZE, SelInv);
@@ -1088,7 +1088,7 @@ static void smooth_recursive(kalman_options_t options, step_t** steps, int lengt
 
 static void smooth(kalman_t* kalman) {
 
-	int length = farray_size(kalman->steps);
+	kalman_step_index_t length = farray_size(kalman->steps);
 	step_t** steps = (step_t**) malloc(length * sizeof(step_t*));
 	
 //#ifdef PARALLEL

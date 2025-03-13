@@ -17,21 +17,21 @@ void parallel_set_thread_limit(int number_of_threads) {
 void parallel_set_blocksize(int blocksize_in) {
 }
 
-void foreach_in_range(void (*f)(void*, int, size_t, size_t),
-                      void *array, int length, size_t n) {
+void foreach_in_range(void (*f)(void*, parallel_index_t, parallel_index_t, parallel_index_t),
+                      void *array, parallel_index_t length, parallel_index_t n) {
   (*f)(array, length, 0, n);
 }
 
-void foreach_in_range_two(void (*f)(void*, void*, int, size_t, size_t),
-                          void *array1, void *array2, int length, size_t n) {
+void foreach_in_range_two(void (*f)(void*, void*, parallel_index_t, parallel_index_t, parallel_index_t),
+                          void *array1, void *array2, parallel_index_t length, parallel_index_t n) {
   (*f)(array1, array2, length, 0, n);
 }
 
 void prefix_sums_pointers(void* (*f)(void*, void*),
                           void **input, void **sums,
                           concurrent_set_t *created_elements,
-                          int length, int stride) {
-  int i, j;
+                          parallel_index_t length, int stride) {
+  parallel_index_t i, j;
   void *sum = NULL; // neutral element when operating on pointers
 
   for (i = 0; i < length; i++) {
