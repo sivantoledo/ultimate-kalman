@@ -589,7 +589,8 @@ static void build_smoothing_elements(void* kalman_v, int l, size_t start, size_t
 }
 
 //step_t* filteringAssociativeOperation(step_t* si, step_t* sj, concurrent_set_t* created_steps, int row, int is_final_scan) {
-static void* filteringAssociativeOperation(void* si_v, void* sj_v, void* created_steps_v, int is_final_scan) {
+//static void* filteringAssociativeOperation(void* si_v, void* sj_v, void* created_steps_v, int is_final_scan) {
+static void* filteringAssociativeOperation(void* si_v, void* sj_v) {
   step_t* si = (step_t*) si_v;
   step_t* sj = (step_t*) sj_v;
   
@@ -604,7 +605,7 @@ static void* filteringAssociativeOperation(void* si_v, void* sj_v, void* created
 
   step_t* sij = step_create();
 
-#ifdef PARALLEL
+#ifdef PARALLEL_OBSOLETE
   concurrent_set_t* created_steps = (concurrent_set_t*) created_steps_v;
   if (!is_final_scan){
     concurrent_set_insert(created_steps, sij);
@@ -694,7 +695,8 @@ static void* filteringAssociativeOperation(void* si_v, void* sj_v, void* created
 
 
 //step_t* smoothingAssociativeOperation(step_t* si, step_t* sj, concurrent_set_t* created_steps, int row, int is_final_scan) {
-static void* smoothingAssociativeOperation(void* si_v, void* sj_v, void* created_steps_v, int is_final_scan) {
+//static void* smoothingAssociativeOperation(void* si_v, void* sj_v, void* created_steps_v, int is_final_scan) {
+static void* smoothingAssociativeOperation(void* si_v, void* sj_v) {
   step_t* si = (step_t*) si_v;
   step_t* sj = (step_t*) sj_v;
 
@@ -707,7 +709,7 @@ static void* smoothingAssociativeOperation(void* si_v, void* sj_v, void* created
   }
   
   step_t* sij = step_create();
-#ifdef PARALLEL
+#ifdef PARALLEL_OBSOLETE
   concurrent_set_t* created_steps = (concurrent_set_t*) created_steps_v;
 
   if (!is_final_scan){
@@ -799,7 +801,8 @@ static step_t** cummulativeSumsSequential(kalman_t* kalman, void* (*f)(void*, vo
 }
 #endif
 
-static void prefix_sums_sequential(void* (*f)(void*, void*, void*, int, int), void** a, void** sums, int s, int e, int stride) {
+//static void prefix_sums_sequential(void* (*f)(void*, void*, void*, int, int), void** a, void** sums, int s, int e, int stride) {
+static void prefix_sums_sequential(void* (*f)(void*, void*), void** a, void** sums, int s, int e, int stride) {
 	//step_t** sums = (step_t**)malloc((abs(e-s) + 1)*sizeof(step_t*));
 	int i = 0;
 	//step_t** a = (step_t**)kalman->steps->elements;
@@ -811,13 +814,15 @@ static void prefix_sums_sequential(void* (*f)(void*, void*, void*, int, int), vo
 	/* The two blocks look similar, but the termination condition of the loop is different */
 	if (s > e) {
 		for (int j=s+stride; j>=e; j+=stride) {
-		    sum = f(sum,a[j], NULL, -1, -1);
+		    //sum = f(sum,a[j], NULL, -1, -1);
+		    sum = f(sum,a[j]);
 			sums[i] = sum;
 			i++;
 		}
 	} else {
 		for (int j=s+stride; j<=e; j+=stride) {
-			sum = f(sum,a[j], NULL, -1, -1);
+		    //sum = f(sum,a[j], NULL, -1, -1);
+			sum = f(sum,a[j]);
 			sums[i] = sum;
 			i++;
 		}

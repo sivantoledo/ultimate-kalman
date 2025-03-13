@@ -64,16 +64,20 @@ extern "C" {
                         j = length - 1 - i;
                     }
 
-                    temp = f(temp, input[j], created_elements, is_final_scan);
+                    //temp = f(temp, input[j], created_elements, is_final_scan);
+                    temp = f(temp, input[j]);
 
                     if (is_final_scan) {
                         sums[i] = temp;
-                    }
+                    } else {
+						concurrent_set_insert( created_elements, temp );
+					}
                 }
                 return temp;
             },
             // and now the combining operation
-            [f, created_elements](void* left, void* right) { return f(left, right, created_elements, 0); }
+            //[f, created_elements](void* left, void* right) { return f(left, right, created_elements, 0); }
+            [f](void* left, void* right) { return f(left, right); }
             // there is also a version with an explicit is_final flag
         );
     }
