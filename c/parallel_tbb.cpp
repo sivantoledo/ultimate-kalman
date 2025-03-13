@@ -53,7 +53,7 @@ extern "C" {
     }
     
     //void parallel_scan_c(void** input, void** sums, void* created_elements , void* (*f)(void*, void*, void*, int), int length, int stride){
-    void parallel_scan_c(void* (*f)(void*, void*), void** input, void** sums, concurrent_set_t* created_elements , int length, int stride){
+    void prefix_sums_pointers(void* (*f)(void*, void*), void** input, void** sums, concurrent_set_t* created_elements , int length, int stride){
     	tbb::global_control control(tbb::global_control::max_allowed_parallelism, nthreads);
 
         tbb::parallel_scan(

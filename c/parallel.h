@@ -9,7 +9,7 @@ void parallel_set_blocksize   (int blocksize_in);
 void foreach_in_range    (void (*func)(void*,        int, size_t, size_t), void* array ,               int length, size_t n);
 void foreach_in_range_two(void (*func)(void*, void*, int, size_t, size_t), void* array1, void* array2, int length, size_t n);
 
-void parallel_scan_c(void* (*f)(void*, void*), void** input, void** sums, concurrent_set_t* create_array , int length, int stride);
+void prefix_sums_pointers(void* (*f)(void*, void*), void** input, void** sums, concurrent_set_t* create_array , int length, int stride);
 
 // Opaque pointer to the mutex
 //typedef struct spin_mutex spin_mutex_t;
