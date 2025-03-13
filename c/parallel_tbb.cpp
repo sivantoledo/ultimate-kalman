@@ -12,7 +12,6 @@ struct tbb_spin_mutex {
 };
 
 extern "C" {
-	#include "parallel.h"
 
 	static int nthreads  = 0;
 	static int blocksize = 10;
