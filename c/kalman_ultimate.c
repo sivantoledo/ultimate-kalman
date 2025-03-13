@@ -19,33 +19,11 @@
 
 #define KALMAN_MATRIX_SHORT_TYPE
 #include "kalman.h"
-
-#ifdef BUILD_MEX
-#include "mex.h"
-
-static char assert_msg[128];
-static void mex_assert(int c, int line) {
-	if (!c) {
-		sprintf(assert_msg,"Assert failed in %s line %d",__FILE__,line);
-		mexErrMsgIdAndTxt("MyToolbox:arrayProduct:assertion",assert_msg);
-	}
-}
-
-#define assert(c) mex_assert((c),__LINE__)
-#else
-#include <assert.h>
-#endif
-
-//static int debug = 0;
-
-/******************************************************************************/
-/* UTILITIES                                                                  */
-/******************************************************************************/
+#include "memory.h"
+#include "assertions.h"
 
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
 #define MAX(a,b) ((a)>(b) ? (a) : (b))
-
-static double NaN = 0.0 / 0.0;
 
 /******************************************************************************/
 /* KALMAN STEPS                                                               */
@@ -533,7 +511,7 @@ static void observe(kalman_t *kalman, matrix_t *G_i, matrix_t *o_i, matrix_t *C_
        if (debug) printf("dtrtr done\n");
        */
     } else {
-      state = matrix_create_constant(n_i, 1, NaN);
+      state = matrix_create_constant(n_i, 1, kalman_nan);
     }
 
     kalman_current->state = state;

@@ -7,8 +7,10 @@
 #include <tbb/spin_mutex.h>
 
 extern "C" {
+
 #include "parallel.h"
 #include "concurrent_set.h"
+
 struct spin_mutex_st {
   tbb::spin_mutex mutex;
 };

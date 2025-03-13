@@ -25,48 +25,13 @@
 #include "kalman.h"
 #include "parallel.h"
 #include "concurrent_set.h"
-
-#ifdef PARALLEL
-
-#ifdef MACOS
-void* local_aligned_alloc(size_t alignment, size_t size) {
-	void* p;
-	int result = posix_memalign(&p, alignment, size);
-	if (result != 0) return NULL;
-	return p;
-} 
-#define malloc(x) local_aligned_alloc(64,(x))
-#else
-#define malloc(x) aligned_alloc(64,(x))
-#endif
-
-//#define parallel_for_c parallel_for_c_associative
-#endif
-
-#ifdef BUILD_MEX
-#include "mex.h"
-
-static char assert_msg[128];
-static void mex_assert(int c, int line) {
-	if (!c) {
-		sprintf(assert_msg,"Assert failed in %s line %d",__FILE__,line);
-		mexErrMsgIdAndTxt("MyToolbox:arrayProduct:assertion",assert_msg);
-	}
-}
-
-#define assert(c) mex_assert((c),__LINE__)
-#else
-#include <assert.h>
-#endif
+#include "memory.h"
+#include "assertions.h"
 
 /******************************************************************************/
 /* UTILITIES                                                                  */
 /******************************************************************************/
 
-#define MIN(a,b) ((a)<(b) ? (a) : (b))
-#define MAX(a,b) ((a)>(b) ? (a) : (b))
-
-static double NaN = 0.0 / 0.0;
 
 /******************************************************************************/
 /* KALMAN STEPS                                                               */

@@ -19,33 +19,14 @@
 
 #define KALMAN_MATRIX_SHORT_TYPE
 #include "kalman.h"
+#include "memory.h"
+#include "assertions.h"
 
-#ifdef BUILD_MEX
-#include "mex.h"
-
-static char assert_msg[128];
-static void mex_assert(int c, int line) {
-	if (!c) {
-		sprintf(assert_msg,"Assert failed in %s line %d",__FILE__,line);
-		mexErrMsgIdAndTxt("MyToolbox:arrayProduct:assertion",assert_msg);
-	}
-}
-
-#define assert(c) mex_assert((c),__LINE__)
-#else
-#include <assert.h>
-#endif
-
-//static int debug = 0;
+double kalman_nan = 0.0 / 0.0;
 
 /******************************************************************************/
 /* UTILITIES                                                                  */
 /******************************************************************************/
-
-#define MIN(a,b) ((a)<(b) ? (a) : (b))
-#define MAX(a,b) ((a)>(b) ? (a) : (b))
-
-static double NaN = 0.0 / 0.0;
 
 #if defined(BUILD_WIN32_GETTIMEOFDAY) && defined(_WIN32)
 #include <windows.h>
@@ -168,7 +149,7 @@ matrix_t* cov_weigh(matrix_t *cov, char cov_type, matrix_t *A) {
     default:
       printf("unknown covariance-matrix type %c\n", cov_type);
       assert(0);
-      WA = matrix_create_constant(matrix_rows(A), matrix_cols(A), NaN);
+      WA = matrix_create_constant(matrix_rows(A), matrix_cols(A), kalman_nan);
       break;
   }
 
@@ -330,7 +311,7 @@ matrix_t* kalman_estimate(kalman_t *kalman, int64_t si) {
 
   if (state == NULL) {
     int32_t dim = (*(kalman->step_get_dimension))(step);
-    return matrix_create_constant(dim, 1, NaN);
+    return matrix_create_constant(dim, 1, kalman_nan);
   }
 
   return matrix_create_copy(state);
@@ -433,7 +414,7 @@ matrix_t* kalman_covariance(kalman_t *kalman, int64_t si) {
     cov = matrix_create_copy((*(kalman->step_get_covariance))(step));
   } else {
     int32_t n_i = (*(kalman->step_get_dimension))(step);
-    cov = matrix_create_constant(n_i, n_i, NaN);
+    cov = matrix_create_constant(n_i, n_i, kalman_nan);
   }
 
   return cov;
@@ -444,7 +425,7 @@ static struct timeval begin, end;
 matrix_t* kalman_perftest(kalman_t *kalman, matrix_t *H, matrix_t *F, matrix_t *c, matrix_t *K, char K_type,
     matrix_t *G, matrix_t *o, matrix_t *C, char C_type, int32_t count, int32_t decimation) {
 
-  matrix_t *t = matrix_create_constant(count / decimation, 1, NaN);
+  matrix_t *t = matrix_create_constant(count / decimation, 1, kalman_nan);
   int32_t i, j, n;
 
   //printf("perftest count %d decimation %d rows %d\n",count,decimation,matrix_rows(t));
