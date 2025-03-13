@@ -300,7 +300,7 @@ static void create_steps_array(void* kalman_v, void* steps_v, kalman_step_index_
 }
 
 //void G_F_to_R_tilde(void* kalman_v, void* steps_v, kalman_step_index_t length, int** helper, kalman_step_index_t start, kalman_step_index_t end){
-static void G_F_to_R_tilde(void** steps_v, kalman_step_index_t length, kalman_step_index_t start, kalman_step_index_t end){
+static void G_F_to_R_tilde(void* steps_v, kalman_step_index_t length, kalman_step_index_t start, kalman_step_index_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
 	step_t* *steps = (step_t**)steps_v;
 
@@ -353,7 +353,7 @@ static void G_F_to_R_tilde(void** steps_v, kalman_step_index_t length, kalman_st
 }
 
 //void H_R_tilde_to_R(void* kalman_v, void* steps_v, int length, int** helper, kalman_step_index_t start, kalman_step_index_t end){
-static void H_R_tilde_to_R(void** steps_v, kalman_step_index_t length, kalman_step_index_t start, kalman_step_index_t end){
+static void H_R_tilde_to_R(void* steps_v, kalman_step_index_t length, kalman_step_index_t start, kalman_step_index_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
 	step_t* *steps = (step_t**)steps_v;
 
@@ -402,7 +402,7 @@ static void H_R_tilde_to_R(void** steps_v, kalman_step_index_t length, kalman_st
 }
 
 //void H_tilde_G_to_G_tilde(void* kalman_v, void* steps_v, int length, int** helper, kalman_step_index_t start, kalman_step_index_t end){
-static void H_tilde_G_to_G_tilde(void** steps_v, kalman_step_index_t length, kalman_step_index_t start, kalman_step_index_t end){
+static void H_tilde_G_to_G_tilde(void* steps_v, kalman_step_index_t length, kalman_step_index_t start, kalman_step_index_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
 	step_t* *steps = (step_t**)steps_v;
 
@@ -434,7 +434,7 @@ static void H_tilde_G_to_G_tilde(void** steps_v, kalman_step_index_t length, kal
 }
 
 //void Variables_Renaming(void* kalman_v, void* steps_v, int length, int** helper, kalman_step_index_t start, kalman_step_index_t end){
-static void Variables_Renaming(void** steps_v, kalman_step_index_t length, kalman_step_index_t start, kalman_step_index_t end){
+static void Variables_Renaming(void* steps_v, kalman_step_index_t length, kalman_step_index_t start, kalman_step_index_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
 	step_t* *steps = (step_t**)steps_v;
 
@@ -599,7 +599,7 @@ static void Convert_LDLT(void* steps_v, kalman_step_index_t length, kalman_step_
 }
 
 //void SelInv(void* kalman_v, void* steps_v, int length, int** converters, kalman_step_index_t start, kalman_step_index_t end){
-static void SelInv(void* steps_v, void** converters_v, kalman_step_index_t length, kalman_step_index_t start, kalman_step_index_t end){
+static void SelInv(void* steps_v, void* converters_v, kalman_step_index_t length, kalman_step_index_t start, kalman_step_index_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
 	step_t** steps = (step_t**) steps_v;
 	kalman_step_index_t** converters = (kalman_step_index_t**) converters_v;
