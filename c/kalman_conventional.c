@@ -27,7 +27,7 @@
 /******************************************************************************/
 
 typedef struct step_st {
-  int64_t step; // logical step number
+  kalman_step_index_t step; // logical step number
   int32_t dimension;
 
   char C_type;
@@ -104,7 +104,7 @@ static void step_rollback(void *v) {
   s->covariance = s->predictedCovariance;
 }
 
-static int64_t step_get_index(void *v) {
+static kalman_step_index_t step_get_index(void *v) {
   return ((step_t*) v)->step;
 }
 
@@ -340,9 +340,9 @@ static void smooth(kalman_t *kalman) {
   if (farray_size(kalman->steps) == 0)
     return;
 
-  int64_t si;
-  int64_t last = farray_last_index(kalman->steps);
-  int64_t first = farray_first_index(kalman->steps);
+  kalman_step_index_t si;
+  kalman_step_index_t last = farray_last_index(kalman->steps);
+  kalman_step_index_t first = farray_first_index(kalman->steps);
 
   step_t *i = farray_get(kalman->steps, last);
 

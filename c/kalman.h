@@ -14,6 +14,8 @@
 
 extern double kalman_nan;
 
+typedef int64_t kalman_step_index_t;
+
 /******************************************************************************/
 /* COVARIANCE MATRICES                                                        */
 /******************************************************************************/
@@ -68,8 +70,8 @@ typedef struct kalman_st {
     void (*step_free)(void *step_v);  // takes a pointer to a step_t
     void (*step_rollback)(void *step_v);  // rollback the step to just after the call to evolve
 
-    int64_t (*step_get_index)(void *step_v);
-    int64_t (*step_get_dimension)(void *step_v);
+    kalman_step_index_t (*step_get_index)(void *step_v);
+    int32_t (*step_get_dimension)(void *step_v);
     kalman_matrix_t* (*step_get_state)(void *step_v);
     kalman_matrix_t* (*step_get_covariance)(void *step_v);
     char (*step_get_covariance_type)();
@@ -80,19 +82,19 @@ kalman_t* kalman_create();
 kalman_t* kalman_create_options(uint32_t options);
 void kalman_free(kalman_t *kalman);
 
-int64_t kalman_earliest(kalman_t *kalman);
-int64_t kalman_latest(kalman_t *kalman);
+kalman_step_index_t kalman_earliest(kalman_t *kalman);
+kalman_step_index_t kalman_latest(kalman_t *kalman);
 
 void kalman_evolve(kalman_t *kalman, int32_t n_i, kalman_matrix_t *H_i, kalman_matrix_t *F_i, kalman_matrix_t *c_i,
     kalman_matrix_t *K_i, char K_type);
 void kalman_observe(kalman_t *kalman, kalman_matrix_t *G_i, kalman_matrix_t *o_i, kalman_matrix_t *C_i, char C_type);
 void kalman_smooth(kalman_t *kalman);
 
-kalman_matrix_t* kalman_estimate(kalman_t *kalman, int64_t si);
-kalman_matrix_t* kalman_covariance(kalman_t *kalman, int64_t si);
-char kalman_covariance_type(kalman_t *kalman, int64_t si);
-void kalman_forget(kalman_t *kalman, int64_t si);
-void kalman_rollback(kalman_t *kalman, int64_t si);
+kalman_matrix_t* kalman_estimate(kalman_t *kalman, kalman_step_index_t si);
+kalman_matrix_t* kalman_covariance(kalman_t *kalman, kalman_step_index_t si);
+char kalman_covariance_type(kalman_t *kalman, kalman_step_index_t si);
+void kalman_forget(kalman_t *kalman, kalman_step_index_t si);
+void kalman_rollback(kalman_t *kalman, kalman_step_index_t si);
 kalman_matrix_t* kalman_perftest(kalman_t *kalman,
                                  kalman_matrix_t *H,
                                  kalman_matrix_t *F,

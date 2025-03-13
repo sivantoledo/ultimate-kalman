@@ -30,7 +30,7 @@
 /******************************************************************************/
 
 typedef struct step_st {
-  int64_t step; // logical step number
+  kalman_step_index_t step; // logical step number
   int32_t dimension;
 
   kalman_matrix_t *Rdiag;
@@ -86,7 +86,7 @@ static void step_rollback(void *v) {
   matrix_free(s->y);
 }
 
-static int64_t step_get_index(void *v) {
+static kalman_step_index_t step_get_index(void *v) {
   return ((step_t*) v)->step;
 }
 
@@ -534,9 +534,9 @@ static void smooth(kalman_t *kalman) {
   if (farray_size(kalman->steps) == 0)
     return;
 
-  int64_t si;
-  int64_t last = farray_last_index(kalman->steps);
-  int64_t first = farray_first_index(kalman->steps);
+  kalman_step_index_t si;
+  kalman_step_index_t last = farray_last_index(kalman->steps);
+  kalman_step_index_t first = farray_first_index(kalman->steps);
 
   step_t *i;
 
@@ -636,7 +636,7 @@ int main(int argc, char *argv[]) {
   printf("farray first %lld\n",farray_first_index(a));
   printf("farray last  %lld\n",farray_last_index(a));
   for (int i=farray_first_index(a); i<=farray_last_index(a); i++) {
-  	printf("farray get(%d) %lld\n",i,(int64_t) farray_get(a,i));
+  	printf("farray get(%d) %lld\n",i,(kalman_step_index_t) farray_get(a,i));
   }
 
   farray_drop_first(a);
@@ -646,11 +646,11 @@ int main(int argc, char *argv[]) {
   printf("farray first %lld\n",farray_first_index(a));
   printf("farray last  %lld\n",farray_last_index(a));
   for (int i=farray_first_index(a); i<=farray_last_index(a); i++) {
-  	printf("farray get(%d) %lld\n",i,(int64_t) farray_get(a,i));
+  	printf("farray get(%d) %lld\n",i,(kalman_step_index_t) farray_get(a,i));
   }
 
-	printf("farray get_first %lld\n",(int64_t) farray_get_first(a));
-	printf("farray get_last  %lld\n",(int64_t) farray_get_last(a));
+	printf("farray get_first %lld\n",(kalman_step_index_t) farray_get_first(a));
+	printf("farray get_last  %lld\n",(kalman_step_index_t) farray_get_last(a));
 
   printf("  farray append 10\n");
   for (int i=0; i<10; i++) farray_append(a,(void*)77);

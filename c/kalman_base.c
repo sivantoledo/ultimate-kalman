@@ -265,7 +265,7 @@ void kalman_free(kalman_t *kalman) {
   free(kalman);
 }
 
-int64_t kalman_earliest(kalman_t *kalman) {
+kalman_step_index_t kalman_earliest(kalman_t *kalman) {
   if (farray_size(kalman->steps) == 0)
     return -1;
   //step_t* s = farray_get_first(kalman->steps);
@@ -274,7 +274,7 @@ int64_t kalman_earliest(kalman_t *kalman) {
   return (*(kalman->step_get_index))(s);
 }
 
-int64_t kalman_latest(kalman_t *kalman) {
+kalman_step_index_t kalman_latest(kalman_t *kalman) {
   if (farray_size(kalman->steps) == 0)
     return -1;
   //step_t* s = farray_get_last(kalman->steps);
@@ -296,7 +296,7 @@ void kalman_smooth(kalman_t *kalman) {
   (*(kalman->smooth))(kalman);
 }
 
-matrix_t* kalman_estimate(kalman_t *kalman, int64_t si) {
+matrix_t* kalman_estimate(kalman_t *kalman, kalman_step_index_t si) {
 #ifdef BUILD_DEBUG_PRINTOUTS
 	printf("kalman_estimate\n");
 #endif
@@ -317,7 +317,7 @@ matrix_t* kalman_estimate(kalman_t *kalman, int64_t si) {
   return matrix_create_copy(state);
 }
 
-void kalman_forget(kalman_t *kalman, int64_t si) {
+void kalman_forget(kalman_t *kalman, kalman_step_index_t si) {
 #ifdef BUILD_DEBUG_PRINTOUTS
 	printf("forget %d\n",(int) si);
 #endif
@@ -349,7 +349,7 @@ void kalman_forget(kalman_t *kalman, int64_t si) {
 #endif
 }
 
-void kalman_rollback(kalman_t *kalman, int64_t si) {
+void kalman_rollback(kalman_t *kalman, kalman_step_index_t si) {
   //printf("rollback %d\n",si);
   if (farray_size(kalman->steps) == 0)
     return;
@@ -361,7 +361,7 @@ void kalman_rollback(kalman_t *kalman, int64_t si) {
 
   //step_t* step;
   void *step;
-  int64_t sj;
+  kalman_step_index_t sj;
   do {
     step = farray_drop_last(kalman->steps);
     sj = (*(kalman->step_get_index))(step);
@@ -391,11 +391,11 @@ void kalman_rollback(kalman_t *kalman, int64_t si) {
 
 }
 
-char kalman_covariance_type(kalman_t *kalman, int64_t si) {
+char kalman_covariance_type(kalman_t *kalman, kalman_step_index_t si) {
   return (*(kalman->step_get_covariance_type))(); // currently the same for all steps
 }
 
-matrix_t* kalman_covariance(kalman_t *kalman, int64_t si) {
+matrix_t* kalman_covariance(kalman_t *kalman, kalman_step_index_t si) {
 
 #ifdef BUILD_DEBUG_PRINTOUTS
 	printf("kalman_covariance\n");
@@ -501,7 +501,7 @@ int main(int argc, char *argv[]) {
   printf("farray first %lld\n",farray_first_index(a));
   printf("farray last  %lld\n",farray_last_index(a));
   for (int i=farray_first_index(a); i<=farray_last_index(a); i++) {
-  	printf("farray get(%d) %lld\n",i,(int64_t) farray_get(a,i));
+  	printf("farray get(%d) %lld\n",i,(kalman_step_index_t) farray_get(a,i));
   }
 
   farray_drop_first(a);
@@ -511,11 +511,11 @@ int main(int argc, char *argv[]) {
   printf("farray first %lld\n",farray_first_index(a));
   printf("farray last  %lld\n",farray_last_index(a));
   for (int i=farray_first_index(a); i<=farray_last_index(a); i++) {
-  	printf("farray get(%d) %lld\n",i,(int64_t) farray_get(a,i));
+  	printf("farray get(%d) %lld\n",i,(kalman_step_index_t) farray_get(a,i));
   }
 
-	printf("farray get_first %lld\n",(int64_t) farray_get_first(a));
-	printf("farray get_last  %lld\n",(int64_t) farray_get_last(a));
+	printf("farray get_first %lld\n",(kalman_step_index_t) farray_get_first(a));
+	printf("farray get_last  %lld\n",(kalman_step_index_t) farray_get_last(a));
 
   printf("  farray append 10\n");
   for (int i=0; i<10; i++) farray_append(a,(void*)77);
