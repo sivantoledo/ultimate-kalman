@@ -53,7 +53,7 @@ extern "C" {
     	tbb::global_control control(tbb::global_control::max_allowed_parallelism, nthreads);
 
         tbb::parallel_scan(
-            tbb::blocked_range<size_t>(0, length),
+            tbb::blocked_range<size_t>(0, length, blocksize),
             (void*) NULL, /* starting value (identity elements) */
             // now define the scan operation
             [input, sums, create_array, f, length, stride](const tbb::blocked_range<size_t>& r, void* sum, bool is_final_scan) {
