@@ -315,6 +315,20 @@ int main(int argc, char* argv[]) {
 
 	printf("performance testing smooth dimension=%d step count=%d, starting\n",n,count);
 
+	char* nthreads_string = getenv("NTHREADS");
+	int nthreads = 0;
+	if (nthreads_string != NULL && sscanf(nthreads_string,"%d",&nthreads)==1) {
+		parallel_set_thread_limit(nthreads);
+		printf("limiting to %d threads/cores\n",nthreads);
+	}
+
+	char* blocksize_string = getenv("TBB_BLOCKSIZE");
+	int blocksize = 0;
+	if (blocksize_string != NULL && sscanf(blocksize_string,"%d",&blocksize)==1) {
+		parallel_set_blocksize(blocksize);
+		printf("setting blocksize to %d\n",blocksize);
+	}
+
 	double t = 0.0;
 
 	switch (n) {
