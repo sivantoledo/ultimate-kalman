@@ -873,6 +873,7 @@ static void smoothed_to_state(void* kalman_v, void* smoothed_v, size_t l, size_t
 	}
 }
 
+#ifdef OBSOLETE
 //step_t** cummulativeSumsSequential(kalman_t* kalman, step_t* (*f)(step_t*, step_t*), int s, int e, int stride) {
 static step_t** cummulativeSumsSequential(kalman_t* kalman, void* (*f)(void*, void*, void*, int, int), int s, int e, int stride) {
 	step_t** sums = (step_t**)malloc((abs(e-s) + 1)*sizeof(step_t*));
@@ -897,6 +898,7 @@ static step_t** cummulativeSumsSequential(kalman_t* kalman, void* (*f)(void*, vo
 	}
 	return sums;
 }
+#endif
 
 static void prefix_sums_sequential(void* (*f)(void*, void*, void*, int, int), void** a, void** sums, int s, int e, int stride) {
 	//step_t** sums = (step_t**)malloc((abs(e-s) + 1)*sizeof(step_t*));
@@ -907,6 +909,7 @@ static void prefix_sums_sequential(void* (*f)(void*, void*, void*, int, int), vo
 	sums[i] = sum;
 	i++;
 
+	/* The two blocks look similar, but the termination condition of the loop is different */
 	if (s > e) {
 		for (int j=s+stride; j>=e; j+=stride) {
 		    sum = f(sum,a[j], NULL, -1, -1);
@@ -920,7 +923,6 @@ static void prefix_sums_sequential(void* (*f)(void*, void*, void*, int, int), vo
 			i++;
 		}
 	}
-	return sums;
 }
 
 
