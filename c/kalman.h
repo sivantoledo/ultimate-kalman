@@ -9,14 +9,27 @@
 #include "mex.h"
 #endif
 
+extern double kalman_nan;
 #include "matrix_ops.h"
 #include "flexible_arrays.h"
 
-extern double kalman_nan;
-
 typedef int64_t kalman_step_index_t;
 
-typedef kalman_step_index_t farray_index_t;
+#ifdef KALMAN_STEP_INDEX_TYPE_INT32
+typedef int32_t kalman_step_index_t;
+#endif
+
+#ifdef KALMAN_STEP_INDEX_TYPE_UINT32
+typedef uint32_t kalman_step_index_t;
+#endif
+
+#ifdef KALMAN_STEP_INDEX_TYPE_INT64
+typedef int64_t kalman_step_index_t;
+#endif
+
+#ifdef KALMAN_STEP_INDEX_TYPE_UINT64
+typedef uint64_t kalman_step_index_t;
+#endif
 
 /******************************************************************************/
 /* COVARIANCE MATRICES                                                        */

@@ -5,6 +5,22 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#ifdef FARRAY_INDEX_TYPE_INT32
+typedef int32_t farray_index_t;
+#endif
+
+#ifdef FARRAY_INDEX_TYPE_UINT32
+typedef uint32_t farray_index_t;
+#endif
+
+#ifdef FARRAY_INDEX_TYPE_INT64
+typedef int64_t farray_index_t;
+#endif
+
+#ifdef FARRAY_INDEX_TYPE_UINT64
+typedef uint64_t farray_index_t;
+#endif
+
 /******************************************************************************/
 /* FLEXIBLE ARRAYS OF POINTERS                                                */
 /******************************************************************************/
