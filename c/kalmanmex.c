@@ -81,9 +81,9 @@ static int selector(char* expected, int nrhs, const mxArray *prhs[]) {
 }
 
 static void argCheck(char* selector,
-		                 int inMin, int inMax,
-										 int outMin, int outMax,
-		                 int nlhs, mxArray *plhs[],
+                     int inMin, int inMax,
+                     int outMin, int outMax,
+                     int nlhs, mxArray *plhs[],
                      int nrhs, const mxArray *prhs[]) {
 
 	int i;
@@ -115,11 +115,15 @@ static void mexTemplate(char* selector,int nlhs, mxArray *plhs[], int nrhs, cons
 
 
 static void mexCreate(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
-	argCheck("create",0,0,1,1,nlhs,plhs,nrhs,prhs);
+  //argCheck("create",0,0,1,1,nlhs,plhs,nrhs,prhs);
+  argCheck("create",1,1,1,1,nlhs,plhs,nrhs,prhs);
 
   int handle;
 
-  kalman_t* kalman = kalman_create();
+  kalman_options_t options = (kalman_options_t) floor(mxGetScalar(prhs[1]));
+
+  //kalman_t* kalman = kalman_create();
+  kalman_t* kalman = kalman_create_options(options);
 
   if (kalman==NULL) {
   	handle = -1;
