@@ -231,7 +231,7 @@ classdef UltimateKalman < KalmanBase
                 kalman.steps{i}.estimatedState = v;
             end
 
-            if ~isfield(kalman.options,'CovarianceEstimates') || strcmp(kalman.options.CovarianceEstimates,'PaigeSaunders')
+            if ~isfield(kalman.options,'covarianceEstimates') || strcmp(kalman.options.covarianceEstimates,'PaigeSaunders')
             R = [];
             for i=l:-1:1
                 if i == l
@@ -252,7 +252,7 @@ classdef UltimateKalman < KalmanBase
             end
             end
 
-            if isfield(kalman.options,'CovarianceEstimates') && strcmp(kalman.options.CovarianceEstimates,'SelInv')
+            if isfield(kalman.options,'covarianceEstimates') && strcmp(kalman.options.covarianceEstimates,'SelInv')
             % these formulas are derived from the paper "SelInv—An
             % Algorithm for Selected Inversion of a Sparse Symmetric
             % Matrix" by Lin et al, ACM Trans. on Math Sotware, 2011, 

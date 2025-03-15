@@ -24,15 +24,41 @@ classdef UltimateKalmanNative < handle
 
     methods (Access = public)
         function kalman = UltimateKalmanNative(options)
+            if nargin==0
+                options = struct();
+            end
+
+            if ~isfield(options,'algorithm')
+                warning('Setting options.algorithm to Ultimate');
+                options.algorithm = 'Ultimate';
+            end
+            if ~isfield(options,'smoothOnly')
+                options.smoothOnly = false;
+            end
+            if ~isfield(options,'estimateCovariance')
+                options.estimateCovariance = true;
+            end
+
+            binaryOptions = 0;
+            if strcmp(options.algorithm,'Ultimate');     binaryOptions = bitshift(1,0); end
+            if strcmp(options.algorithm,'Conventional'); binaryOptions = bitshift(1,1); end
+            if strcmp(options.algorithm,'Oddeven');      binaryOptions = bitshift(1,2); end
+            if strcmp(options.algorithm,'Associative');  binaryOptions = bitshift(1,3); end
+            if binaryOptions==0
+                error('The value %s is invalid for options.algorithm',options.algorithm);
+            end
+            if options.estimateCovariance == false;      binaryOptions = binaryOptions + bitshift(1,16); end
+            %if options.smoothOnly         == true;       binaryOptions = binaryOptions + bitshift(1,17); end
+
             kalman = kalman@handle();
-            kalman.handle = ultimatekalmanmex('create');
+            kalman.handle = kalmanmex('create',binaryOptions);
             if kalman.handle < 0
                 error('no more handles');
             end
         end
 
         function delete(kalman)
-            ultimatekalmanmex('free',kalman.handle);
+            kalmanmex('free',kalman.handle);
             kalman.handle = -1; % invalid; not needed but added for safety
         end
 
@@ -42,7 +68,7 @@ classdef UltimateKalmanNative < handle
             %
             %   kalman.EARLIEST() returns the index of the earliest step
             %   that has not been forgoten. Step numbers start from zero.
-            i = ultimatekalmanmex('earliest',kalman.handle);
+            i = kalmanmex('earliest',kalman.handle);
         end
 
         function i = latest(kalman)
@@ -50,7 +76,7 @@ classdef UltimateKalmanNative < handle
             %
             %   kalman.LATEST() returns the index of the latest step that 
             %   was observed.
-            i = ultimatekalmanmex('latest',kalman.handle);
+            i = kalmanmex('latest',kalman.handle);
         end
 
         function evolve(kalman,n_i,H_i,F_i,c_i,K_i)
@@ -71,7 +97,7 @@ classdef UltimateKalmanNative < handle
             %   an identity matrix (possibly rectangular, if the dimension of
             %   this state is larger than the dimension of the previous state).
             if nargin==2 || isempty(F_i)
-               ultimatekalmanmex('evolve',kalman.handle,n_i,[],[],[],[],double('X'));
+               kalmanmex('evolve',kalman.handle,n_i,[],[],[],[],double('X'));
                return;
             end
             l_i = size(F_i,1);                                             % row dimension
@@ -84,7 +110,8 @@ classdef UltimateKalmanNative < handle
             end
 
             [R,type] = rep(K_i);
-            ultimatekalmanmex('evolve',kalman.handle,n_i,H_i,F_i,c_i,R,double(type));
+            %type
+            kalmanmex('evolve',kalman.handle,n_i,H_i,F_i,c_i,R,double(type));
 
         end
 
@@ -104,11 +131,11 @@ classdef UltimateKalmanNative < handle
             %   This method must be called after advance and evolve.
 
             if nargin<=1
-                ultimatekalmanmex('observe',kalman.handle,[],[],[],double('X'));
+                kalmanmex('observe',kalman.handle,[],[],[],double('X'));
                 return;
             end
             [R,type] = rep(C_i);
-            ultimatekalmanmex('observe',kalman.handle,G_i,o_i,R,double(type));
+            kalmanmex('observe',kalman.handle,G_i,o_i,R,double(type));
 
         end
 
@@ -149,10 +176,10 @@ classdef UltimateKalmanNative < handle
             if nargin<2
                 s = -1;
             end
-            estimate = ultimatekalmanmex('estimate',kalman.handle,s);
-            %W        = ultimatekalmanmex('covariance',kalman.handle,s);
+            estimate = kalmanmex('estimate',kalman.handle,s);
+            %W        = kalmanmex('covariance',kalman.handle,s);
             %cov = CovarianceMatrix(W,'W');
-            [W,dtype]  = ultimatekalmanmex('covariance',kalman.handle,s);
+            [W,dtype]  = kalmanmex('covariance',kalman.handle,s);
             cov = CovarianceMatrix(W,char(dtype));
         end
 
@@ -167,7 +194,7 @@ classdef UltimateKalmanNative < handle
                 s = -1;
             end
  
-            ultimatekalmanmex('forget',kalman.handle,s);
+            kalmanmex('forget',kalman.handle,s);
         end
 
         function rollback(kalman,s)
@@ -186,7 +213,7 @@ classdef UltimateKalmanNative < handle
             if nargin<2
                 s = -1;
             end
-            ultimatekalmanmex('rollback',kalman.handle,s);
+            kalmanmex('rollback',kalman.handle,s);
         end
         
         function smooth(kalman)
@@ -197,7 +224,7 @@ classdef UltimateKalmanNative < handle
             % 
             %   This method must be called after the last step has been
             %   observed.
-            ultimatekalmanmex('smooth',kalman.handle);
+            kalmanmex('smooth',kalman.handle);
         end
 
         function u = gather(kalman)
@@ -235,7 +262,7 @@ classdef UltimateKalmanNative < handle
 
             [C_rep,C_type] = rep(C);
             [K_rep,K_type] = rep(K);
-            t = ultimatekalmanmex('perftest',kalman.handle,H,F,c,K_rep,double(K_type),G,o,C_rep,double(C_type),double(count),double(decimation));
+            t = kalmanmex('perftest',kalman.handle,H,F,c,K_rep,double(K_type),G,o,C_rep,double(C_type),double(count),double(decimation));
         end
         
     end % methods
