@@ -134,7 +134,7 @@ static void mexCreate(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]
   	//printf("create %d %08x\n",handle,kalman);
 
   	if (handle != -1) out[0] = handle;
-  	else              out[0] = NaN;
+  	else              out[0] = kalman_nan;
   }
 }
 
@@ -158,7 +158,7 @@ static void mexEarliest(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs
   plhs[0] = mxCreateDoubleMatrix(1,1,mxREAL);
   double* out = mxGetPr(plhs[0]);
 
-  if (p==NULL) out[0] = NaN;
+  if (p==NULL) out[0] = kalman_nan;
   else                  out[0] = (double) kalman_earliest(p);
 }
 
@@ -171,7 +171,7 @@ static void mexLatest(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]
   plhs[0] = mxCreateDoubleMatrix(1,1,mxREAL);
   double* out = mxGetPr(plhs[0]);
 
-  if (kalman==NULL) out[0] = NaN;
+  if (kalman==NULL) out[0] = kalman_nan;
   else                  out[0] = (double) kalman_latest(kalman);
 }
 

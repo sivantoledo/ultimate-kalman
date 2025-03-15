@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <assert.h>
 
 #ifdef _WIN32
 // for "unused" attribute
@@ -16,6 +15,22 @@
 // string.h for memcpy
 #else
 #include <unistd.h>
+#endif
+
+#ifdef BUILD_MEX
+#include "mex.h"
+
+static char assert_msg[128];
+static void mex_assert(int c, int line) {
+    if (!c) {
+        sprintf(assert_msg,"Assert failed in %s line %d",__FILE__,line);
+        mexErrMsgIdAndTxt("MyToolbox:arrayProduct:assertion",assert_msg);
+    }
+}
+
+#define assert(c) mex_assert((c),__LINE__)
+#else
+#include <assert.h>
 #endif
 
 #include "flexible_arrays.h"

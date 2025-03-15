@@ -17,10 +17,25 @@
 #include <unistd.h>
 #endif
 
+#ifdef BUILD_MEX
+#include "mex.h"
+
+static char assert_msg[128];
+static void mex_assert(int c, int line) {
+    if (!c) {
+        sprintf(assert_msg,"Assert failed in %s line %d",__FILE__,line);
+        mexErrMsgIdAndTxt("MyToolbox:arrayProduct:assertion",assert_msg);
+    }
+}
+
+#define assert(c) mex_assert((c),__LINE__)
+#else
+#include <assert.h>
+#endif
+
 #define KALMAN_MATRIX_SHORT_TYPE
 #include "kalman.h"
 #include "memory.h"
-#include "assertions.h"
 
 double kalman_nan = 0.0 / 0.0;
 
@@ -161,6 +176,7 @@ matrix_t* kalman_covariance_matrix_weigh(matrix_t *cov, char cov_type, matrix_t 
 
 // SUPPORT 'W','C' only
 matrix_t* kalman_covariance_matrix_explicit(matrix_t *cov, char type) {
+fprintf(stderr,"cov type %c\n",type);
   assert(type == 'W' || type == 'C' || type == 'U' || type == 'F');
   if (type == 'W') {
     matrix_t *WT = matrix_create_transpose(cov);
@@ -202,10 +218,10 @@ void kalman_create_oddeven     (kalman_t*);
 void kalman_create_associative (kalman_t*);
 
 kalman_t* kalman_create() {
-  //return kalman_create_options( KALMAN_ALGORITHM_ULTIMATE ); // default
+  return kalman_create_options( KALMAN_ALGORITHM_ULTIMATE ); // default
   //return kalman_create_options( KALMAN_ALGORITHM_ULTIMATE | KALMAN_NO_COVARIANCE ); // default
   //return kalman_create_options( KALMAN_ALGORITHM_ODDEVEN | KALMAN_NO_COVARIANCE ); // default
-  return kalman_create_options(KALMAN_ALGORITHM_ASSOCIATIVE); // default
+  //return kalman_create_options(KALMAN_ALGORITHM_ASSOCIATIVE); // default
 }
 
 kalman_t* kalman_create_options(kalman_options_t options) {
