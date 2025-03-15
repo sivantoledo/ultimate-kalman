@@ -61,7 +61,7 @@ typedef enum {
   KALMAN_ALGORITHM_CONVENTIONAL    = 1 << 1, // 0x02 (2)
   KALMAN_ALGORITHM_ODDEVEN         = 1 << 2,
   KALMAN_ALGORITHM_ASSOCIATIVE     = 1 << 3,
-  KALMAN_NO_COVARIANCE             = 1 << 15
+  KALMAN_NO_COVARIANCE             = 1 << 16
 } kalman_options_t;
 
 struct kalman_st;
