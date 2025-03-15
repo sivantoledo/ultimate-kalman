@@ -177,7 +177,17 @@ matrix_t* kalman_covariance_matrix_weigh(matrix_t *cov, char cov_type, matrix_t 
 // SUPPORT 'W','C' only
 matrix_t* kalman_covariance_matrix_explicit(matrix_t *cov, char type) {
 fprintf(stderr,"cov type %c\n",type);
-  assert(type == 'W' || type == 'C' || type == 'U' || type == 'F');
+  assert(type == 'w' || type == 'W' || type == 'C' || type == 'U' || type == 'F');
+  if (type == 'w') {
+    blas_int_t n = matrix_rows(cov);
+
+    matrix_t* C = matrix_create_constant(n, n, 0.0);
+
+    for (int j = 0; j < n; j++) {
+      matrix_set(C, j, j, pow(matrix_get(cov, j, 0),-2.0) );
+    }
+    return C;
+  }
   if (type == 'W') {
     matrix_t *WT = matrix_create_transpose(cov);
     matrix_t *WTW = matrix_create_multiply(WT, cov);
