@@ -269,7 +269,8 @@ kalman_t* kalman_create_options(kalman_options_t options) {
       break;
     case KALMAN_ALGORITHM_ODDEVEN:
       printf("calling kalman_oddeven\n");
-      kalman_create_oddeven(kalman);
+      //kalman_create_oddeven(kalman);
+      kalman_create_explicit_representation(kalman);
       break;
     case KALMAN_ALGORITHM_ASSOCIATIVE:
       printf("calling kalman_associative\n");

@@ -130,6 +130,7 @@ static void step_free(void* v) {
 	free(s);
 }
 
+#ifdef OBSOLETE
 static void step_rollback(void* v) {
 	step_t* s = (step_t*) v;
 	
@@ -171,7 +172,7 @@ static kalman_matrix_t* step_get_covariance(void* v) {
 static char step_get_covariance_type(void* v) {
 	return 'C';
 }
-
+#endif
 /******************************************************************************/
 /* KALMAN                                                                     */
 /******************************************************************************/
@@ -183,6 +184,7 @@ static char step_get_covariance_type(void* v) {
  * unification with associative evolve and observe!)
  */
 
+#ifdef OBSOLETE
 static void evolve(kalman_t* kalman, int32_t n_i, matrix_t* H_i, matrix_t* F_i, matrix_t* c_i, matrix_t* K_i, char K_type) {
 	step_t* kalman_current;
 	kalman->current = kalman_current = step_create();
@@ -274,6 +276,7 @@ static void observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 	printf("kalman_observe done\n");
 #endif
 }
+#endif
 
 /******************************************************************************/
 /* ADDITIONAL MATRIX OPERATIONS                                               */
@@ -304,8 +307,17 @@ static void free_and_assign(matrix_t** original, matrix_t* new){
 /* FUNCIONS THAT CAN BE APPLIED IN PARALLEL TO AN ARRAY OF STEPS              */
 /******************************************************************************/
 
-//void assign_steps(void* kalman_v, void* steps_v, int length, int** helper, kalman_step_index_t start, kalman_step_index_t end) {
 static void create_steps_array(void* kalman_v, void* steps_v, kalman_step_index_t length, kalman_step_index_t start, kalman_step_index_t end) {
+    kalman_t* kalman = (kalman_t*) kalman_v;
+    step_t** steps = (step_t**) steps_v;
+
+    for (kalman_step_index_t i = start; i < end; ++i) {
+        steps[i] = farray_get(kalman->steps,i);
+    }
+}
+
+//void assign_steps(void* kalman_v, void* steps_v, int length, int** helper, kalman_step_index_t start, kalman_step_index_t end) {
+static void create_steps_array_new(void* kalman_v, void* steps_v, kalman_step_index_t length, kalman_step_index_t start, kalman_step_index_t end) {
 	kalman_t* kalman = (kalman_t*) kalman_v;
 	step_t** steps = (step_t**) steps_v;
 	
@@ -1101,6 +1113,7 @@ static void smooth_recursive(kalman_options_t options, step_t** steps, kalman_st
 
 }
 
+#ifdef OBSOLETE
 static void smooth(kalman_t* kalman) {
 
 	kalman_step_index_t length = farray_size(kalman->steps);
@@ -1123,7 +1136,118 @@ static void smooth(kalman_t* kalman) {
 
 	free(steps);
 }
+#endif
 
+static void steps_init(void* steps_v, void* steps_array_v, kalman_step_index_t l, kalman_step_index_t start, kalman_step_index_t end) {
+  step_t*  steps_array  = (step_t*)   steps_array_v;
+  step_t** steps        = (step_t**)  steps_v;
+  for (kalman_step_index_t j = start; j < end; j++) {
+    steps[j] = &(steps_array[j]);
+    step_t* s = steps[j];
+
+    s->step      = -1;
+    s->dimension = -1;
+
+    s->H = NULL;
+    s->F = NULL;
+    s->c = NULL;
+
+    s->G = NULL;
+    s->o = NULL;
+    s->C = NULL;
+
+    s->X = NULL;
+    s->Y = NULL;
+    s->Z = NULL;
+    s->R = NULL;
+
+    s->X_tilde = NULL;
+    s->F_tilde = NULL;
+    s->H_tilde = NULL;
+    s->R_tilde = NULL;
+    s->G_tilde = NULL;
+
+    s->state = NULL;
+    s->covariance = NULL;
+  }
+}
+
+static void steps_weigh(void* equations_v, void* steps_v, kalman_step_index_t l, kalman_step_index_t start, kalman_step_index_t end) {
+  kalman_step_equations_t** equations = (kalman_step_equations_t**) equations_v;
+  step_t**                  steps     = (step_t**)                  steps_v;
+  for (kalman_step_index_t i = start; i < end; i++) {
+
+    steps[i]->step      = equations[i]->step;
+    steps[i]->dimension = equations[i]->dimension;
+
+    if (equations[i]->step > 0) {
+      matrix_t* H_i = equations[i]->H;
+      matrix_t* F_i = equations[i]->F;
+      matrix_t* c_i = equations[i]->c;
+      matrix_t* K_i = equations[i]->K;
+      char K_type   = equations[i]->K_type;
+
+      matrix_t* V_i_H_i = kalman_covariance_matrix_weigh(K_i,K_type,H_i);
+      matrix_t* V_i_F_i = kalman_covariance_matrix_weigh(K_i,K_type,F_i);
+      matrix_t* V_i_c_i = kalman_covariance_matrix_weigh(K_i,K_type,c_i);
+
+      matrix_mutate_scale(V_i_F_i,-1.0);
+
+      steps[i]->H = V_i_H_i;
+      steps[i]->F = V_i_F_i;
+      steps[i]->c = V_i_c_i;
+    }
+
+    matrix_t* G_i = equations[i]->G;
+    matrix_t* o_i = equations[i]->o;
+    matrix_t* C_i = equations[i]->C;
+    char C_type   = equations[i]->C_type;
+
+    if (o_i != NULL) {
+      matrix_t* W_i_G_i = kalman_covariance_matrix_weigh(C_i,C_type,G_i);
+      matrix_t* W_i_o_i = kalman_covariance_matrix_weigh(C_i,C_type,o_i);
+
+      steps[i]->G  = W_i_G_i;
+      steps[i]->o  = W_i_o_i;
+    }
+  }
+}
+
+static void steps_finalize(void* equations_v, void* steps_v, kalman_step_index_t l, kalman_step_index_t start, kalman_step_index_t end) {
+  kalman_step_equations_t** equations = (kalman_step_equations_t**) equations_v;
+  step_t**                  steps     = (step_t**)                  steps_v;
+  for (kalman_step_index_t i = start; i < end; i++) {
+
+    equations[i]->state      = steps[i]->state;
+    equations[i]->covariance = steps[i]->covariance;
+  }
+}
+
+void kalman_smooth_oddeven(kalman_options_t options, kalman_step_equations_t** equations, kalman_step_index_t l) {
+  //step_t** steps = (step_t**) malloc(length * sizeof(step_t*));
+
+  fprintf(stderr,"oes 1\n");
+
+  step_t*  steps_array = (step_t*)  malloc( l * sizeof(step_t)  );
+  step_t** steps       = (step_t**) malloc( l * sizeof(step_t*) );
+
+  fprintf(stderr,"oes 2\n");
+  foreach_in_range_two(steps_init,  steps,     steps_array, l, l);
+  fprintf(stderr,"oes 3\n");
+  foreach_in_range_two(steps_weigh, equations, steps,       l, l);
+
+  fprintf(stderr,"oes 4\n");
+
+  smooth_recursive(options, steps, l);
+  fprintf(stderr,"oes 6\n");
+
+  foreach_in_range_two(steps_finalize, equations, steps,       l, l);
+
+  free(steps);
+}
+
+
+#ifdef OBSOLETE
 void kalman_create_oddeven(kalman_t* kalman) {
 	kalman->evolve  = evolve;	
 	kalman->observe = observe;	
@@ -1138,6 +1262,8 @@ void kalman_create_oddeven(kalman_t* kalman) {
 	kalman->step_get_covariance      = step_get_covariance;
 	kalman->step_get_covariance_type = step_get_covariance_type;
 }
+#endif
+
 /******************************************************************************/
 /* END OF FILE                                                                */
 /******************************************************************************/
