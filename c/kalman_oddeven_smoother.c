@@ -1220,30 +1220,49 @@ static void steps_finalize(void* equations_v, void* steps_v, kalman_step_index_t
 
     equations[i]->state      = steps[i]->state;
     equations[i]->covariance = steps[i]->covariance;
+
+    step_t* s = steps[i];
+
+    matrix_free(s->H);
+    matrix_free(s->F);
+    matrix_free(s->c);
+
+    matrix_free(s->G);
+    matrix_free(s->o);
+    matrix_free(s->C);
+
+    matrix_free(s->X);
+    matrix_free(s->Y);
+    matrix_free(s->Z);
+    matrix_free(s->R);
+
+    matrix_free(s->X_tilde);
+    matrix_free(s->F_tilde);
+    matrix_free(s->H_tilde);
+    matrix_free(s->R_tilde);
+    matrix_free(s->G_tilde);
+
+    // state and covariance were transfered ...
+    //matrix_free(s->state);
+    //matrix_free(s->covariance);
   }
 }
 
 void kalman_smooth_oddeven(kalman_options_t options, kalman_step_equations_t** equations, kalman_step_index_t l) {
   //step_t** steps = (step_t**) malloc(length * sizeof(step_t*));
 
-  fprintf(stderr,"oes 1\n");
-
   step_t*  steps_array = (step_t*)  malloc( l * sizeof(step_t)  );
   step_t** steps       = (step_t**) malloc( l * sizeof(step_t*) );
 
-  fprintf(stderr,"oes 2\n");
   foreach_in_range_two(steps_init,  steps,     steps_array, l, l);
-  fprintf(stderr,"oes 3\n");
   foreach_in_range_two(steps_weigh, equations, steps,       l, l);
 
-  fprintf(stderr,"oes 4\n");
-
   smooth_recursive(options, steps, l);
-  fprintf(stderr,"oes 6\n");
 
   foreach_in_range_two(steps_finalize, equations, steps,       l, l);
 
   free(steps);
+  free(steps_array);
 }
 
 
