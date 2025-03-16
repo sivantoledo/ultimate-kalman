@@ -226,6 +226,7 @@ void kalman_create_ultimate    (kalman_t*);
 void kalman_create_conventional(kalman_t*);
 void kalman_create_oddeven     (kalman_t*);
 void kalman_create_associative (kalman_t*);
+void kalman_create_explicit_representation(kalman_t*);
 
 kalman_t* kalman_create() {
   return kalman_create_options( KALMAN_ALGORITHM_ULTIMATE ); // default
@@ -272,7 +273,8 @@ kalman_t* kalman_create_options(kalman_options_t options) {
       break;
     case KALMAN_ALGORITHM_ASSOCIATIVE:
       printf("calling kalman_associative\n");
-      kalman_create_associative(kalman);
+      //kalman_create_associative(kalman);
+      kalman_create_explicit_representation(kalman);
       break;
   }
 

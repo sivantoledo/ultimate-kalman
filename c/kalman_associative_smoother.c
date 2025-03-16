@@ -150,6 +150,7 @@ static void step_free(void *v) {
   free(s);
 }
 
+#ifdef OBSOLETE
 static void step_rollback(void *v) {
   step_t *s = (step_t*) v;
 
@@ -192,11 +193,11 @@ static kalman_matrix_t* step_get_covariance(void *v) {
 static char step_get_covariance_type(void *v) {
   return 'C';
 }
-
+#endif
 /******************************************************************************/
 /* KALMAN                                                                     */
 /******************************************************************************/
-
+#ifdef OBSOLETE
 static void evolve(kalman_t *kalman, int32_t n_i, matrix_t *H_i, matrix_t *F_i, matrix_t *c_i, matrix_t *K_i,
     char K_type) {
   step_t *kalman_current;
@@ -293,11 +294,212 @@ static void observe(kalman_t *kalman, matrix_t *G_i, matrix_t *o_i, matrix_t *C_
 	printf("kalman_observe done\n");
 #endif
 }
-
+#endif
 /******************************************************************************/
 /* Associative Smoother                                                       */
 /******************************************************************************/
 
+static void build_filtering_element_new(kalman_step_equations_t* equations[], step_t* elements[], kalman_step_index_t i) {
+  /*
+   we denote by Z the matrix denoted by C in the article,
+   because we already use C for the covariance of the
+   observations.
+   */
+
+  //step_t *step_i = farray_get(kalman->steps, i);
+
+  kalman_step_equations_t* equation = equations[i];
+  step_t*                  element  = elements[i];
+
+  int32_t n_i = equation->dimension;
+  //kalman_step_index_t step = equation->step;
+
+  element->dimension = equation->dimension;
+  // we need F, c, K later
+  element->F = matrix_create_copy(equation->F);
+  element->c = matrix_create_copy(equation->c);
+  element->K = matrix_create_copy(equation->K);
+  element->K_type = equation->K_type;
+
+  if (i == 0) {
+    return;
+  }
+
+  if (i == 1) {
+    kalman_step_equations_t* step_0 = equations[0];
+    matrix_t* G_i    = step_0->G;
+    matrix_t* o_i    = step_0->o;
+    matrix_t* C_i    = step_0->C;
+    char      C_type = step_0->C_type;
+
+    matrix_t* W_i_G_i = kalman_covariance_matrix_weigh(C_i, C_type, G_i);
+    matrix_t* W_i_o_i = kalman_covariance_matrix_weigh(C_i, C_type, o_i);
+
+    matrix_t* R = matrix_create_copy(W_i_G_i);
+    matrix_t* Q = matrix_create_mutate_qr(R);
+
+    matrix_mutate_apply_qt(R, Q, W_i_o_i);
+
+    matrix_mutate_triu(R);
+    matrix_t* m0 = matrix_create_trisolve(R, W_i_o_i);
+
+    matrix_t* RT  = matrix_create_transpose(R);
+    matrix_t* RTR = matrix_create_multiply(RT, R);
+    matrix_t* P0  = matrix_create_inverse(RTR);
+
+    elements[0]->state = m0;
+    elements[0]->covariance = P0;
+
+    matrix_free(Q);
+    matrix_free(R);
+
+    matrix_free(W_i_G_i);
+    matrix_free(W_i_o_i);
+
+    matrix_free(RT);
+    matrix_free(RTR);
+  }
+
+  matrix_t *F_i = equation->F;
+  matrix_t *c_i = equation->c;
+  matrix_t *K_i = kalman_covariance_matrix_explicit(equation->K, equation->K_type);
+
+  if (i == 1) {
+    //kalman_step_equations_t *step_0    = equations[0];
+    matrix_t *F_iT    = matrix_create_transpose(F_i);
+    matrix_t *P0      = elements[0]->covariance;
+    matrix_t *FP0     = matrix_create_multiply(F_i, P0);
+    matrix_t *FPFT    = matrix_create_multiply(FP0, F_iT);
+    matrix_t *new_K_i = matrix_create_add(K_i, FPFT);
+    matrix_free(K_i);
+    K_i = new_K_i;
+    matrix_free(F_iT);
+    matrix_free(FP0);
+    matrix_free(FPFT);
+  }
+
+  if (equation->o == NULL) {
+    element->Z = K_i;
+    if (i == 1) {
+      element->A = matrix_create_constant(n_i, n_i, 0.0);
+      //kalman_step_equations_t* step_0 = equations[0];
+      matrix_t* m0 = elements[0]->state;
+      matrix_t* b = matrix_create_add(m0, c_i);
+      element->b = b;
+  } else {
+      element->A = matrix_create_copy(F_i);
+      element->b = matrix_create_copy(c_i);
+    }
+    element->e = NULL;
+    element->J = NULL;
+  } else { // there are observations
+    matrix_t* G_i = equation->G;
+    matrix_t* o_i = equation->o;
+    matrix_t* C_i = kalman_covariance_matrix_explicit(equation->C, equation->C_type);
+
+    matrix_t* G_iT = matrix_create_transpose(G_i);
+    matrix_t* KGT  = matrix_create_multiply(K_i, G_iT);
+    matrix_t* GKGT = matrix_create_multiply(G_i, KGT);
+    matrix_t* S    = matrix_create_add(GKGT, C_i);
+
+    matrix_free(G_iT);
+    matrix_free(KGT);
+    matrix_free(GKGT);
+    matrix_free(C_i);
+
+    matrix_t *ST = matrix_create_transpose(S);
+
+    matrix_t* G_i_trans_inv_S_T = matrix_create_mldivide(ST, G_i);
+    matrix_t* G_i_trans_inv_S   = matrix_create_transpose(G_i_trans_inv_S_T);
+
+    matrix_free(ST);
+    matrix_free(G_i_trans_inv_S_T);
+
+    matrix_t* K = matrix_create_multiply(K_i, G_i_trans_inv_S);
+
+    if (i == 1) {
+      element->A = matrix_create_constant(n_i, n_i, 0.0);
+      //kalman_step_equations_t *step_0 = equations[0];
+      matrix_t *m0 = elements[0]->state;
+      matrix_t *F_im = matrix_create_multiply(F_i, m0);
+      matrix_t *m1 = matrix_create_add(F_im, c_i);
+      matrix_t *G_im = matrix_create_multiply(G_i, m1);
+      matrix_t *o_G_im = matrix_create_subtract(o_i, G_im);
+      matrix_t *K_o_G_im = matrix_create_multiply(K, o_G_im);
+      matrix_t *b = matrix_create_add(m1, K_o_G_im);
+      element->b = b;
+
+      matrix_t *KS = matrix_create_multiply(K, S);
+      matrix_t *KT = matrix_create_transpose(K);
+      matrix_t *KSKT = matrix_create_multiply(KS, KT);
+      matrix_t *Z = matrix_create_subtract(K_i, KSKT);
+      element->Z = Z;
+
+      matrix_free(F_im);
+      matrix_free(m1);
+      matrix_free(G_im);
+      matrix_free(o_G_im);
+      matrix_free(K_o_G_im);
+
+      matrix_free(KS);
+      matrix_free(KT);
+      matrix_free(KSKT);
+    } else {
+      matrix_t *GF = matrix_create_multiply(G_i, F_i);
+      matrix_t *KGF = matrix_create_multiply(K, GF);
+      matrix_t *A = matrix_create_subtract(F_i, KGF);
+      element->A = A;
+
+      matrix_free(GF);
+      matrix_free(KGF);
+
+      matrix_t *G_ic = matrix_create_multiply(G_i, c_i);
+      matrix_t *o_G_ic = matrix_create_subtract(o_i, G_ic);
+      matrix_t *K_o_G_ic = matrix_create_multiply(K, o_G_ic);
+      matrix_t *b = matrix_create_add(c_i, K_o_G_ic);
+      element->b = b;
+
+      matrix_free(G_ic);
+      matrix_free(o_G_ic);
+      matrix_free(K_o_G_ic);
+
+      matrix_t *KG = matrix_create_multiply(K, G_i);
+      matrix_t *KGK_i = matrix_create_multiply(KG, K_i);
+      matrix_t *Z = matrix_create_subtract(K_i, KGK_i);
+      element->Z = Z;
+
+      matrix_free(KG);
+      matrix_free(KGK_i);
+    }
+    matrix_free(K_i);
+
+    matrix_t *G_ic = matrix_create_multiply(G_i, c_i);
+    matrix_t *o_G_ic = matrix_create_subtract(o_i, G_ic);
+    matrix_t *FT = matrix_create_transpose(F_i);
+    matrix_t *FTG = matrix_create_multiply(FT, G_i_trans_inv_S);
+    matrix_t *e = matrix_create_multiply(FTG, o_G_ic);
+    element->e = e;
+
+    matrix_free(G_ic);
+    matrix_free(o_G_ic);
+    matrix_free(FT);
+
+    matrix_t *GF = matrix_create_multiply(G_i, F_i);
+    matrix_t *J = matrix_create_multiply(FTG, GF);
+    element->J = J;
+
+    matrix_free(FTG);
+    matrix_free(GF);
+
+    matrix_free(G_i_trans_inv_S);
+    matrix_free(K);
+    matrix_free(S);
+  }
+  fprintf(stderr,">> z %d\n", i);
+
+}
+
+#ifdef OBSOLETE
 static void build_filtering_element(kalman_t *kalman, kalman_step_index_t i) {
   /*
    we denote by Z the matrix denoted by C in the article,
@@ -485,9 +687,68 @@ static void build_filtering_element(kalman_t *kalman, kalman_step_index_t i) {
     matrix_free(S);
   }
 }
+#endif
 
-static
-void build_smoothing_element(kalman_t *kalman, kalman_step_index_t i) {
+static void build_smoothing_element_new(step_t* elements[], kalman_step_index_t n, kalman_step_index_t i) {
+
+  step_t *step_i = elements[i];
+  if (i == n - 1) {
+    int32_t ni = step_i->dimension;
+    step_i->E = matrix_create_constant(ni, ni, 0.0);
+    step_i->g = matrix_create_copy(step_i->state);
+    step_i->L = matrix_create_copy(step_i->covariance);
+  } else {
+    matrix_t *x = step_i->state;
+    matrix_t *P = kalman_covariance_matrix_explicit(step_i->covariance, 'C');
+    step_t *step_ip1 = elements[ i+1 ];
+    matrix_t *F = step_ip1->F;
+    matrix_t *Q = kalman_covariance_matrix_explicit(step_ip1->K, step_ip1->K_type);
+    matrix_t *c = step_ip1->c;
+
+    matrix_t *FT = matrix_create_transpose(F);
+    matrix_t *PFT = matrix_create_multiply(P, FT);
+    matrix_t *FPFT = matrix_create_multiply(F, PFT);
+    matrix_t *FPFT_Q = matrix_create_add(FPFT, Q);
+
+    matrix_t *PFT_T = matrix_create_transpose(PFT);
+    matrix_t *FPFT_Q_T = matrix_create_transpose(FPFT_Q);
+    matrix_t *E_T = matrix_create_mldivide(FPFT_Q_T, PFT_T);
+    matrix_t *E = matrix_create_transpose(E_T);
+
+    step_i->E = E;
+
+    matrix_free(FT);
+    matrix_free(PFT);
+    matrix_free(FPFT);
+    matrix_free(FPFT_Q);
+    matrix_free(PFT_T);
+    matrix_free(FPFT_Q_T);
+    matrix_free(E_T);
+
+    matrix_t *Fx = matrix_create_multiply(F, x);
+    matrix_t *Fx_c = matrix_create_add(Fx, c);
+    matrix_t *E_Fx_c = matrix_create_multiply(E, Fx_c);
+    matrix_t *g = matrix_create_subtract(x, E_Fx_c);
+    step_i->g = g;
+
+    matrix_free(Fx);
+    matrix_free(Fx_c);
+    matrix_free(E_Fx_c);
+    matrix_t *EF = matrix_create_multiply(E, F);
+    matrix_t *EFP = matrix_create_multiply(EF, P);
+    matrix_t *L = matrix_create_subtract(P, EFP);
+    step_i->L = L;
+
+    matrix_free(EF);
+    matrix_free(EFP);
+
+    matrix_free(P);
+    matrix_free(Q);
+  }
+}
+
+#ifdef OBSOLETE
+static void build_smoothing_element(kalman_t *kalman, kalman_step_index_t i) {
 
   if (i == farray_size(kalman->steps) - 1) {
     step_t *step_i = farray_get(kalman->steps, i);
@@ -545,7 +806,9 @@ void build_smoothing_element(kalman_t *kalman, kalman_step_index_t i) {
     matrix_free(Q);
   }
 }
+#endif
 
+#ifdef OBSOLETE
 static void build_filtering_elements(void *kalman_v, kalman_step_index_t l, kalman_step_index_t start, kalman_step_index_t end) {
   kalman_t *kalman = (kalman_t*) kalman_v;
 
@@ -561,6 +824,62 @@ static void build_smoothing_elements(void *kalman_v, kalman_step_index_t l, kalm
     build_smoothing_element(kalman, j);
   }
 }
+#endif
+
+static void build_filtering_elements_new(void* equations_v, void* elements_v, kalman_step_index_t l, kalman_step_index_t start, kalman_step_index_t end) {
+  kalman_step_equations_t** equations = (kalman_step_equations_t**) equations_v;
+  step_t**                  elements  = (step_t**)                  elements_v;
+  for (kalman_step_index_t j = start; j < end; j++) {
+    build_filtering_element_new(equations, elements, j);
+  }
+}
+
+static void build_smoothing_elements_new(void* elements_v, kalman_step_index_t l, kalman_step_index_t start, kalman_step_index_t end) {
+  step_t**                  elements  = (step_t**)                  elements_v;
+  for (kalman_step_index_t j = start; j < end; j++) {
+    build_smoothing_element_new(elements, l, j);
+  }
+}
+
+static void elements_init(void* elements_v, void* elements_array_v, kalman_step_index_t l, kalman_step_index_t start, kalman_step_index_t end) {
+  step_t*  elements_array  = (step_t*)   elements_array_v;
+  step_t** elements        = (step_t**)  elements_v;
+  for (kalman_step_index_t j = start; j < end; j++) {
+    elements[j] = &(elements_array[j]);
+    step_t* s = elements[j];
+
+    s->step = j;
+    s->dimension = -1;
+
+    s->C_type = 0;
+    s->K_type = 0;
+
+    s->H = NULL;
+    s->F = NULL;
+    s->K = NULL;
+    s->c = NULL;
+
+    s->G = NULL;
+    s->o = NULL;
+    s->C = NULL;
+
+    s->Z = NULL;
+
+    s->A = NULL;
+    s->b = NULL;
+
+    s->e = NULL;
+    s->J = NULL;
+
+    s->E = NULL;
+    s->g = NULL;
+    s->L = NULL;
+
+    s->state = NULL;
+    s->covariance = NULL;
+  }
+}
+
 
 static void* filteringAssociativeOperation(void *si_v, void *sj_v) {
   step_t *si = (step_t*) si_v;
@@ -691,6 +1010,7 @@ static void* smoothingAssociativeOperation(void *si_v, void *sj_v) {
   return sij;
 }
 
+#ifdef OBSOLETE
 static void filtered_to_state(void *kalman_v, void *filtered_v, kalman_step_index_t l, kalman_step_index_t start, kalman_step_index_t end) {
   kalman_t *kalman = (kalman_t*) kalman_v;
   step_t **filtered = (step_t**) filtered_v;
@@ -721,6 +1041,45 @@ static void smoothed_to_state(void *kalman_v, void *smoothed_v, kalman_step_inde
     step_j->state = matrix_create_copy(smoothed_i->g);
     matrix_free(step_j->covariance);
     step_j->covariance = matrix_create_copy(smoothed_i->L);
+    //step_free(smoothed_i);
+  }
+}
+#endif
+
+static void filtered_to_state_new(void* elements_v, void* filtered_v, kalman_step_index_t l, kalman_step_index_t start, kalman_step_index_t end) {
+  //kalman_t *kalman = (kalman_t*) kalman_v;
+  //step_t **filtered = (step_t**) filtered_v;
+  step_t** elements = (step_t**) elements_v;
+  step_t** filtered = (step_t**) filtered_v;
+
+  kalman_step_index_t i = start;
+  for (kalman_step_index_t j = start + 1; j < end + 1; j++) {
+    step_t *step_j = elements[j];
+    step_t *filtered_i = filtered[i];
+    step_j->state = matrix_create_copy(filtered_i->b);
+    step_j->covariance = matrix_create_copy(filtered_i->Z);
+    //if (i != 0) {
+    //  step_free(filtered_i);
+    //}
+    i++;
+  }
+}
+
+static void smoothed_to_state_new(kalman_step_equations_t* equations_v, void* smoothed_v, kalman_step_index_t l, kalman_step_index_t start, kalman_step_index_t end) {
+  //kalman_t *kalman = (kalman_t*) kalman_v;
+  //step_t **smoothed = (step_t**) smoothed_v;
+  kalman_step_equations_t** equations = (kalman_step_equations_t**) equations_v;
+  step_t**                  smoothed  = (step_t**) smoothed_v;
+
+  kalman_step_index_t i = 0;
+  for (kalman_step_index_t j = start; j < end; j++) {
+    i = l - 2 - j + 1;
+    kalman_step_equations_t* equation = equations[j];
+    step_t* smoothed_i = smoothed[i];
+    matrix_free(equation->state);
+    equation->state = matrix_create_copy(smoothed_i->g);
+    matrix_free(equation->covariance);
+    equation->covariance = matrix_create_copy(smoothed_i->L);
     //step_free(smoothed_i);
   }
 }
@@ -782,6 +1141,7 @@ static void prefix_sums_sequential(void* (*f)(void*, void*), void** a, void** su
 }
 #endif
 
+#ifdef OBSOLETE
 static void smooth(kalman_t *kalman) {
   kalman_step_index_t l = farray_size(kalman->steps);
 
@@ -828,7 +1188,51 @@ static void smooth(kalman_t *kalman) {
   concurrent_set_free(smoothed_created_steps);
   free(smoothed);
 }
+#endif
 
+void kalman_smooth_associative(kalman_options_t options, kalman_step_equations_t** equations, kalman_step_index_t l) {
+  //kalman_step_index_t l = farray_size(kalman->steps);
+
+  //foreach_in_range(build_filtering_elements, kalman, l, l);
+
+  step_t*  elements_array = (step_t*)  malloc( l * sizeof(step_t)  );
+  step_t** elements       = (step_t**) malloc( l * sizeof(step_t*) );
+
+  foreach_in_range_two(elements_init, elements, elements_array, l, l);
+
+  foreach_in_range_two(build_filtering_elements_new, equations, elements, l, l);
+
+  step_t **filtered = (step_t**) malloc( (l-1) * sizeof(step_t*) );
+  concurrent_set_t *filtered_created_steps = concurrent_set_create(l, step_free);
+
+  //prefix_sums_pointers(filteringAssociativeOperation, &((kalman->steps->elements)[1]), (void**) filtered, filtered_created_steps, l - 1, 1);
+  prefix_sums_pointers(filteringAssociativeOperation, &(elements[1]), (void**) filtered, filtered_created_steps, l - 1, 1);
+
+  foreach_in_range_two(filtered_to_state_new, elements, filtered, l, l - 1);
+
+  // in the last step, the smoothed estimate is simply the filtered one, so copy now.
+  equations[l-1]->state      = matrix_create_copy(filtered[l-2]->b);
+  equations[l-1]->covariance = matrix_create_copy(filtered[l-2]->L);
+
+  concurrent_set_foreach(filtered_created_steps);
+  concurrent_set_free(filtered_created_steps);
+  free(filtered);
+
+  foreach_in_range(build_smoothing_elements_new, elements, l, l);
+
+  step_t **smoothed = (step_t**) malloc( l * sizeof(step_t*) );
+  concurrent_set_t *smoothed_created_steps = concurrent_set_create(l, step_free);
+
+  prefix_sums_pointers(smoothingAssociativeOperation, elements, (void**) smoothed, smoothed_created_steps, l, -1);
+
+  foreach_in_range_two(smoothed_to_state_new, equations, smoothed, l, l-1);
+
+  concurrent_set_foreach(smoothed_created_steps);
+  concurrent_set_free(smoothed_created_steps);
+  free(smoothed);
+}
+
+#ifdef OBSOLETE
 void kalman_create_associative(kalman_t *kalman) {
   kalman->evolve = evolve;
   kalman->observe = observe;
@@ -843,6 +1247,7 @@ void kalman_create_associative(kalman_t *kalman) {
   kalman->step_get_covariance = step_get_covariance;
   kalman->step_get_covariance_type = step_get_covariance_type;
 }
+#endif
 
 /******************************************************************************/
 /* END OF FILE                                                                */

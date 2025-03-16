@@ -235,7 +235,12 @@ static void observe(kalman_t *kalman, matrix_t *G_i, matrix_t *o_i, matrix_t *C_
 #endif
 }
 
+void kalman_smoother_associative(kalman_options_t options, kalman_step_equations_t** equations, kalman_step_index_t l);
+
 static void smooth(kalman_t *kalman) {
+  fprintf(stderr,"explicit rep smooth\n");
+
+  if (kalman->options & KALMAN_ALGORITHM_ASSOCIATIVE) kalman_smooth_associative(kalman->options, kalman->steps->elements, farray_size(kalman->steps));
 }
 
 void kalman_create_explicit_representation(kalman_t *kalman) {
