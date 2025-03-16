@@ -39,17 +39,31 @@ kalman_matrix_t* kalman_covariance_matrix_explicit(kalman_matrix_t* cov, char ty
 /******************************************************************************/
 /* STEPS                                                                      */
 /******************************************************************************/
-#ifdef OBSOLETE
-void* step_create ();         // returns a pointer to a step_t
-void step_free (void* v);// takes a pointer to a step_t
-void step_rollback(void* v);// rollback the step to just after the call to evolve
 
-int64_t step_get_step(void* v);
-int32_t step_get_dimension(void* v);
-kalman_matrix_t* step_get_state(void* v);
-kalman_matrix_t* step_get_covariance(void* v);
-char step_get_covariance_type(void* v);
-#endif
+/*
+ * This structure is used as the input and output for parallel smoothers.
+ *
+ * It is meant to be used directly by clients of parallel smoothers.
+ */
+typedef struct kalman_step_equations_st {
+  kalman_step_index_t step; // logical step number
+  int32_t dimension;
+
+  char C_type;
+  char K_type;
+
+  kalman_matrix_t *H;
+  kalman_matrix_t *F;
+  kalman_matrix_t *K;
+  kalman_matrix_t *c;
+
+  kalman_matrix_t *G;
+  kalman_matrix_t *o;
+  kalman_matrix_t *C;
+
+  kalman_matrix_t *state;
+  kalman_matrix_t *covariance;
+} kalman_step_equations_t;
 
 /******************************************************************************/
 /* KALMAN                                                                     */

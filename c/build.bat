@@ -58,6 +58,7 @@ cl ^
   kalman_oddeven_smoother.c ^
   kalman_associative_smoother.c ^
   kalman_base.c ^
+  kalman_explicit_representation.c ^
   matrix_ops.c ^
   flexible_arrays.c ^
   concurrent_set.c ^
@@ -65,11 +66,11 @@ cl ^
   %test%.c ^
   %BLAS_LAPACK_LIBS% 
 
-ECHO generated test program
-
 DEL *.obj
   
-%test%.exe
+ECHO generated test program
+
+%test%.exe %2 %3 %4 %5 %6 %7 %8 %9
 
 ECHO done running test 
   

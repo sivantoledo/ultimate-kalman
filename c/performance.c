@@ -227,6 +227,7 @@ kalman_matrix_t* generateRandomOrthonormal(int rows, int cols) {
 double times[16];
 
 double perftest_smooth(
+        kalman_options_t options,
 		kalman_matrix_t* H, kalman_matrix_t* F, kalman_matrix_t* c, kalman_matrix_t* K, char K_type,
 		kalman_matrix_t* G,                     kalman_matrix_t* o, kalman_matrix_t* C, char C_type,
 		int32_t count) {
@@ -241,7 +242,7 @@ double perftest_smooth(
 	//struct timeval begin, end;
 	gettimeofday(&begin, 0);
 
-	kalman_t* kalman = kalman_create();
+	kalman_t* kalman = kalman_create_options(options);
 
 	j = 0;
 	n = matrix_cols(G);
@@ -299,12 +300,22 @@ double perftest_smooth(
 	return times[3];
 }
 
+static int streq(char* constant, char* value) {
+  int l = strlen(constant);
+  if (strncmp(constant,value,l)==0 && strlen(value)==l) {
+    printf("streq %s == %s => %d\n",constant,value,1);
+    return 1;
+  }
+  printf("streq %s == %s => %d\n",constant,value,0);
+  return 0;
+}
+
 int main(int argc, char* argv[]) {
 
 	printf("performance testing starting (start with two arguments, dimension and count)\n");
 
 	if (argc < 3) {
-		printf("usage: performance dimension count\n");
+		printf("usage: performance dimension count [ultimate/conventional/oddeven/associative]\n");
 		printf("       using defaults\n");
 	}
 
@@ -313,6 +324,14 @@ int main(int argc, char* argv[]) {
 
 	if (argc >= 2) sscanf(argv[1],"%d",&n);
 	if (argc >= 3) sscanf(argv[2],"%d",&count);
+
+	kalman_options_t options = KALMAN_ALGORITHM_ULTIMATE;
+	for (int i=1; i<argc; i++) {
+      if (streq("ultimate",    argv[i])) options = KALMAN_ALGORITHM_ULTIMATE;
+      if (streq("conventional",argv[i])) options = KALMAN_ALGORITHM_CONVENTIONAL;
+      if (streq("oddeven",     argv[i])) options = KALMAN_ALGORITHM_ODDEVEN;
+      if (streq("associative", argv[i])) options = KALMAN_ALGORITHM_ASSOCIATIVE;
+	}
 
 	printf("performance testing smooth dimension=%d step count=%d, starting\n",n,count);
 
@@ -334,17 +353,20 @@ int main(int argc, char* argv[]) {
 
 	switch (n) {
 	case 6:
-		t = perftest_smooth(matrix_create_identity(6,6), matrix_create_from_rowwise(F6, 6, 6), matrix_create_constant(6,1,0.0),      matrix_create_identity(6,6), 'W',
+		t = perftest_smooth(options,
+		                    matrix_create_identity(6,6), matrix_create_from_rowwise(F6, 6, 6), matrix_create_constant(6,1,0.0),      matrix_create_identity(6,6), 'W',
 			  	                                         matrix_create_from_rowwise(G6, 6, 6), matrix_create_from_rowwise(o6, 6, 1), matrix_create_identity(6,6), 'W',
 					        count);
 		break;
 	case 48:
-		t = perftest_smooth(matrix_create_identity(48,48), matrix_create_from_rowwise(F48, 48, 48), matrix_create_constant(48,1,0.0),      matrix_create_identity(48,48), 'W',
+		t = perftest_smooth(options,
+		                    matrix_create_identity(48,48), matrix_create_from_rowwise(F48, 48, 48), matrix_create_constant(48,1,0.0),      matrix_create_identity(48,48), 'W',
 			  	                                           matrix_create_from_rowwise(G48, 48, 48), matrix_create_from_rowwise(o48, 48, 1), matrix_create_identity(48,48), 'W',
 					        count);
 		break;
 	default:
-		t = perftest_smooth(matrix_create_identity(n,n), generateRandomOrthonormal(n, n), matrix_create_constant(n,1,0.0), matrix_create_identity(n,n), 'W',
+		t = perftest_smooth(options,
+		                    matrix_create_identity(n,n), generateRandomOrthonormal(n, n), matrix_create_constant(n,1,0.0), matrix_create_identity(n,n), 'W',
 				                                         generateRandomOrthonormal(n, n), generateRandomOrthonormal(n, 1), matrix_create_identity(n,n), 'W',
 					        count);
 		break;
