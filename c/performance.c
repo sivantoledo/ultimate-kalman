@@ -310,6 +310,18 @@ static int streq(char* constant, char* value) {
   return 0;
 }
 
+static kalman_options_t parse_arguments(int argc, char* argv[]) {
+  kalman_options_t options = KALMAN_ALGORITHM_ULTIMATE;
+  for (int i=1; i<argc; i++) {
+    if (streq("ultimate",    argv[i])) options = KALMAN_ALGORITHM_ULTIMATE;
+    if (streq("conventional",argv[i])) options = KALMAN_ALGORITHM_CONVENTIONAL;
+    if (streq("oddeven",     argv[i])) options = KALMAN_ALGORITHM_ODDEVEN;
+    if (streq("associative", argv[i])) options = KALMAN_ALGORITHM_ASSOCIATIVE;
+  }
+
+  return options;
+}
+
 int main(int argc, char* argv[]) {
 
 	printf("performance testing starting (start with two arguments, dimension and count)\n");
@@ -325,13 +337,7 @@ int main(int argc, char* argv[]) {
 	if (argc >= 2) sscanf(argv[1],"%d",&n);
 	if (argc >= 3) sscanf(argv[2],"%d",&count);
 
-	kalman_options_t options = KALMAN_ALGORITHM_ULTIMATE;
-	for (int i=1; i<argc; i++) {
-      if (streq("ultimate",    argv[i])) options = KALMAN_ALGORITHM_ULTIMATE;
-      if (streq("conventional",argv[i])) options = KALMAN_ALGORITHM_CONVENTIONAL;
-      if (streq("oddeven",     argv[i])) options = KALMAN_ALGORITHM_ODDEVEN;
-      if (streq("associative", argv[i])) options = KALMAN_ALGORITHM_ASSOCIATIVE;
-	}
+	kalman_options_t options = parse_arguments(argc,argv);
 
 	printf("performance testing smooth dimension=%d step count=%d, starting\n",n,count);
 

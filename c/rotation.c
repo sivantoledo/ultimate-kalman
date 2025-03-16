@@ -90,6 +90,27 @@ void matrix_mutate_scale_accumulate(
   }
 }
 
+static int streq(char* constant, char* value) {
+  int l = strlen(constant);
+  if (strncmp(constant,value,l)==0 && strlen(value)==l) {
+    printf("streq %s == %s => %d\n",constant,value,1);
+    return 1;
+  }
+  printf("streq %s == %s => %d\n",constant,value,0);
+  return 0;
+}
+
+static kalman_options_t parse_arguments(int argc, char* argv[]) {
+  kalman_options_t options = KALMAN_ALGORITHM_ULTIMATE;
+  for (int i=1; i<argc; i++) {
+    if (streq("ultimate",    argv[i])) options = KALMAN_ALGORITHM_ULTIMATE;
+    if (streq("conventional",argv[i])) options = KALMAN_ALGORITHM_CONVENTIONAL;
+    if (streq("oddeven",     argv[i])) options = KALMAN_ALGORITHM_ODDEVEN;
+    if (streq("associative", argv[i])) options = KALMAN_ALGORITHM_ASSOCIATIVE;
+  }
+
+  return options;
+}
 
 int main(int argc, char* argv[]) {
 
@@ -97,6 +118,8 @@ int main(int argc, char* argv[]) {
 
 	printf("results should be identical to those produced by rotation(UltimateKalman,5,2) in MATLAB\n");
 	
+    kalman_options_t options = parse_arguments(argc,argv);
+
 	char* nthreads_string = getenv("NTHREADS");
 	int nthreads = 0;
 	if (nthreads_string != NULL && sscanf(nthreads_string,"%d",&nthreads)==1) {
@@ -215,7 +238,7 @@ int main(int argc, char* argv[]) {
 	/* predict all the states from the first observation         */
 	/*************************************************************/
 
-	kalman_t* kalman = kalman_create();
+	kalman_t* kalman = kalman_create_options(options);
 	
 	// first step
 	printf("evolve-observe step %d\n",0);
