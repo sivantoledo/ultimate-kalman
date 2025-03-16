@@ -1220,6 +1220,7 @@ static void steps_finalize(void* equations_v, void* steps_v, kalman_step_index_t
 
     equations[i]->state      = steps[i]->state;
     equations[i]->covariance = steps[i]->covariance;
+    equations[i]->covariance_type = 'C';
 
     step_t* s = steps[i];
 

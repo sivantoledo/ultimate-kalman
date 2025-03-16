@@ -231,7 +231,7 @@ static void evolve(kalman_t *kalman, int32_t n_i, matrix_t *H_i, matrix_t *F_i, 
   //assert(K_i!=NULL);
 
   // matrix_t* V_i_H_i = kalman_covariance_matrix_weigh(K_i,K_type,H_i);
-  // matrix_t* V_i_F_i = kalman_covariance_matrix_weigh(K_i,K_type,F_i);
+  // matrix_t* V_i_F_i = kalman_<_matrix_weigh(K_i,K_type,F_i);
   // matrix_t* V_i_c_i = kalman_covariance_matrix_weigh(K_i,K_type,c_i);
 
   // matrix_mutate_scale(V_i_F_i,-1.0);
@@ -1080,6 +1080,7 @@ static void smoothed_to_state_new(kalman_step_equations_t* equations_v, void* sm
     equation->state = matrix_create_copy(smoothed_i->g);
     matrix_free(equation->covariance);
     equation->covariance = matrix_create_copy(smoothed_i->L);
+    equation->covariance_type = 'C';
     //step_free(smoothed_i);
   }
 }
@@ -1213,6 +1214,7 @@ void kalman_smooth_associative(kalman_options_t options, kalman_step_equations_t
   // in the last step, the smoothed estimate is simply the filtered one, so copy now.
   equations[l-1]->state      = matrix_create_copy(filtered[l-2]->b);
   equations[l-1]->covariance = matrix_create_copy(filtered[l-2]->L);
+  equations[l-1]->covariance_type = 'C';
 
   concurrent_set_foreach(filtered_created_steps);
   concurrent_set_free(filtered_created_steps);

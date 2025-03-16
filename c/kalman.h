@@ -63,6 +63,7 @@ typedef struct kalman_step_equations_st {
 
   kalman_matrix_t *state;
   kalman_matrix_t *covariance;
+  char            covariance_type;
 } kalman_step_equations_t;
 
 /******************************************************************************/

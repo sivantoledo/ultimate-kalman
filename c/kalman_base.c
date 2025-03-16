@@ -422,7 +422,16 @@ void kalman_rollback(kalman_t *kalman, kalman_step_index_t si) {
 }
 
 char kalman_covariance_type(kalman_t *kalman, kalman_step_index_t si) {
-  return (*(kalman->step_get_covariance_type))(); // currently the same for all steps
+  //return (*(kalman->step_get_covariance_type))(); // currently the same for all steps
+
+  if (farray_size(kalman->steps) == 0)
+    return NULL;
+
+  if (si < 0)
+    si = farray_last_index(kalman->steps);
+  void *step = farray_get(kalman->steps, si);
+
+  return (*(kalman->step_get_covariance_type))(step);
 }
 
 matrix_t* kalman_covariance(kalman_t *kalman, kalman_step_index_t si) {

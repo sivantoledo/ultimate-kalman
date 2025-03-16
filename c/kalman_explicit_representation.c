@@ -146,7 +146,7 @@ static kalman_matrix_t* step_get_covariance(void *v) {
 }
 
 static char step_get_covariance_type(void *v) {
-  return 'C';
+  return ((step_t*) v)->covariance_type;
 }
 
 /******************************************************************************/
