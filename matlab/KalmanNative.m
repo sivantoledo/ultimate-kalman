@@ -1,4 +1,4 @@
-classdef UltimateKalmanNative < handle
+classdef KalmanNative < handle
     % UltimateKalman   An implementation of the Paige-Saunders Kalman
     % filter and smoother by Sivan Toledo, Tel Aviv University.
     %
@@ -23,7 +23,7 @@ classdef UltimateKalmanNative < handle
     end
 
     methods (Access = public)
-        function kalman = UltimateKalmanNative(options)
+        function kalman = KalmanNative(options)
             if nargin==0
                 options = struct();
             end

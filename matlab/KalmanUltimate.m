@@ -1,4 +1,4 @@
-classdef UltimateKalman < KalmanBase
+classdef KalmanUltimate < KalmanBase
     % UltimateKalman   An implementation of the Paige-Saunders Kalman
     % filter and smoother by Sivan Toledo, Tel Aviv University.
     %
@@ -35,7 +35,7 @@ classdef UltimateKalman < KalmanBase
     end
 
     methods (Access = public)
-        function kalman = UltimateKalman(options)
+        function kalman = KalmanUltimate(options)
             if nargin==0
                 options = struct();
             end

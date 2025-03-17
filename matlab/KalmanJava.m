@@ -1,4 +1,4 @@
-classdef UltimateKalmanJava < handle
+classdef KalmanJava < handle
     % UltimateKalman   An implementation of the Paige-Saunders Kalman
     % filter and smoother by Sivan Toledo, Tel Aviv University.
     %
@@ -23,7 +23,7 @@ classdef UltimateKalmanJava < handle
     end
 
     methods (Access = public)
-        function kalman = UltimateKalmanJava(options)
+        function kalman = KalmanJava(options)
             kalman = kalman@handle();
             % kalman.handle = sivantoledo.kalman.UltimateKalman();
             kalman.handle = javaObject("sivantoledo.kalman.UltimateKalman");

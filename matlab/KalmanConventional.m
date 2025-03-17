@@ -1,16 +1,16 @@
-classdef KalmanFilterSmoother < KalmanBase
-    % KalmanFilterSmoother   A conventional Kalman filter and RTS (Rauch,
-    %                        Tung, and Striebel) smoother. The
-    %                        implementation works both as a linear
-    %                        filter/smoother or an extended one, depending
-    %                        on whether the evolution and observation
-    %                        operators are matrices or functions.
+classdef KalmanConventional < KalmanBase
+    % KalmanConventional   A conventional Kalman filter and RTS (Rauch,
+    %                      Tung, and Striebel) smoother. The
+    %                      implementation works both as a linear
+    %                      filter/smoother or an extended one, depending
+    %                      on whether the evolution and observation
+    %                      operators are matrices or functions.
     %
-    % KalmanFilterSmoother inherits from KalmanBase.
+    % KalmanConventional inherits from KalmanBase.
     %
-    % KalmanFilterSmoother fields (properties): none
+    % KalmanConventional fields (properties): none
     %  
-    % KalmanFilterSmoother implements these abstract methods:
+    % KalmanConventional implements these abstract methods:
     %    evolve   - Evolve the state using a linear matrix equation 
     %    observe  - Provide observations of the current state 
     %    smooth   - Compute smooth estimates of all the stored states
@@ -33,7 +33,7 @@ classdef KalmanFilterSmoother < KalmanBase
     end
 
     methods (Access = public)
-        function kalman = KalmanFilterSmoother(options)
+        function kalman = KalmanConventional(options)
             if nargin==0
                 options = struct();
             end
