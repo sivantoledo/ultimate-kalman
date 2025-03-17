@@ -5,16 +5,18 @@ if nargin<2
 end
 
 switch class
-    case 'UltimateKalmanNative'
-        kalman = UltimateKalmanNative(options);
-    case 'UltimateKalmanJava'
-        kalman = UltimateKalmanJava(options);
-    case 'UltimateKalman'
-        kalman = UltimateKalman(options);
-    case 'KalmanFilterSmoother'
-        kalman = KalmanFilterSmoother(options);
+    case 'KalmanNative'
+        kalman = KalmanNative(options);
+    case 'KalmanJava'
+        kalman = KalmanJava(options);
+    case 'KalmanUltimate'
+        kalman = KalmanUltimate(options);
+    case 'KalmanConventional'
+        kalman = KalmanConventional(options);
     case 'KalmanAssociativeSmoother'
         kalman = KalmanAssociativeSmoother(options);
+    case 'KalmanOddevenSmoother'
+        kalman = KalmanOddevenSmoother(options);
     case 'KalmanSparse'
         kalman = KalmanSparse(options);
     otherwise
