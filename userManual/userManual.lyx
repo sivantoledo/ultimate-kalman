@@ -12,6 +12,7 @@
 
 
  
+\usepackage{amssymb} % Provides \checkmark
 \end_preamble
 \options format=acmsmall
 \use_default_options false
@@ -564,48 +565,9 @@ UltimateKalman
 
 \end_inset
 
- is a library that implements efficient Kalman filtering and smoothing algorithm
-s using orthogonal transformations.
- The algorithms are based on an algorithm by Paige and Saunders
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset CommandInset citation
-LatexCommand cite
-key "PaigeSaunders:1977:Kalman"
-literal "false"
-
-\end_inset
-
-, which to the best of our knowledge, has not been implemented before.
- This guide is part of an article in the journal ACM Transactions on Mathematica
-l Software that describes 
-\begin_inset Flex Pkg
-status open
-
-\begin_layout Plain Layout
-UltimateKalman
-\end_layout
-
-\end_inset
-
-.
- The algorithms are described in that article; this user guide focuses on
- usage of the software library.
-\end_layout
-
-\begin_layout Standard
-\begin_inset Flex Pkg
-status open
-
-\begin_layout Plain Layout
-UltimateKalman
-\end_layout
-
-\end_inset
-
- is currently available in 
+ is a library that implements efficient and flexible Kalman filtering and
+ smoothing algorithms.
+ The library contains 
 \begin_inset Flex Proglang
 status open
 
@@ -635,8 +597,205 @@ Java
 
 \end_inset
 
+ implementations (currently, the Java implementations does not contain all
+ the algorithms).
+ The library is available on GitHub at 
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+https://github.com/sivantoledo/ultimate-kalman
+\end_layout
+
+\end_inset
+
 .
- Each implementation is separate and does not rely on the others.
+ The release history of the library is as follows:
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+Release 1.2.0
+\series default
+ contains the sequential UltimateKalman algorithm, which is documented carefully
+ in an article in the ACM Transactions on Mathematical Software
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "doi:10.1145/3699958"
+literal "false"
+
+\end_inset
+
+.
+ The algorithm is a slight extension an algorithm by Paige and Saunders
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "PaigeSaunders:1977:Kalman"
+literal "false"
+
+\end_inset
+
+, which to the best of our knowledge, has not been implemented before.
+ The algorithm uses orthogonal transformations so it has good numerical
+ stability.
+ The algorithm is implemented monolithically in all 3 languages.
+ Please cite this article when citing the sequential UltimateKalman algorithm
+ or its implementation.
+ To use that version, please use the user guide from that release, not this
+ document.
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+Release 2.0.0
+\series default
+ contains three additional algorithms in 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+, including two parallel-in-time smoothers, the Odd-Even smoother proposed
+ in an article by Gargir and Toledo
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "toappear:IPDPS2025"
+literal "false"
+
+\end_inset
+
+ and the smoother proposed by Särkkä and García-Fernández
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+CITE
+\end_layout
+
+\end_inset
+
+.
+ The code in this release was used to perform the experiments reported by
+ Gargir and Toledo
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "toappear:IPDPS2025"
+literal "false"
+
+\end_inset
+
+; the release is meant mostly to document these experiments, not for adoption
+ by users.
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+Release 2.1.0
+\series default
+ is a significantly cleaned up version of the codes described by Gargir
+ and Toledo
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "toappear:IPDPS2025"
+literal "false"
+
+\end_inset
+
+.
+ It is meant to be adopted by users.
+ This is the version described in this guide.
+\begin_inset Newline newline
+\end_inset
+
+The 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ codes in this release use the same API as the implementation in Release
+\begin_inset space ~
+\end_inset
+
+1.2.0, but the code has been split into multiple files so the build is more
+ complicated.
+ The 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ also retains the same API, but class names have changed.
+ The 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+Java
+\end_layout
+
+\end_inset
+
+ implementation is identical to the implementation in Release
+\begin_inset space ~
+\end_inset
+
+1.2.0.
+\end_layout
+
+\begin_layout Standard
+The implementation in each language is separate and does not rely on the
+ others.
  The implementation includes 
 \begin_inset Flex Proglang
 status open
@@ -678,8 +837,17 @@ MATLAB
 \end_inset
 
 .
- This allows a single set of example functions to invoke all three implementatio
-ns.
+ This allows a single set of 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+example functions to invoke all three implementations.
  
 \end_layout
 
@@ -838,6 +1006,41 @@ literal "false"
 status open
 
 \begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ implementation of the parallel-in-time smoothers used the Threading Building
+ Blocks (TBB) library to express shared-memory parallelism.
+ TBB is a 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C++
+\end_layout
+
+\end_inset
+
+ library and the code uses a single 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C++
+\end_layout
+
+\end_inset
+
+ source file to expose the parallel primitives.
+ The code can also be compiled without TBB, but this generates a sequential
+ algorithm, not a multi-threaded (multi-core) one.
+ The 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
 Java
 \end_layout
 
@@ -881,7 +1084,7 @@ MATLAB
 
 \end_inset
 
- R2021b (version 9.11) and with GNU 
+ R2021b (version 9.11) and R2024a, and with GNU 
 \begin_inset Flex Pkg
 status open
 
@@ -1561,21 +1764,17 @@ w
 \end_layout
 
 \begin_layout Standard
-\begin_inset Flex Pkg
-status open
-
-\begin_layout Plain Layout
-UltimateKalman
-\end_layout
-
-\end_inset
-
- always returns the covariance matrix of 
+The UltimateKalman algorithm always returns the covariance matrix of 
 \begin_inset Formula $\estimate u_{i}$
 \end_inset
 
  as an upper triangular inverse factor 
 \begin_inset Formula $W$
+\end_inset
+
+.
+ The other algorithms return an explicit covariance matrix 
+\begin_inset Formula $C$
 \end_inset
 
 .
@@ -1604,7 +1803,16 @@ Java
 CovarianceMatrix
 \family default
  type (always with an inverse-factor representation); the C implementation
- simply returns the inverse factor as a matrix.
+ includes one function that returns the type of the covariance matrix (a
+ single character) and another that returns the factor 
+\begin_inset Formula $W$
+\end_inset
+
+ or the explicit matrix 
+\begin_inset Formula $C$
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Section
@@ -1672,9 +1880,105 @@ MATLAB
 
 \end_inset
 
- implementation is object oriented and is implemented as a handle (reference)
- class.
- The constructor takes no arguments.
+ implementation is object oriented and is implemented as a collection of
+ handle (reference) classes called 
+\family typewriter
+KalmanUltimate
+\family default
+, 
+\family typewriter
+KalmanConventional
+\family default
+, 
+\family typewriter
+KalmanOddevenSmoother
+\family default
+, 
+\family typewriter
+KalmanAssociativeSmoother
+\family default
+, and 
+\family typewriter
+KalmanSparse
+\family default
+.
+ The first four classes implement, respectively, the UltimateKalman algorithm
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "doi:10.1145/3699958,PaigeSaunders:1977:Kalman"
+literal "false"
+
+\end_inset
+
+, a conventional Kalman filter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Kalman:1960:KalmanFilter"
+literal "false"
+
+\end_inset
+
+ and RTS smoother
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+CITE RTS
+\end_layout
+
+\end_inset
+
+, the Gargir-Toledo parallel smoother
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "toappear:IPDPS2025"
+literal "false"
+
+\end_inset
+
+, and the parallel smoother by Särkkä and García-Fernández
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+CITE
+\end_layout
+
+\end_inset
+
+.
+ The fifth implementation, 
+\family typewriter
+KalmanSparse
+\family default
+, uses an explicit sparse QR factorizations to filter and smooth; it is
+ inefficient, especially when filtering, and is meant only for testing the
+ correctness of other implementations.
+ It is particularly simple and therefore it is particularly easy to ensure
+ that it is correct.
+ The interface of all these classes is exactly the same.
+ The constructor takes one optional argument, a structure that specifies
+ algorithmic options.
 \end_layout
 
 \begin_layout Standard
@@ -1684,7 +1988,22 @@ status open
 
 \begin_layout Plain Layout
 
-kalman = UltimateKalman()
+kalman = KalmanUltimate(options)
+\end_layout
+
+\end_inset
+
+or
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+kalman = KalmanUltimate()
 \end_layout
 
 \end_inset
@@ -2096,27 +2415,41 @@ MATLAB
 
 \end_inset
 
-, create an object of one of the adapter classes, not an object of the 
-\family typewriter
-UltimateKalman
-\family default
- class:
+, create an object of one of the adapter classes:
 \begin_inset listings
 inline false
 status open
 
 \begin_layout Plain Layout
 
-kalman = UltimateKalmanNative()
+kalman = KalmanNative(options)
 \end_layout
 
 \begin_layout Plain Layout
 
-kalman = UltimateKalmanJava()
+kalman = KalmanJava(options)
 \end_layout
 
 \end_inset
 
+These adapter classes have exactly the same interface as the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ implementations (including the fact that the 
+\family typewriter
+options
+\family default
+ argument is optional).
+\end_layout
+
+\begin_layout Standard
 To use the 
 \begin_inset Flex Proglang
 status open
@@ -2254,6 +2587,722 @@ replication.m
 examples
 \family default
  sub-directory adds these libraries to the path and can serve as an example.
+\end_layout
+
+\begin_layout Subsection
+Options
+\end_layout
+
+\begin_layout Standard
+The 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ implementations interpret a number of options, specified as fields of the
+ 
+\family typewriter
+options
+\family default
+ structure.
+ Most of the implementations process only a subset of the options (some
+ process none), as shown in Table
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:matlab-options"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+.
+\begin_inset Float table
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Tabular
+<lyxtabular version="3" rows="5" columns="10">
+<features tabularvalignment="middle">
+<column alignment="left" valignment="top">
+<column alignment="left" valignment="top">
+<column alignment="left" valignment="top" width="20text%">
+<column alignment="center" valignment="top" width="0pt">
+<column alignment="center" valignment="top" width="0pt">
+<column alignment="center" valignment="top" width="0pt">
+<column alignment="center" valignment="top" width="0pt">
+<column alignment="center" valignment="top" width="0pt">
+<column alignment="center" valignment="top" width="0pt">
+<column alignment="center" valignment="top" width="0pt">
+<row>
+<cell alignment="left" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+field name
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+values (default is 1st)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" rotate="90" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+KalmanUltimate
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" rotate="90" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+KalmanConventional
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" rotate="90" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+KalmanOddevenSmoother
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" rotate="90" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+KalmanAssociativeSmoother
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" rotate="90" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+KalmanSparse
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" rotate="90" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+KalmanNative
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" rotate="90" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+KalmanJava
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+estimateCovariance
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+boolean
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+true, false
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $\checkmark$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $\checkmark$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+covarianceEstimates
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+string
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+'PaigeSaunders', 'SelInv'
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $\checkmark$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+smoothOnly
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+boolean
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+false, true
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $\checkmark$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+algorithm
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+string
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+'Ultimate', 'Conventional', 'Oddeven', 'Associative'
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $\checkmark$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:matlab-options"
+
+\end_inset
+
+Options that affect the behavior of the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ implementations.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The meaning of the options is as follows:
+\end_layout
+
+\begin_layout Itemize
+The 
+\family typewriter
+estimateCovariance
+\family default
+ field tells some of the algorithms that the covariance matrices of the
+ state estimates are not required.
+ Not computing them saves time in these algorithms.
+ This is particularly useful in smoothers that are used as a building block
+ of a non-linear smoother
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+CITE SS
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+The 
+\family typewriter
+covarianceEstimates
+\family default
+ field specifies which method to use to compute the covariance matrices
+ of the state estimates, when more than one method is available.
+ 
+\end_layout
+
+\begin_layout Itemize
+The 
+\family typewriter
+smoothOnly
+\family default
+ field tells an implementation that filtered estimates are not required,
+ only smoothed estimates.
+ This can save time in some implementations (most notably, the 
+\family typewriter
+KalmanSparse
+\family default
+ one).
+\end_layout
+
+\begin_layout Itemize
+The 
+\family typewriter
+algorithm
+\family default
+ field tells the interface to the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ implementations which algorithm to use.
+\end_layout
+
+\begin_layout Subsection
+Implementation Details
+\end_layout
+
+\begin_layout Standard
+All the implementations extend an abstract class called 
+\family typewriter
+KalmanBase
+\family default
+, which implements most of the methods that handle modifications of the
+ sequence of steps (forgetting, rolling back, etc.).
+ The 
+\family typewriter
+KalmanOddevenSmoother
+\family default
+ and the 
+\family typewriter
+KalmanAssociativeSmoother
+\family default
+ implementations do not return filtered estimated, only smoothed estimates.
+ They both extend a second abstract class, 
+\family typewriter
+KalmanExplicitRepresentation
+\family default
+, in which the 
+\family typewriter
+evolve
+\family default
+ and 
+\family typewriter
+observe
+\family default
+ methods simply record the equations for later processing by the smoother.
+ Both of these implementations are sequential but they exhibit the parallel
+ algorithms in a clear way that is hopefully easy to implement in parallel
+ programming environments.
 \end_layout
 
 \begin_layout Section
@@ -2460,8 +3509,11 @@ C
 
 \end_inset
 
- interface, the filter is represented by a pointer to a structure of the
- 
+ interface, defined in 
+\family typewriter
+kalman.h
+\family default
+, the filter is represented by a pointer to a structure of the 
 \family typewriter
 kalman_t
 \family default
@@ -2471,12 +3523,17 @@ kalman_t
 \family typewriter
 kalman_create
 \family default
+ or 
+\family typewriter
+kalman_create_options
+\family default
 , which returns a pointer to 
 \family typewriter
 kalman_t
 \family default
 .
- 
+ The interface to the parallel smoothers is a little different and will
+ be explained later.
 \end_layout
 
 \begin_layout Standard
@@ -2559,7 +3616,7 @@ estimate
 \end_inset
 
 .
- Here is the declaration of some of the functions.
+ Here is the declaration the functions.
  
 \begin_inset listings
 inline false
@@ -2567,12 +3624,43 @@ status open
 
 \begin_layout Plain Layout
 
-kalman_t*        kalman_create    ();
+kalman_t*        kalman_create         ();
 \end_layout
 
 \begin_layout Plain Layout
 
-void             kalman_free      (kalman_t* kalman);
+kalman_t*        kalman_create_options (kalman_options_t options);
+\end_layout
+
+\begin_layout Plain Layout
+
+void             kalman_free           (kalman_t* kalman);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+void             kalman_evolve    (kalman_t* kalman, int32_t n_i,      
+                                                
+\end_layout
+
+\begin_layout Plain Layout
+
+                                   kalman_matrix_t* H_i, 
+\end_layout
+
+\begin_layout Plain Layout
+
+                                   kalman_matrix_t* F_i, kalman_matrix_t*
+ c_i,
+\end_layout
+
+\begin_layout Plain Layout
+
+                                   kalman_matrix_t* K_i, char K_i_type);
 \end_layout
 
 \begin_layout Plain Layout
@@ -2594,22 +3682,16 @@ void             kalman_observe   (kalman_t* kalman,
 
 \begin_layout Plain Layout
 
+\end_layout
+
+\begin_layout Plain Layout
+
 int64_t          kalman_earliest  (kalman_t* kalman);
 \end_layout
 
 \begin_layout Plain Layout
 
-void             kalman_smooth    (kalman_t* kalman);
-\end_layout
-
-\begin_layout Plain Layout
-
-kalman_matrix_t* kalman_estimate  (kalman_t* kalman, int64_t i);
-\end_layout
-
-\begin_layout Plain Layout
-
-kalman_matrix_t* kalman_covariance(kalman_t* kalman, int64_t i);
+int64_t          kalman_latest    (kalman_t* kalman);
 \end_layout
 
 \begin_layout Plain Layout
@@ -2619,7 +3701,44 @@ void             kalman_forget    (kalman_t* kalman, int64_t i);
 
 \begin_layout Plain Layout
 
-...
+void             kalman_rollback  (kalman_t* kalman, int64_t i);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+void             kalman_smooth    (kalman_t* kalman);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+kalman_matrix_t* kalman_estimate        (kalman_t* kalman, int64_t i);
+\end_layout
+
+\begin_layout Plain Layout
+
+kalman_matrix_t* kalman_covariance      (kalman_t* kalman, int64_t i);
+\end_layout
+
+\begin_layout Plain Layout
+
+char             kalman_covariance_type (kalman_t* kalman, int64_t i);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+kalman_matrix_t* kalman_perftest        (kalman_t* kalman, ...); // see later
 \end_layout
 
 \end_inset
@@ -2638,7 +3757,15 @@ kalman_covariance
 \end_inset
 
  such that 
-\begin_inset Formula $(W^{T}W)^{-1}$
+\begin_inset Formula $C=(W^{T}W)^{-1}$
+\end_inset
+
+ or 
+\begin_inset Formula $C$
+\end_inset
+
+ itself, where 
+\begin_inset Formula $C$
 \end_inset
 
  is the covariance matrix of the output of 
@@ -2646,6 +3773,19 @@ kalman_covariance
 kalman_estimate
 \family default
  on the same step.
+ The function 
+\family typewriter
+kalman_covariance_type
+\family default
+ specifies whether 
+\begin_inset Formula $C$
+\end_inset
+
+ is represented by itself or by its inverse factor 
+\begin_inset Formula $W$
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Standard
@@ -2662,7 +3802,16 @@ UltimateKalman
 \end_inset
 
 .
- Here are the declarations of some of them.
+ Here are the declarations of some of them (the full set is declared in
+ 
+\family typewriter
+matrix_ops.h
+\family default
+, included automatically by 
+\family typewriter
+kalman.h
+\family default
+).
 \begin_inset listings
 inline false
 status open
@@ -2733,7 +3882,333 @@ matrix_free
  when they are no longer needed.
 \end_layout
 
-\begin_layout Subsection*
+\begin_layout Subsection
+Options
+\end_layout
+
+\begin_layout Standard
+The 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+
+ takes an integer-type options argument that specifies which algorithm to
+ use, as well as parameters for these algorithms (currently only one parameter
+ is supported).
+ Different options are ORed together.
+ The option values defined in 
+\family typewriter
+kalman.h
+\family default
+ are:
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+KALMAN_ALGORITHM_ULTIMATE
+\family default
+, 
+\family typewriter
+KALMAN_ALGORITHM_CONVENTIONAL
+\family default
+, 
+\family typewriter
+KALMAN_ALGORITHM_ODDEVEN
+\family default
+, and 
+\family typewriter
+KALMAN_ALGORITHM_ASSOCIATIVE
+\family default
+, which specify which algorithm to use.
+ Specify exactly one of these bit values.
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+KALMAN_NO_COVARIANCE
+\family default
+, which tells the UltimateKalman and the Oddeven algorithms not to compute
+ the covariance matrices of the estimates.
+\end_layout
+
+\begin_layout Subsection
+Direct Invocation of the Parallel Smoothers
+\end_layout
+
+\begin_layout Standard
+The two parallel smoothers can be invoked for testing by first supplying
+ the evolution and observation equations using a sequence of calls to 
+\family typewriter
+kalman_evolve
+\family default
+ and 
+\family typewriter
+kalman_observe
+\family default
+ and then calling 
+\family typewriter
+kalman_smooth
+\family default
+, but this normally not appropriate for high-performance parallel software,
+ because the construction of the input to the smoother is completely sequential.
+\end_layout
+
+\begin_layout Standard
+Instead, the parallel smoothers should be invoked directly on an array of
+ equations,
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+void kalman_smooth_oddeven(kalman_options_t         options, 
+\end_layout
+
+\begin_layout Plain Layout
+
+                          kalman_step_equations_t** equations, 
+\end_layout
+
+\begin_layout Plain Layout
+
+                          kalman_step_index_t       k); 
+\end_layout
+
+\begin_layout Plain Layout
+
+void kalman_smoother_associative(...); // same arguments
+\end_layout
+
+\end_inset
+
+The first argument contains options, as in the call to 
+\family typewriter
+kalman_create_options
+\family default
+.
+ The second, 
+\family typewriter
+equations
+\family default
+, is an array of 
+\family typewriter
+k
+\family default
+ pointers to structures that each define an evolution equation and an observatio
+n equation, defined in 
+\family typewriter
+kalman.h
+\family default
+:
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+typedef struct kalman_step_equations_st {
+\end_layout
+
+\begin_layout Plain Layout
+
+  kalman_step_index_t step; // logical step number, start from 0
+\end_layout
+
+\begin_layout Plain Layout
+
+  int32_t dimension;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+  kalman_matrix_t* H;
+\end_layout
+
+\begin_layout Plain Layout
+
+  kalman_matrix_t* F;
+\end_layout
+
+\begin_layout Plain Layout
+
+  kalman_matrix_t* c;
+\end_layout
+
+\begin_layout Plain Layout
+
+  kalman_matrix_t* K;
+\end_layout
+
+\begin_layout Plain Layout
+
+  char             K_type;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+  kalman_matrix_t* G;
+\end_layout
+
+\begin_layout Plain Layout
+
+  kalman_matrix_t* o;
+\end_layout
+
+\begin_layout Plain Layout
+
+  kalman_matrix_t* C;
+\end_layout
+
+\begin_layout Plain Layout
+
+  char             C_type;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+  kalman_matrix_t* state;
+\end_layout
+
+\begin_layout Plain Layout
+
+  kalman_matrix_t* covariance;
+\end_layout
+
+\begin_layout Plain Layout
+
+  char             covariance_type;
+\end_layout
+
+\begin_layout Plain Layout
+
+} kalman_step_equations_t;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Parallel codes should normally allocate two arrays of length 
+\family typewriter
+k
+\family default
+, an arrays of structures and an array of pointers to these structures,
+ and ideally fill their elements using a multi-threaded code.
+ The array of pointers should be filled with the addresses of the elements
+ in the array of structures.
+ Each structure should be filled with the matrices that define the evolution
+ and observation equations of one step; the semantics are the same as in
+ calls to 
+\family typewriter
+kalman_evolve
+\family default
+ and 
+\family typewriter
+kalman_observe
+\family default
+.
+ The 
+\family typewriter
+dimension
+\family default
+ field specifies the dimension of the state vector, and the 
+\family typewriter
+step
+\family default
+ field is a sequence number that should start from zero.
+\end_layout
+
+\begin_layout Standard
+When the call to the smoother returns, the 
+\family typewriter
+state
+\family default
+ fields contain the smoothed state estimates and the 
+\family typewriter
+covariance
+\family default
+ and 
+\family typewriter
+covariance_type
+\family default
+ fields contain the covariance of the state, unless the 
+\family typewriter
+KALMAN_NO_COVARIANCE
+\family default
+ bit was set in 
+\family typewriter
+options
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+The parallel-programming environment that the library uses, TBB, allows
+ codes to control the number of operating-system threads that are used in
+ a given computation, and a parameter called the block size.
+ The first parameter controls how many physical cores are used.
+ The second controls the overhead of parallelism: in parallel for loops
+ and similar constructs, the environment performs blocks of iterations sequentia
+lly to reduce overhead.
+ Our experiments indicate that a value of 16 is a good for the block size.
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+increased from the 10 in the paper, to ensure that even in an array of pointers,
+ blocks fill entire cache lines.
+\end_layout
+
+\end_inset
+
+ Callers should specify these two value, using the following two functions
+ defined in 
+\family typewriter
+parallel.h
+\family default
+, before calling a parallel smoother:
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+void parallel_set_thread_limit(int p); 
+\end_layout
+
+\begin_layout Plain Layout
+
+void parallel_set_blocksize   (int b); 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
 Building and Running the C Outside Matlab
 \end_layout
 
@@ -2778,9 +4253,14 @@ UltimateKalman
 
 \end_inset
 
- and Windows and Linux scripts that build executable versions of the three
- programs.
- The scripts compile one of the programs along with 
+ and Windows and Linux/MacOS scripts that build executable versions of the
+ three programs.
+ 
+\begin_inset Note Note
+status collapsed
+
+\begin_layout Plain Layout
+The scripts compile one of the programs along with 
 \begin_inset Flex Pkg
 status open
 
@@ -2811,6 +4291,10 @@ LAPACK
 \end_inset
 
  libraries, and run it.
+\end_layout
+
+\end_inset
+
  You should be able to use these scripts as examples of how to compile and
  link 
 \begin_inset Flex Pkg
@@ -2823,7 +4307,12 @@ UltimateKalman
 \end_inset
 
 .
- In particular, the 
+ 
+\begin_inset Note Note
+status collapsed
+
+\begin_layout Plain Layout
+In particular, the 
 \begin_inset Flex Proglang
 status open
 
@@ -2877,6 +4366,11 @@ C++
  programs or libraries.
 \end_layout
 
+\end_inset
+
+
+\end_layout
+
 \begin_layout Standard
 These 
 \begin_inset Flex Proglang
@@ -2915,7 +4409,638 @@ c
  directory of the distribution archive.
 \end_layout
 
+\begin_layout Subsubsection*
+Building Under Windows
+\end_layout
+
 \begin_layout Standard
+The Windows build script uses the BLAS and LAPACK libraries from MKL
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "MKL"
+literal "false"
+
+\end_inset
+
+.
+ Both MKL and TBB are installed as part of the oneAPI Base Kit, a set of
+ free development tools from Intel.
+ The kit includes additional components but for UltimateKalman, only thse
+ components are required.
+ We tested the library with the 2024.1 and 2025.0 versions of oneAPI, as well
+ as some older ones.
+ Upgrading oneMKL should not require any change in the build script.
+\end_layout
+
+\begin_layout Standard
+The script also uses Microsoft's C/C++ compiler (
+\family typewriter
+cl
+\family default
+) from the free Visual Studio Community Edition.
+ We tested the library with versions 2019 and 2022
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "VSCommunity"
+literal "false"
+
+\end_inset
+
+.
+ The build script is currently set up to use the 2022 version.
+ If you installed a different version, you will need to update the path
+ to the script that sets up the development tool in 
+\family typewriter
+build.bat
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+Assuming that these prerequisites have been installed, you can build the
+ example programs by executing 
+\family typewriter
+build.bat
+\family default
+.
+ The script will build the programs and it will tell you to execute another
+ script so that Windows can find the MKL libraries at run time.
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+C:
+\backslash
+Users
+\backslash
+stoledo
+\backslash
+github
+\backslash
+ultimate-kalman
+\backslash
+c>build.bat
+\end_layout
+
+\begin_layout Plain Layout
+
+**********************************************************************
+\end_layout
+
+\begin_layout Plain Layout
+
+** Visual Studio 2022 Developer Command Prompt v17.9.2
+\end_layout
+
+\begin_layout Plain Layout
+
+** Copyright (c) 2022 Microsoft Corporation
+\end_layout
+
+\begin_layout Plain Layout
+
+**********************************************************************
+\end_layout
+
+\begin_layout Plain Layout
+
+[vcvarsall.bat] Environment initialized for: 'x64'
+\end_layout
+
+\begin_layout Plain Layout
+
+:: initializing oneAPI environment...
+\end_layout
+
+\begin_layout Plain Layout
+
+   Initializing Visual Studio command-line environment...
+\end_layout
+
+\begin_layout Plain Layout
+
+   Visual Studio version 17.9.2 environment configured.
+\end_layout
+
+\begin_layout Plain Layout
+
+   "C:
+\backslash
+Program Files
+\backslash
+Microsoft Visual Studio
+\backslash
+2022
+\backslash
+Community
+\backslash
+"
+\end_layout
+
+\begin_layout Plain Layout
+
+   Visual Studio command-line environment initialized for: 'x64'
+\end_layout
+
+\begin_layout Plain Layout
+
+:  advisor -- latest
+\end_layout
+
+\begin_layout Plain Layout
+
+:  compiler -- latest
+\end_layout
+
+\begin_layout Plain Layout
+
+:  dev-utilities -- latest
+\end_layout
+
+\begin_layout Plain Layout
+
+:  ipp -- latest
+\end_layout
+
+\begin_layout Plain Layout
+
+:  mkl -- latest
+\end_layout
+
+\begin_layout Plain Layout
+
+:  ocloc -- latest
+\end_layout
+
+\begin_layout Plain Layout
+
+:  pti -- latest
+\end_layout
+
+\begin_layout Plain Layout
+
+:  tbb -- latest
+\end_layout
+
+\begin_layout Plain Layout
+
+:  umf -- latest
+\end_layout
+
+\begin_layout Plain Layout
+
+:: oneAPI environment initialized ::
+\end_layout
+
+\begin_layout Plain Layout
+
+kalman_ultimate.c
+\end_layout
+
+\begin_layout Plain Layout
+
+kalman_conventional.c
+\end_layout
+
+\begin_layout Plain Layout
+
+kalman_oddeven_smoother.c
+\end_layout
+
+\begin_layout Plain Layout
+
+kalman_associative_smoother.c
+\end_layout
+
+\begin_layout Plain Layout
+
+...
+\end_layout
+
+\begin_layout Plain Layout
+
+generated test programs
+\end_layout
+
+\begin_layout Plain Layout
+
+To run the generated binaries, invoke
+\end_layout
+
+\begin_layout Plain Layout
+
+  "C:
+\backslash
+Program Files (x86)
+\backslash
+Intel
+\backslash
+oneAPI
+\backslash
+setvars.bat" intel64
+\end_layout
+
+\begin_layout Plain Layout
+
+on the command line, to ensure that Windows can find the required DLLs.
+\end_layout
+
+\end_inset
+
+You can see in the output the setup of Visual Studio, then the setup of
+ oneAPI, and then the compilation of the source files.
+ Once you run 
+\family typewriter
+setvars.bat
+\family default
+ so that Windows can find the libraries, you can run the test programs.
+ The output of 
+\family typewriter
+blastest.exe
+\family default
+, the simplest example program, should look like this:
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+C:
+\backslash
+Users
+\backslash
+stoledo
+\backslash
+github
+\backslash
+ultimate-kalman
+\backslash
+c>blastest
+\end_layout
+
+\begin_layout Plain Layout
+
+BLAS test starting
+\end_layout
+
+\begin_layout Plain Layout
+
+A = matrix_print 2 3
+\end_layout
+
+\begin_layout Plain Layout
+
+1 2 3
+\end_layout
+
+\begin_layout Plain Layout
+
+4 5 6
+\end_layout
+
+\begin_layout Plain Layout
+
+B = matrix_print 3 2
+\end_layout
+
+\begin_layout Plain Layout
+
+7 8
+\end_layout
+
+\begin_layout Plain Layout
+
+9 10
+\end_layout
+
+\begin_layout Plain Layout
+
+12 13
+\end_layout
+
+\begin_layout Plain Layout
+
+C = matrix_print 2 2
+\end_layout
+
+\begin_layout Plain Layout
+
+125 137
+\end_layout
+
+\begin_layout Plain Layout
+
+293 323
+\end_layout
+
+\begin_layout Plain Layout
+
+Result should be:
+\end_layout
+
+\begin_layout Plain Layout
+
+  125  137
+\end_layout
+
+\begin_layout Plain Layout
+
+  293  323
+\end_layout
+
+\begin_layout Plain Layout
+
+BLAS test done
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection*
+Building Under Linux
+\end_layout
+
+\begin_layout Standard
+Under Linux, 
+\family typewriter
+build.sh
+\family default
+ uses the 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+BLAS
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+LAPACK
+\end_layout
+
+\end_inset
+
+ libraries that are installed in the Ubuntu Linux distribution using the
+ commands
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+sudo apt install libblas-dev
+\end_layout
+
+\begin_layout Plain Layout
+
+sudo apt install liblapack-dev
+\end_layout
+
+\end_inset
+
+These software packages install the libraries in a directory that is already
+ on the search path, so no special configuration of the search path is required.
+ These particular implementations of the 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+BLAS
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+LAPACK
+\end_layout
+
+\end_inset
+
+ are not high-performance implementations, but since 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+ typically handles fairly small matrices, a high-performance library like
+ Intel's 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+MKL
+\end_layout
+
+\end_inset
+
+ may not provide performance benefits.
+ However, 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+MKL
+\end_layout
+
+\end_inset
+
+ is also available for Linux and you can certainly use it.
+\end_layout
+
+\begin_layout Subsubsection*
+Building Under MacOS
+\end_layout
+
+\begin_layout Standard
+The 
+\family typewriter
+build.sh
+\family default
+ script assumes that on MacOS, XCode is installed (Apple's development environme
+nt), which provides a C/C++ compiler.
+ The script also assumes that TBB has been installed using Homebrew, a popular
+ package manager for MacOS.
+ The compiler is invoked in the script using the 
+\family typewriter
+gcc
+\family default
+ command, but the actual compiler is not the GNU C compiler (
+\family typewriter
+gcc
+\family default
+) but 
+\family typewriter
+clang
+\family default
+.
+ The BLAS and LAPACK libraries that we use in the MacOS build are from Apple's
+ Accelerate framework, a collection of high-performance libraries.
+\end_layout
+
+\begin_layout Standard
+To install TBB using Homebrew, first install Homebrew (if not already installed)
+ and then issue the commands 
+\family typewriter
+brew update
+\family default
+ and 
+\family typewriter
+brew install tbb
+\family default
+.
+ To inspect the installed version, use the command 
+\family typewriter
+brew info tbb
+\family default
+.
+\end_layout
+
+\begin_layout Subsubsection*
+Running Example Programs
+\end_layout
+
+\begin_layout Standard
+The build script builds four binaries from three example source files:
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+blastest
+\family default
+, a simple program that only tests that UltimateKalman is able to call BLAS
+ and LAPACK functions correctly.
+ If this program fails to compile, to link, or to run, there is a problem
+ with the BLAS and LAPACK libraries.
+ 
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+rotation
+\family default
+ performs the same computation that the expression 
+\family typewriter
+rotation(KalmanUltimate,5,2)
+\family default
+ performs in the 
+\begin_inset Flex Proglang
+status open
+
+\begin_layout Plain Layout
+MATLAB
+\end_layout
+
+\end_inset
+
+ version and should output the same numerical results, just like 
+\family typewriter
+Rotation.java
+\family default
+.
+ This example shows how to use UltimateKalman to filter and smooth, and
+ it shows how the APIs in the three languages are related to each other.
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+performance
+\family default
+ implements a Kalman smoother on problems with 
+\begin_inset Formula $n_{i}=m_{i}=n$
+\end_inset
+
+ and 
+\begin_inset Formula $k$
+\end_inset
+
+ steps.
+ The matrices 
+\begin_inset Formula $F_{i}$
+\end_inset
+
+ and 
+\begin_inset Formula $G_{i}$
+\end_inset
+
+ are orthonormal and 
+\begin_inset Formula $H_{i}=I$
+\end_inset
+
+.
+ These choices avoid the risk of numerical problems, including overflows
+ or underflows.
+ The program measures and reports the running time of the smoother.
+ You specify 
+\begin_inset Formula $n$
+\end_inset
+
+ and 
+\begin_inset Formula $k$
+\end_inset
+
+ on the command line.
+ Setting 
+\begin_inset Formula $n=6$
+\end_inset
+
+ or 
+\begin_inset Formula $n=48$
+\end_inset
+
+ results in exactly the same numerical input as the Matlab version (with
+ seed 1 for the random-number generator).
+ This program is sequential.
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+performance_par
+\family default
+ is identical to 
+\family typewriter
+performance
+\family default
+, but it uses TBB to parallelize the Oddeven and Associative smoothers.
+\end_layout
+
+\begin_layout Subsubsection*
+Modifying Build Parameters
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status collapsed
+
+\begin_layout Plain Layout
 The three sample programs are 
 \family typewriter
 rotation.c
@@ -2942,6 +5067,20 @@ MATLAB
 
  programs, 
 \family typewriter
+performance.c
+\family default
+, a program designed to measure the running time of 
+\begin_inset Flex Pkg
+status open
+
+\begin_layout Plain Layout
+UltimateKalman
+\end_layout
+
+\end_inset
+
+, and 
+\family typewriter
 blastest.c
 \family default
 , a small program intended only to test the interface to the 
@@ -2964,28 +5103,14 @@ LAPACK
 
 \end_inset
 
- libraries, and 
-\family typewriter
-performance.c
-\family default
-, a program designed to measure the running time of 
-\begin_inset Flex Pkg
-status open
-
-\begin_layout Plain Layout
-UltimateKalman
-\end_layout
-
-\end_inset
-
-.
+ libraries.
  The program 
 \family typewriter
 rotation.c
 \family default
  performs the same computation that the expression 
 \family typewriter
-rotation(UltimateKalman,5,2)
+rotation(KalmanUltimate,5,2)
 \family default
  performs in 
 \begin_inset Flex Proglang
@@ -3007,14 +5132,14 @@ Rotation.java
 performance.c
 \family default
  implements a Kalman smoother on problems with 
-\begin_inset Formula $n_{i}=m_{i}=6$
+\begin_inset Formula $n_{i}=m_{i}=n$
 \end_inset
 
- or 
-\begin_inset Formula $n_{i}=m_{i}=48$
+ and 
+\begin_inset Formula $k$
 \end_inset
 
- using orthonormal matrices for 
+ steps using orthonormal matrices for 
 \begin_inset Formula $F_{i}$
 \end_inset
 
@@ -3028,9 +5153,18 @@ performance.c
 
 .
  It measures and reports the running time of the smoother.
+ You specify 
+\begin_inset Formula $n$
+\end_inset
+
+ and 
+\begin_inset Formula $k$
+\end_inset
+
+ on the command line.
 \end_layout
 
-\begin_layout Standard
+\begin_layout Plain Layout
 If you invoke the build script, 
 \family typewriter
 build.bat
@@ -3056,7 +5190,16 @@ performance
 .
 \end_layout
 
+\end_inset
+
+
+\end_layout
+
 \begin_layout Standard
+\begin_inset Note Note
+status collapsed
+
+\begin_layout Plain Layout
 The Windows script, 
 \family typewriter
 build.bat
@@ -3365,7 +5508,16 @@ build script done
 
 \end_layout
 
+\end_inset
+
+
+\end_layout
+
 \begin_layout Standard
+\begin_inset Note Note
+status collapsed
+
+\begin_layout Plain Layout
 When you run the Windows executable program yourself, make sure that the
  directory where the 
 \begin_inset Flex Pkg
@@ -3435,171 +5587,14 @@ setvars.bat
  
 \end_layout
 
-\begin_layout Standard
-Under Linux, 
-\family typewriter
-build.sh
-\family default
- uses the 
-\begin_inset Flex Pkg
-status open
-
-\begin_layout Plain Layout
-BLAS
-\end_layout
-
 \end_inset
 
- and 
-\begin_inset Flex Pkg
-status open
 
-\begin_layout Plain Layout
-LAPACK
-\end_layout
-
-\end_inset
-
- libraries that are installed in the Ubuntu Linux distribution using the
- commands
-\begin_inset listings
-inline false
-status open
-
-\begin_layout Plain Layout
-
-sudo apt install libblas-dev
-\end_layout
-
-\begin_layout Plain Layout
-
-sudo apt install liblapack-dev
-\end_layout
-
-\end_inset
-
-These software packages install the libraries in a directory that is already
- on the search path, so no special configuration of the search path is required.
- These particular implementations of the 
-\begin_inset Flex Pkg
-status open
-
-\begin_layout Plain Layout
-BLAS
-\end_layout
-
-\end_inset
-
- and 
-\begin_inset Flex Pkg
-status open
-
-\begin_layout Plain Layout
-LAPACK
-\end_layout
-
-\end_inset
-
- are not high-performance implementations, but since 
-\begin_inset Flex Pkg
-status open
-
-\begin_layout Plain Layout
-UltimateKalman
-\end_layout
-
-\end_inset
-
- typically handles fairly small matrices, a high-performance library like
- Intel's 
-\begin_inset Flex Pkg
-status open
-
-\begin_layout Plain Layout
-MKL
-\end_layout
-
-\end_inset
-
- may not provide performance benefits.
- However, 
-\begin_inset Flex Pkg
-status open
-
-\begin_layout Plain Layout
-MKL
-\end_layout
-
-\end_inset
-
- is also available for Linux and you can certainly use it.
 \end_layout
 
 \begin_layout Standard
-To successfully link 
-\begin_inset Flex Pkg
-status open
-
-\begin_layout Plain Layout
-UltimateKalman
-\end_layout
-
-\end_inset
-
- with other implementations of the 
-\begin_inset Flex Pkg
-status open
-
-\begin_layout Plain Layout
-BLAS
-\end_layout
-
-\end_inset
-
- and 
-\begin_inset Flex Pkg
-status open
-
-\begin_layout Plain Layout
-LAPACK
-\end_layout
-
-\end_inset
-
-, you may need to set some preprocessor variables that control how 
-\begin_inset Flex Pkg
-status open
-
-\begin_layout Plain Layout
-UltimateKalman
-\end_layout
-
-\end_inset
-
- calls these libraries.
- Most of the variations are due to the fact that these libraries were originally
- implemented in 
-\begin_inset Flex Proglang
-status open
-
-\begin_layout Plain Layout
-Fortran
-\end_layout
-
-\end_inset
-
-.
- The preprocessor variables that control the behavior of 
-\begin_inset Flex Pkg
-status open
-
-\begin_layout Plain Layout
-UltimateKalman
-\end_layout
-
-\end_inset
-
- are listed and explained in Table
+Certain aspects of UltimateKalman can be modified by defining preprocessor
+ macros, listed in Table
 \begin_inset space ~
 \end_inset
 
@@ -3613,7 +5608,50 @@ noprefix "false"
 
 \end_inset
 
-.
+:
+\end_layout
+
+\begin_layout Itemize
+The BLAS and LAPACK were originally Fortran libraries and different implementati
+ons of them must be called from C in different ways.
+ Several proprocessor macros select the calling convention.
+ The build scripts set these up for several popular libraries.
+ 
+\end_layout
+
+\begin_layout Itemize
+Step numbers (indices of states) can be represented by 32-bit or 64-bit
+ numbers.
+ Three preprocessor macros, which should be set consistently, control this
+ choice: 
+\family typewriter
+KALMAN_STEP_INDEX_TYPE_INT32
+\family default
+, 
+\family typewriter
+FARRAY_INDEX_TYPE_INT32
+\family default
+, and 
+\family typewriter
+PARALLEL_INDEX_TYPE_INT32
+\family default
+ (to use 64-bit integers, replace 
+\family typewriter
+INT32
+\family default
+ by 
+\family typewriter
+INT64
+\family default
+; it is also possible to use unsigned integer typed, but we advise against
+ this).
+ 
+\end_layout
+
+\begin_layout Itemize
+Two preprocessor macros listed at the bottom of the table control debug
+ outputs.
+ They should normally not be set.
 \end_layout
 
 \begin_layout Standard
@@ -3625,7 +5663,7 @@ status open
 \begin_layout Plain Layout
 \align center
 \begin_inset Tabular
-<lyxtabular version="3" rows="10" columns="3">
+<lyxtabular version="3" rows="13" columns="3">
 <features tabularvalignment="middle">
 <column alignment="left" valignment="top">
 <column alignment="left" valignment="top">
@@ -3889,7 +5927,7 @@ LAPACK
 </cell>
 </row>
 <row>
-<cell alignment="left" valignment="top" usebox="none">
+<cell alignment="left" valignment="top" bottomline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -3900,7 +5938,7 @@ BUILD_BLAS_STRLEN_END
 
 \end_inset
 </cell>
-<cell alignment="left" valignment="top" usebox="none">
+<cell alignment="left" valignment="top" bottomline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -3909,7 +5947,7 @@ no
 
 \end_inset
 </cell>
-<cell alignment="left" valignment="top" usebox="none">
+<cell alignment="left" valignment="top" bottomline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -3934,6 +5972,134 @@ LAPACK
 \end_inset
 
 
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+KALMAN_STEP_INDEX_TYPE_INT32
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+exactly one
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Specifies 32-bit step numbers
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+KALMAN_STEP_INDEX_TYPE_INT64
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+exactly one
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Speficies 64-bit step numbers
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+FARRAY_INDEX_TYPE_INT32/64
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+yes
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Must be consistent with 
+\family typewriter
+KALMAN_STEP_INDEX_TYPE
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+PARALLEL_INDEX_TYPE_INT32/64
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+yes
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Must be consistent with 
+\family typewriter
+KALMAN_STEP_INDEX_TYPE
 \end_layout
 
 \end_inset
@@ -3971,7 +6137,7 @@ generates run-time debug printouts
 </cell>
 </row>
 <row>
-<cell alignment="left" valignment="top" usebox="none">
+<cell alignment="left" valignment="top" bottomline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -3982,7 +6148,7 @@ NDEBUG
 
 \end_inset
 </cell>
-<cell alignment="left" valignment="top" usebox="none">
+<cell alignment="left" valignment="top" bottomline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -3991,42 +6157,11 @@ no
 
 \end_inset
 </cell>
-<cell alignment="left" valignment="top" usebox="none">
+<cell alignment="left" valignment="top" bottomline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
 suppresses run-time assertion checking
-\end_layout
-
-\end_inset
-</cell>
-</row>
-<row>
-<cell alignment="center" valignment="top" bottomline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-
-\family typewriter
-BUILD_WIN32_GETTIMEOFDAY
-\end_layout
-
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" bottomline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-no
-\end_layout
-
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" bottomline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-required under Windows; do not use under Linux or MacOS
 \end_layout
 
 \end_inset

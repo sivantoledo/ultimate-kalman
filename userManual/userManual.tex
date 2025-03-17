@@ -9,7 +9,9 @@
 \geometry{verbose,tmargin=2.5cm,bmargin=2.5cm,lmargin=2.5cm,rmargin=2.5cm,headheight=2.5cm,headsep=2.5cm,footskip=1cm}
 \usepackage{babel}
 \usepackage{array}
+\usepackage{url}
 \usepackage{amstext}
+\usepackage{rotating}
 \usepackage{xargs}[2008/03/08]
 \usepackage[unicode=true,pdfusetitle,
  bookmarks=true,bookmarksnumbered=false,bookmarksopen=false,
@@ -30,6 +32,7 @@
 
 
  
+\usepackage{amssymb} % Provides \checkmark
 
 \makeatother
 
@@ -135,20 +138,45 @@ Transformations}
 
 \global\long\def\irange{\boldsymbol{:}}%
 
-UltimateKalman is a library that implements efficient Kalman filtering
-and smoothing algorithms using orthogonal transformations. The algorithms
-are based on an algorithm by Paige and Saunders~\cite{PaigeSaunders:1977:Kalman},
+UltimateKalman is a library that implements efficient and flexible
+Kalman filtering and smoothing algorithms. The library contains MATLAB,
+C, and Java implementations (currently, the Java implementations
+does not contain all the algorithms). The library is available on
+GitHub at \url{https://github.com/sivantoledo/ultimate-kalman}. The
+release history of the library is as follows:
+\begin{itemize}
+\item \textbf{Release 1.2.0} contains the sequential UltimateKalman algorithm,
+which is documented carefully in an article in the ACM Transactions
+on Mathematical Software~\cite{doi:10.1145/3699958}. The algorithm
+is a slight extension an algorithm by Paige and Saunders~\cite{PaigeSaunders:1977:Kalman},
 which to the best of our knowledge, has not been implemented before.
-This guide is part of an article in the journal ACM Transactions on
-Mathematical Software that describes UltimateKalman. The algorithms
-are described in that article; this user guide focuses on usage of
-the software library.
-
-UltimateKalman is currently available in MATLAB, C, and Java.
-Each implementation is separate and does not rely on the others. The
-implementation includes MATLAB adapter classes that allow invocation
-of the C and Java implementations from MATLAB. This allows a single
-set of example functions to invoke all three implementations. 
+The algorithm uses orthogonal transformations so it has good numerical
+stability. The algorithm is implemented monolithically in all 3 languages.
+Please cite this article when citing the sequential UltimateKalman
+algorithm or its implementation. To use that version, please use the
+user guide from that release, not this document.
+\item \textbf{Release 2.0.0} contains three additional algorithms in MATLAB
+and C, including two parallel-in-time smoothers, the Odd-Even smoother
+proposed in an article by Gargir and Toledo~\cite{toappear:IPDPS2025}
+and the smoother proposed by Särkkä and García-Fernández~. The code
+in this release was used to perform the experiments reported by Gargir
+and Toledo~\cite{toappear:IPDPS2025}; the release is meant mostly
+to document these experiments, not for adoption by users.
+\item \textbf{Release 2.1.0} is a significantly cleaned up version of the
+codes described by Gargir and Toledo~\cite{toappear:IPDPS2025}.
+It is meant to be adopted by users. This is the version described
+in this guide.\\
+The C codes in this release use the same API as the implementation
+in Release~1.2.0, but the code has been split into multiple files
+so the build is more complicated. The MATLAB also retains the same
+API, but class names have changed. The Java implementation is identical
+to the implementation in Release~1.2.0.
+\end{itemize}
+The implementation in each language is separate and does not rely
+on the others. The implementation includes MATLAB adapter classes
+that allow invocation of the C and Java implementations from MATLAB.
+This allows a single set of MATLABexample functions to invoke all
+three implementations. 
 
 The programming interfaces of all three implementations are similar.
 They offer exactly the same functionality using the same abstractions,
@@ -166,11 +194,16 @@ on functionality that is part of the core product. The implementation
 also works under GNU Octave. The C implementation relies on basic
 matrix and vector operations from the BLAS~\cite{BLAS,BLAS3ALG}
 and on the QR and Cholesky factorizations from LAPACK~\cite{LAPACK-UG}.
-The Java implementation uses the Apache Commons Math library for
-both basic matrix-vector operations and for the QR and Cholesky factorizations.
-The Cholesky factorization is used only to factor covariance matrices
-that are specified explicitly, as opposed to being specified by inverse
-factors or triangular factors.
+The C implementation of the parallel-in-time smoothers used the Threading
+Building Blocks (TBB) library to express shared-memory parallelism.
+TBB is a C++ library and the code uses a single C++ source file
+to expose the parallel primitives. The code can also be compiled without
+TBB, but this generates a sequential algorithm, not a multi-threaded
+(multi-core) one. The Java implementation uses the Apache Commons
+Math library for both basic matrix-vector operations and for the QR
+and Cholesky factorizations. The Cholesky factorization is used only
+to factor covariance matrices that are specified explicitly, as opposed
+to being specified by inverse factors or triangular factors.
 
 We first describe how the different implementations represent matrices,
 vectors, and covariance matrices. Then we describe in detail the MATLAB
@@ -180,14 +213,14 @@ ends with a discussion of the data structures that are used to represent
 the step sequence and a presentation of a mechanism for measuring
 the performance of the implementations.
 
-The code has been tested with MATLAB R2021b (version 9.11) and with
-GNU OCTAVE 7.1.0, both running under Windows 11. The code has also
-been tested on Linux and on MacOS. Under Windows, MATLAB was configured
-to use Microsoft Visual C/C++ 2019 to compile C (mex) code. OCTAVE
-was configured to use mingw64 to compile C (mex) code. The code also
-compiles as a standalone C program under both GCC and Microsoft
-Visual C/C++ 2022, as well as under Java version 1.8 (also called
-version 8) and up.
+The code has been tested with MATLAB R2021b (version 9.11) and R2024a,
+and with GNU OCTAVE 7.1.0, both running under Windows 11. The code
+has also been tested on Linux and on MacOS. Under Windows, MATLAB
+was configured to use Microsoft Visual C/C++ 2019 to compile C (mex)
+code. OCTAVE was configured to use mingw64 to compile C (mex) code.
+The code also compiles as a standalone C program under both GCC
+and Microsoft Visual C/C++ 2022, as well as under Java version 1.8
+(also called version 8) and up.
 
 The distribution archive contains a number of directories with scripts
 that build libraries, programs, and this document. The scripts for
@@ -293,11 +326,14 @@ is represented using two arguments, a matrix and a single character
 (\texttt{C}, \texttt{W}, \texttt{I}, or \texttt{w}) that defines how
 the given matrix is related to $C$. 
 
-UltimateKalman always returns the covariance matrix of $\estimate u_{i}$
-as an upper triangular inverse factor $W$. The MATLAB and Java
-implementations return covariance matrices as objects of the \texttt{CovarianceMatrix}
-type (always with an inverse-factor representation); the C implementation
-simply returns the inverse factor as a matrix.
+The UltimateKalman algorithm always returns the covariance matrix
+of $\estimate u_{i}$ as an upper triangular inverse factor $W$.
+The other algorithms return an explicit covariance matrix $C$. The
+MATLAB and Java implementations return covariance matrices as objects
+of the \texttt{CovarianceMatrix} type (always with an inverse-factor
+representation); the C implementation includes one function that returns
+the type of the covariance matrix (a single character) and another
+that returns the factor $W$ or the explicit matrix $C$.
 
 \section{\label{sec:matlab}The MATLAB programming interface}
 
@@ -307,10 +343,28 @@ directory to your MATLAB search path using MATLAB's \texttt{addpath}
 command. 
 
 The MATLAB implementation is object oriented and is implemented as
-a handle (reference) class. The constructor takes no arguments.
+a collection of handle (reference) classes called \texttt{KalmanUltimate},
+\texttt{KalmanConventional}, \texttt{KalmanOddevenSmoother}, \texttt{KalmanAssociativeSmoother},
+and \texttt{KalmanSparse}. The first four classes implement, respectively,
+the UltimateKalman algorithm~\cite{doi:10.1145/3699958,PaigeSaunders:1977:Kalman},
+a conventional Kalman filter~\cite{Kalman:1960:KalmanFilter} and
+RTS smoother~, the Gargir-Toledo parallel smoother~\cite{toappear:IPDPS2025},
+and the parallel smoother by Särkkä and García-Fernández~. The fifth
+implementation, \texttt{KalmanSparse}, uses an explicit sparse QR
+factorizations to filter and smooth; it is inefficient, especially
+when filtering, and is meant only for testing the correctness of other
+implementations. It is particularly simple and therefore it is particularly
+easy to ensure that it is correct. The interface of all these classes
+is exactly the same. The constructor takes one optional argument,
+a structure that specifies algorithmic options.
 
 \begin{lstlisting}
-kalman = UltimateKalman()
+kalman = KalmanUltimate(options)
+\end{lstlisting}
+or
+
+\begin{lstlisting}
+kalman = KalmanUltimate()
 \end{lstlisting}
 
 The (overloaded) methods that advance the filter through a sequence
@@ -406,12 +460,15 @@ steps and the information from future steps that are in memory when
 \texttt{smooth} is called.
 
 To use the C or Java implementations from within MATLAB, create
-an object of one of the adapter classes, not an object of the \texttt{UltimateKalman}
-class:
+an object of one of the adapter classes:
 \begin{lstlisting}
-kalman = UltimateKalmanNative()
-kalman = UltimateKalmanJava()
+kalman = KalmanNative(options)
+kalman = KalmanJava(options)
 \end{lstlisting}
+These adapter classes have exactly the same interface as the MATLAB
+implementations (including the fact that the \texttt{options} argument
+is optional).
+
 To use the C implementation, you will first need to compile the C
 code into a MATLAB-callable dynamically-linked library that MATLAB
 uses through an interface called the \texttt{mex} interface. To perform
@@ -423,6 +480,73 @@ containing the Apache Commons Math library to MATLAB's Java search
 path using MATLAB \texttt{javaaddpath} command. The function \texttt{replication.m}
 in the \texttt{examples} sub-directory adds these libraries to the
 path and can serve as an example.
+
+\subsection{Options}
+
+The MATLAB implementations interpret a number of options, specified
+as fields of the \texttt{options} structure. Most of the implementations
+process only a subset of the options (some process none), as shown
+in Table~\ref{tab:matlab-options}.
+\begin{table}
+\begin{tabular}{ll>{\raggedright}p{0.2\textwidth}ccccccc}
+field name & type & values (default is 1st) & \begin{turn}{90}
+\texttt{KalmanUltimate}
+\end{turn} & \begin{turn}{90}
+\texttt{KalmanConventional}
+\end{turn} & \begin{turn}{90}
+\texttt{KalmanOddevenSmoother}
+\end{turn} & \begin{turn}{90}
+\texttt{KalmanAssociativeSmoother}
+\end{turn} & \begin{turn}{90}
+\texttt{KalmanSparse}
+\end{turn} & \begin{turn}{90}
+\texttt{KalmanNative}
+\end{turn} & \begin{turn}{90}
+\texttt{KalmanJava}
+\end{turn}\tabularnewline
+\hline 
+\texttt{estimateCovariance} & boolean & \texttt{true, false} & $\checkmark$ &  & $\checkmark$ &  &  &  & \tabularnewline
+\texttt{covarianceEstimates} & string & \texttt{'PaigeSaunders', 'SelInv'} & $\checkmark$ &  &  &  &  &  & \tabularnewline
+\texttt{smoothOnly} & boolean & \texttt{false, true} &  &  &  &  & $\checkmark$ &  & \tabularnewline
+\texttt{algorithm} & string & \texttt{'Ultimate', 'Conventional', 'Oddeven', 'Associative'} &  &  &  &  &  & $\checkmark$ & \tabularnewline
+\end{tabular}
+
+\caption{\label{tab:matlab-options}Options that affect the behavior of the
+MATLAB implementations.}
+
+\end{table}
+
+The meaning of the options is as follows:
+\begin{itemize}
+\item The \texttt{estimateCovariance} field tells some of the algorithms
+that the covariance matrices of the state estimates are not required.
+Not computing them saves time in these algorithms. This is particularly
+useful in smoothers that are used as a building block of a non-linear
+smoother~.
+\item The \texttt{covarianceEstimates} field specifies which method to use
+to compute the covariance matrices of the state estimates, when more
+than one method is available. 
+\item The \texttt{smoothOnly} field tells an implementation that filtered
+estimates are not required, only smoothed estimates. This can save
+time in some implementations (most notably, the \texttt{KalmanSparse}
+one).
+\item The \texttt{algorithm} field tells the interface to the C implementations
+which algorithm to use.
+\end{itemize}
+
+\subsection{Implementation Details}
+
+All the implementations extend an abstract class called \texttt{KalmanBase},
+which implements most of the methods that handle modifications of
+the sequence of steps (forgetting, rolling back, etc.). The \texttt{KalmanOddevenSmoother}
+and the \texttt{KalmanAssociativeSmoother} implementations do not
+return filtered estimated, only smoothed estimates. They both extend
+a second abstract class, \texttt{KalmanExplicitRepresentation}, in
+which the \texttt{evolve} and \texttt{observe} methods simply record
+the equations for later processing by the smoother. Both of these
+implementations are sequential but they exhibit the parallel algorithms
+in a clear way that is hopefully easy to implement in parallel programming
+environments.
 
 \section{\label{sec:java}The Java programming interface}
 
@@ -455,11 +579,13 @@ that calls UltimateKalman.
 
 \section{\label{sec:c-lang}The C programming interface}
 
-In the C interface, the filter is represented by a pointer to a structure
-of the \texttt{kalman\_t} type; to client code, this structure is
-opaque (there is no need to directly access its fields). The filter
-is constructed by a call to \texttt{kalman\_create}, which returns
-a pointer to \texttt{kalman\_t}. 
+In the C interface, defined in \texttt{kalman.h}, the filter is represented
+by a pointer to a structure of the \texttt{kalman\_t} type; to client
+code, this structure is opaque (there is no need to directly access
+its fields). The filter is constructed by a call to \texttt{kalman\_create}
+or \texttt{kalman\_create\_options}, which returns a pointer to \texttt{kalman\_t}.
+The interface to the parallel smoothers is a little different and
+will be explained later.
 
 In general, the memory management principle of the interface (and
 the internal implementation) is that client code is responsible for
@@ -475,29 +601,44 @@ The functions are not overloaded because C does not support overloading.
 Missing matrices and vectors (e.g., to \texttt{evolve} and \texttt{observe})
 are represented by a \texttt{NULL} pointer and default step numbers
 (to \texttt{forget} , \texttt{estimate}, and so on) by $-1$. Here
-is the declaration of some of the functions. 
+is the declaration the functions. 
 \begin{lstlisting}
-kalman_t*        kalman_create    ();
-void             kalman_free      (kalman_t* kalman);
+kalman_t*        kalman_create         ();
+kalman_t*        kalman_create_options (kalman_options_t options);
+void             kalman_free           (kalman_t* kalman);
+
+void             kalman_evolve    (kalman_t* kalman, int32_t n_i,                                                      
+                                   kalman_matrix_t* H_i, kalman_matrix_t* F_i, kalman_matrix_t* c_i,
+                                   kalman_matrix_t* K_i, char K_i_type);
 void             kalman_observe   (kalman_t* kalman,                                                               
                                    kalman_matrix_t* G_i, kalman_matrix_t* o_i,
                                    kalman_matrix_t* C_i, char C_i_type);
+
 int64_t          kalman_earliest  (kalman_t* kalman);
-void             kalman_smooth    (kalman_t* kalman);
-kalman_matrix_t* kalman_estimate  (kalman_t* kalman, int64_t i);
-kalman_matrix_t* kalman_covariance(kalman_t* kalman, int64_t i);
+int64_t          kalman_latest    (kalman_t* kalman);
 void             kalman_forget    (kalman_t* kalman, int64_t i);
-...
+void             kalman_rollback  (kalman_t* kalman, int64_t i);
+
+void             kalman_smooth    (kalman_t* kalman);
+
+kalman_matrix_t* kalman_estimate        (kalman_t* kalman, int64_t i);
+kalman_matrix_t* kalman_covariance      (kalman_t* kalman, int64_t i);
+char             kalman_covariance_type (kalman_t* kalman, int64_t i);
+
+kalman_matrix_t* kalman_perftest        (kalman_t* kalman, ...); // see later
 \end{lstlisting}
 Note that input covariance matrices are represented by a \texttt{kalman\_matrix\_t}
 and a representation code (a single character). The output of \texttt{kalman\_covariance}
-is a matrix $W$ such that $(W^{T}W)^{-1}$ is the covariance matrix
-of the output of \texttt{kalman\_estimate} on the same step.
+is a matrix $W$ such that $C=(W^{T}W)^{-1}$ or $C$ itself, where
+$C$ is the covariance matrix of the output of \texttt{kalman\_estimate}
+on the same step. The function \texttt{kalman\_covariance\_type} specifies
+whether $C$ is represented by itself or by its inverse factor $W$.
 
 A small set of helper functions allows client code to construct input
 matrices in the required format, to set their elements, and to read
 and use matrices returned by UltimateKalman. Here are the declarations
-of some of them.
+of some of them (the full set is declared in \texttt{matrix\_ops.h},
+included automatically by \texttt{kalman.h}).
 \begin{lstlisting}
 kalman_matrix_t* matrix_create(int32_t rows, int32_t cols);
 void             matrix_free(kalman_matrix_t* A);
@@ -514,29 +655,117 @@ Client code is responsible for freeing matrices returned by \texttt{kalman\_esti
 and \texttt{kal\-man\_\-covariance} by calling \texttt{matrix\_free}
 when they are no longer needed.
 
-\subsection*{Building and Running the C Outside Matlab}
+\subsection{Options}
+
+The C takes an integer-type options argument that specifies which
+algorithm to use, as well as parameters for these algorithms (currently
+only one parameter is supported). Different options are ORed together.
+The option values defined in \texttt{kalman.h} are:
+\begin{itemize}
+\item \texttt{KALMAN\_ALGORITHM\_ULTIMATE}, \texttt{KALMAN\_ALGORITHM\_CONVENTIONAL},
+\texttt{KALMAN\_ALGORITHM\_ODDEVEN}, and \texttt{KALMAN\_ALGORITHM\_ASSOCIATIVE},
+which specify which algorithm to use. Specify exactly one of these
+bit values.
+\item \texttt{KALMAN\_NO\_COVARIANCE}, which tells the UltimateKalman and
+the Oddeven algorithms not to compute the covariance matrices of the
+estimates.
+\end{itemize}
+
+\subsection{Direct Invocation of the Parallel Smoothers}
+
+The two parallel smoothers can be invoked for testing by first supplying
+the evolution and observation equations using a sequence of calls
+to \texttt{kalman\_evolve} and \texttt{kalman\_observe} and then calling
+\texttt{kalman\_smooth}, but this normally not appropriate for high-performance
+parallel software, because the construction of the input to the smoother
+is completely sequential.
+
+Instead, the parallel smoothers should be invoked directly on an array
+of equations,
+\begin{lstlisting}
+void kalman_smooth_oddeven(kalman_options_t         options, 
+                          kalman_step_equations_t** equations, 
+                          kalman_step_index_t       k); 
+void kalman_smoother_associative(...); // same arguments
+\end{lstlisting}
+The first argument contains options, as in the call to \texttt{kalman\_create\_options}.
+The second, \texttt{equations}, is an array of \texttt{k} pointers
+to structures that each define an evolution equation and an observation
+equation, defined in \texttt{kalman.h}:
+\begin{lstlisting}
+typedef struct kalman_step_equations_st {
+  kalman_step_index_t step; // logical step number, start from 0
+  int32_t dimension;
+
+  kalman_matrix_t* H;
+  kalman_matrix_t* F;
+  kalman_matrix_t* c;
+  kalman_matrix_t* K;
+  char             K_type;
+
+  kalman_matrix_t* G;
+  kalman_matrix_t* o;
+  kalman_matrix_t* C;
+  char             C_type;
+
+  kalman_matrix_t* state;
+  kalman_matrix_t* covariance;
+  char             covariance_type;
+} kalman_step_equations_t;
+\end{lstlisting}
+
+Parallel codes should normally allocate two arrays of length \texttt{k},
+an arrays of structures and an array of pointers to these structures,
+and ideally fill their elements using a multi-threaded code. The array
+of pointers should be filled with the addresses of the elements in
+the array of structures. Each structure should be filled with the
+matrices that define the evolution and observation equations of one
+step; the semantics are the same as in calls to \texttt{kalman\_evolve}
+and \texttt{kalman\_observe}. The \texttt{dimension} field specifies
+the dimension of the state vector, and the \texttt{step} field is
+a sequence number that should start from zero.
+
+When the call to the smoother returns, the \texttt{state} fields contain
+the smoothed state estimates and the \texttt{covariance} and \texttt{covariance\_type}
+fields contain the covariance of the state, unless the \texttt{KALMAN\_NO\_COVARIANCE}
+bit was set in \texttt{options}.
+
+The parallel-programming environment that the library uses, TBB, allows
+codes to control the number of operating-system threads that are used
+in a given computation, and a parameter called the block size. The
+first parameter controls how many physical cores are used. The second
+controls the overhead of parallelism: in parallel for loops and similar
+constructs, the environment performs blocks of iterations sequentially
+to reduce overhead. Our experiments indicate that a value of 16 is
+a good for the block size. Callers should specify these two value,
+using the following two functions defined in \texttt{parallel.h},
+before calling a parallel smoother:
+\begin{lstlisting}
+void parallel_set_thread_limit(int p); 
+void parallel_set_blocksize   (int b); 
+\end{lstlisting}
+
+
+\subsection{Building and Running the C Outside Matlab}
 
 To help you integrate UltimateKalman into your own native code in
 C or C++, the software includes three example programs that call
-UltimateKalman and Windows and Linux scripts that build executable
+UltimateKalman and Windows and Linux/MacOS scripts that build executable
 versions of the three programs. The scripts compile one of the programs
 along with UltimateKalman, link it with BLAS and LAPACK libraries,
 and run it. You should be able to use these scripts as examples of
-how to compile and link UltimateKalman. In particular, the C implementation
-of UltimateKalman consists of a single C source file, so it is not
-necessary to build it into a library; the source code or a single
-object file can be used directly in your C or C++ programs or libraries.
+how to compile and link UltimateKalman. 
 
 These C programs, the C implementation of UltimateKalman, and the
 build scripts are all under the \texttt{c} directory of the distribution
 archive.
 
 The three sample programs are \texttt{rotation.c}, a C implementation
-of one of the example MATLAB programs, \texttt{blastest.c}, a small
-program intended only to test the interface to the BLAS and LAPACK
-libraries, and \texttt{performance.c}, a program designed to measure
-the running time of UltimateKalman. The program \texttt{rotation.c}
-performs the same computation that the expression \texttt{rotation(UltimateKalman,5,2)}
+of one of the example MATLAB programs, \texttt{performance.c}, a
+program designed to measure the running time of UltimateKalman, and
+\texttt{blastest.c}, a small program intended only to test the interface
+to the BLAS and LAPACK libraries. The program \texttt{rotation.c}
+performs the same computation that the expression \texttt{rotation(KalmanUltimate,5,2)}
 performs in MATLAB and should output the same numerical results,
 just like \texttt{Rotation.java}. The program \texttt{performance.c}
 implements a Kalman smoother on problems with $n_{i}=m_{i}=6$ or

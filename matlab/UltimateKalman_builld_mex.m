@@ -1,37 +1,15 @@
-if ~exist('parallel','var')
-    parallel = 'ultimate';
-end
-
 clear mex;
 if ispc
     cd '..\c'
     if (~isempty(ver('MATLAB')))
-        switch parallel
-            case 'oddeven'
-                disp('compiling and linking under MATLAB (parallel UltimateKalman) ...');
-                mex -DNDEBUG -DBUILD_MEX -DBUILD_MATLAB -DBUILD_LAPACK_H -DBUILD_BLAS_H -DBUILD_WIN32_GETTIMEOFDAY ultimatekalmanmex.c ultimatekalman_oddeven.c -lmwlapack -lmwblas
-            case 'oddeven_nc'
-                disp('compiling and linking under MATLAB (parallel UltimateKalman) ...');
-                mex -DNDEBUG -DBUILD_MEX -DBUILD_MATLAB -DBUILD_LAPACK_H -DBUILD_BLAS_H -DBUILD_WIN32_GETTIMEOFDAY ultimatekalmanmex.c ultimatekalman_oddeven_nc.c -lmwlapack -lmwblas
-            case 'associative'
-                disp('compiling and linking under MATLAB (parallel associative) ...');
-                mex -DNDEBUG -DBUILD_MEX -DBUILD_MATLAB -DBUILD_LAPACK_H -DBUILD_BLAS_H -DBUILD_WIN32_GETTIMEOFDAY ultimatekalmanmex.c kalman_associative_parallel.c -lmwlapack -lmwblas
-            case 'ultimate'
-                disp('compiling and linking under MATLAB ... (ultimate kalman)');
-                %mex -DNDEBUG -DBUILD_MEX -DBUILD_MATLAB -DBUILD_LAPACK_H -DBUILD_BLAS_H -DBUILD_WIN32_GETTIMEOFDAY ultimatekalmanmex.c ultimatekalman.c flexible_arrays.c kalman_matrix_ops.c -lmwlapack -lmwblas
+                disp('compiling and linking under MATLAB');
                 mex -DNDEBUG -DBUILD_MEX -DBUILD_MATLAB -DBUILD_LAPACK_H -DBUILD_BLAS_H -DBUILD_WIN32_GETTIMEOFDAY ...
                     -DKALMAN_STEP_INDEX_TYPE_INT64 -DFARRAY_INDEX_TYPE_INT64 -DPARALLEL_INDEX_TYPE_INT64 ...
-                    kalmanmex.c ...
+                    ultimatekalmanmex.c ...
                     kalman_ultimate.c kalman_conventional.c kalman_oddeven_smoother.c kalman_associative_smoother.c ...
-                    kalman_base.c ...
+                    kalman_base.c kalman_explicit_representation.c ...
                     matrix_ops.c flexible_arrays.c concurrent_set.c parallel_sequential.c ...
                     -lmwlapack -lmwblas
-            case 'filter_smoother'
-                disp('compiling and linking under MATLAB ... (kalman filter smoother)');
-                mex -DNDEBUG -DBUILD_MEX -DBUILD_MATLAB -DBUILD_LAPACK_H -DBUILD_BLAS_H -DBUILD_WIN32_GETTIMEOFDAY ultimatekalmanmex.c kalman_filter_smoother.c -lmwlapack -lmwblas
-            otherwise
-                error(['unknown parallel variant ' parallel])
-        end
     end
     if (~isempty(ver('Octave')))
         disp('compiling and linking under Octave ...');
