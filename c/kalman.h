@@ -134,6 +134,13 @@ kalman_matrix_t* kalman_perftest(kalman_t *kalman,
                                  int32_t count, int32_t decimation);
 
 /******************************************************************************/
+/* PARALLEL SMOOTHERS                                                         */
+/******************************************************************************/
+
+void kalman_smooth_oddeven      (kalman_options_t options, kalman_step_equations_t** equations, kalman_step_index_t length);
+void kalman_smoother_associative(kalman_options_t options, kalman_step_equations_t** equations, kalman_step_index_t length);
+
+/******************************************************************************/
 /* END OF FILE                                                                */
 /******************************************************************************/
 
