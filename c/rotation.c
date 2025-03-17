@@ -314,8 +314,11 @@ int main(int argc, char* argv[]) {
 	}
 
 	kalman_matrix_t* W = kalman_covariance(kalman,0);
-	printf("covariance of smoothed estimate of state 0 (W such that W^T*W=cov^-1) = ");
-	matrix_print(W, "%.2e");
+	char             t = kalman_covariance_type(kalman,0);
+    //printf("covariance of smoothed estimate of state 0 (type %c) = ",t);
+    //matrix_print(W, "%.2e");
+    printf("covariance of smoothed estimate of state 0 = ");
+    matrix_print(kalman_covariance_matrix_explicit(W,t), "%.2e");
 
 	/*************************************************************/
 	/* release kalman object                                     */
