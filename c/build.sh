@@ -104,6 +104,37 @@ for C_SOURCE in $CLIENTS_C; do
     gcc -c -O2 $INT_TYPES $C_SOURCE
 done
 
+g++ -c -O2 $INCDIR $INT_TYPES -std=c++11 parallel_tbb.cpp
+gcc -c -O2 $INCDIR $INT_TYPES            parallel_sequential.c
+
+echo LINKING
+
+for CLIENT in $CLIENTS; do
+    echo linking $CLIENT
+    gcc $ULTIMATE_O parallel_sequential.o ${CLIENT}.o -o $CLIENT $LIBDIR $SEQLIBS
+done
+
+echo linking performance_par
+g++ $ULTIMATE_O parallel_tbb.o performance.o -o performance_par $LIBDIR $PARLIBS
+
+echo On Linux ARM, run \"export LD_LIBRARY_PATH=/opt/arm/armpl_24.10_gcc/lib/\"
+case "$(uname)" in 
+    Darwin)
+        ;;
+    Linux)
+	case "$(uname -m)" in
+	    aarch64)
+		echo "Linux ARM, to set environment variables to run programs, run (under bash)"
+		echo export LD_LIBRARY_PATH=/opt/arm/armpl_24.10_gcc/lib/
+		;;
+	    x86_64)
+		echo "Linux Intel, to set environment variables to run programs, run (under bash)"
+		echo source /opt/intel/oneapi/setvars.sh
+		;;
+	esac
+	;;
+esac
+
 exit
 
 
@@ -118,7 +149,6 @@ gcc -O2 $INCDIR $INT_TYPES -DBUILD_DEBUG_PRINTOUTSx -c -o flexible_arrays.o     
 gcc -O2 $INCDIR $INT_TYPES -DBUILD_DEBUG_PRINTOUTSx -c -o concurrent_set.o                     concurrent_set.c
 
 gcc -O2 $INCDIR $INT_TYPES  -DBUILD_DEBUG_PRINTOUTSx -c -o parallel_sequential.o                parallel_sequential.c
-g++     $INCDIR $INT_TYPES  -std=c++11               -c                                         parallel_tbb.cpp
 
 gcc -O2 $INCDIR $INT_TYPES -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_ultimate.o                    kalman_ultimate.c
 gcc -O2 $INCDIR $INT_TYPES -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_conventional.o                kalman_conventional.c
