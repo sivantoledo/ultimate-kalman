@@ -22,7 +22,7 @@
 
 #include <math.h>
 
-#include "ultimatekalman.h"
+#include "kalman.h"
 
 double A_rowwise[] = {
   1, 2, 3,
