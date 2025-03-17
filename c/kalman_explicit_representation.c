@@ -236,9 +236,6 @@ static void observe(kalman_t *kalman, matrix_t *G_i, matrix_t *o_i, matrix_t *C_
 #endif
 }
 
-void kalman_smooth_oddeven      (kalman_options_t options, kalman_step_equations_t** equations, kalman_step_index_t length);
-void kalman_smoother_associative(kalman_options_t options, kalman_step_equations_t** equations, kalman_step_index_t length);
-
 static void smooth(kalman_t *kalman) {
   fprintf(stderr,"explicit rep smooth\n");
 
