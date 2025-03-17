@@ -1,5 +1,5 @@
-classdef UltimateKalmanParallel < KalmanExplicitRepresentation
-    % UltimateKalmanParallel   A Kalman/RTS (Rauch, Tung, and Striebel) 
+classdef KalmanOddevenSmoother < KalmanExplicitRepresentation
+    % KalmanOddevenSmoother   A Kalman/RTS (Rauch, Tung, and Striebel) 
     %                          linear smoother. The algorithm uses an odd-even
     %                          QR reduction that can be easily parallelized.
     %                          The implementation here is for testing and
@@ -220,7 +220,7 @@ classdef UltimateKalmanParallel < KalmanExplicitRepresentation
     end
 
     methods (Access = public)
-        function kalman = UltimateKalmanParallel(options)
+        function kalman = KalmanOddevenSmoother(options)
             if nargin<1
                 options = struct();
             end
