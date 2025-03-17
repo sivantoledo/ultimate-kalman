@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <assert.h>
+#include <string.h>
 
 #ifdef _WIN32
 // for "unused" attribute

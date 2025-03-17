@@ -13,6 +13,26 @@ fi
 echo On Linux Intel, run \"source /opt/intel/oneapi/setvars.sh\" under bash to set environment variables
 echo On Linux ARM, run \"export LD_LIBRARY_PATH=/opt/arm/armpl_24.10_gcc/lib/\"
 
+ULTIMATE_C="\
+kalman_ultimate.c \
+kalman_conventional.c \
+kalman_oddeven_smoother.c \
+kalman_associative_smoother.c \
+kalman_base.c \
+kalman_explicit_representation.c \
+matrix_ops.c \
+flexible_arrays.c \
+concurrent_set.c"
+
+CLIENTS_C="blastest.c rotation.c performance.c"
+
+ULTIMATE_O="${ULTIMATE_C//.c/.o}"
+CLIENTS_O="${CLIENTS_C//.c/.o}"
+CLIENTS="${CLIENTS_C//.c/}"
+
+INT_TYPES="-DKALMAN_STEP_INDEX_TYPE_INT64 -DFARRAY_INDEX_TYPE_INT64 -DPARALLEL_INDEX_TYPE_INT64"
+INT_TYPES="-DKALMAN_STEP_INDEX_TYPE_INT32 -DFARRAY_INDEX_TYPE_INT32 -DPARALLEL_INDEX_TYPE_INT32"
+
 case "$(uname)" in 
     Darwin)
         LIBDIR=""
@@ -50,14 +70,16 @@ case "$(uname)" in
 		   PARLIBS="-ltbbmalloc_proxy -lflame -lblis-mt -laoclutils -lgomp -lpthread -lm -ldl -ltbb"
 		   # parallel with nested TBB parallelism
 		   PRNLIBS="-ltbbmalloc_proxy -lflame -lblis-mt -laoclutils -lpthread -lm -ldl -ltbb"
-		else
-		LIBDIR=""
-		INCDIR="-DBUILD_MKL"
-		# sequential libraries; not sure why -lpthread was used, but it was included
-		SEQLIBS="                  -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl"
-		PARLIBS="-ltbbmalloc_proxy -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl -ltbb"
-		# parallel with nested TBB parallelism
-		PRNLIBS="-ltbbmalloc_proxy -lmkl_intel_lp64 -lmkl_tbb_thread -lmkl_core -lpthread -lm -ldl -ltbb"
+		else # assuming an Intel CPU
+		    source /opt/intel/oneapi/setvars.sh
+		    
+		    LIBDIR=""
+		    INCDIR="-DBUILD_MKL"
+		    # sequential libraries; not sure why -lpthread was used, but it was included
+		    SEQLIBS="                  -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl"
+		    PARLIBS="-ltbbmalloc_proxy -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl -ltbb"
+		    # parallel with nested TBB parallelism
+		    PRNLIBS="-ltbbmalloc_proxy -lmkl_intel_lp64 -lmkl_tbb_thread -lmkl_core -lpthread -lm -ldl -ltbb"
 		fi
 		;;
 	    *)
@@ -72,28 +94,37 @@ case "$(uname)" in
         ;;
 esac
 
-INT_TYPES="-DKALMAN_STEP_INDEX_TYPE_INT64 -DFARRAY_INDEX_TYPE_INT64 -DPARALLEL_INDEX_TYPE_INT64"
-INT_TYPES="-DKALMAN_STEP_INDEX_TYPE_INT32 -DFARRAY_INDEX_TYPE_INT32 -DPARALLEL_INDEX_TYPE_INT32"
+for C_SOURCE in $ULTIMATE_C; do
+    echo compiling $C_SOURCE
+    gcc -c -O2 $INCDIR $INT_TYPES $C_SOURCE
+done
 
-# gcc -O2 -DBUILD_MKL -DBUILD_DEBUG_PRINTOUTSx -c performance.c ultimatekalman.c
+for C_SOURCE in $CLIENTS_C; do
+    echo compiling $C_SOURCE
+    gcc -c -O2 $INT_TYPES $C_SOURCE
+done
+
+exit
+
+
+gcc -O2 $INT_TYPES -c blastest.c 
 gcc -O2 $INT_TYPES -c performance.c 
 gcc -O2 $INT_TYPES -c rotation.c 
 
-gcc -O2 $INCDIR $INT_TYPES -DPARALLEL -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_base_par.o                    kalman_base.c
-gcc -O2 $INCDIR $INT_TYPES            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_base.o                        kalman_base.c
-gcc -O2 $INCDIR $INT_TYPES            -DBUILD_DEBUG_PRINTOUTSx -c -o matrix_ops.o                         matrix_ops.c
-gcc -O2 $INCDIR $INT_TYPES            -DBUILD_DEBUG_PRINTOUTSx -c -o flexible_arrays.o                    flexible_arrays.c
-gcc -O2 $INCDIR $INT_TYPES            -DBUILD_DEBUG_PRINTOUTSx -c -o concurrent_set.o                     concurrent_set.c
+gcc -O2 $INCDIR $INT_TYPES -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_explicit_representation.o     kalman_explicit_representation.c
+gcc -O2 $INCDIR $INT_TYPES -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_base.o                        kalman_base.c
+gcc -O2 $INCDIR $INT_TYPES -DBUILD_DEBUG_PRINTOUTSx -c -o matrix_ops.o                         matrix_ops.c
+gcc -O2 $INCDIR $INT_TYPES -DBUILD_DEBUG_PRINTOUTSx -c -o flexible_arrays.o                    flexible_arrays.c
+gcc -O2 $INCDIR $INT_TYPES -DBUILD_DEBUG_PRINTOUTSx -c -o concurrent_set.o                     concurrent_set.c
 
-gcc -O2 $INCDIR $INT_TYPES            -DBUILD_DEBUG_PRINTOUTSx -c -o parallel_sequential.o                parallel_sequential.c
-g++     $INCDIR $INT_TYPES            -std=c++11               -c                                         parallel_tbb.cpp
+gcc -O2 $INCDIR $INT_TYPES  -DBUILD_DEBUG_PRINTOUTSx -c -o parallel_sequential.o                parallel_sequential.c
+g++     $INCDIR $INT_TYPES  -std=c++11               -c                                         parallel_tbb.cpp
 
-gcc -O2 $INCDIR $INT_TYPES            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_ultimate.o                    kalman_ultimate.c
-gcc -O2 $INCDIR $INT_TYPES            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_conventional.o                kalman_conventional.c
-gcc -O2 $INCDIR $INT_TYPES -DPARALLEL -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_oddeven_smoother.o            kalman_oddeven_smoother.c
-gcc -O2 $INCDIR $INT_TYPES            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_oddeven_smoother_seq.o        kalman_oddeven_smoother.c
-gcc -O2 $INCDIR $INT_TYPES -DPARALLEL -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_associative_smoother.o        kalman_associative_smoother.c
-gcc -O2 $INCDIR $INT_TYPES            -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_associative_smoother_seq.o    kalman_associative_smoother.c
+gcc -O2 $INCDIR $INT_TYPES -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_ultimate.o                    kalman_ultimate.c
+gcc -O2 $INCDIR $INT_TYPES -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_conventional.o                kalman_conventional.c
+gcc -O2 $INCDIR $INT_TYPES -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_oddeven_smoother.o            kalman_oddeven_smoother.c
+gcc -O2 $INCDIR $INT_TYPES -DBUILD_DEBUG_PRINTOUTSx -c -o kalman_associative_smoother.o        kalman_associative_smoother.c
+
 
 
 #gcc -O2 $INCDIR -DNO_COVARIANCE_ESTIMATES \
