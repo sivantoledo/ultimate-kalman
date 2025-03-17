@@ -402,7 +402,7 @@ char kalman_covariance_type(kalman_t *kalman, kalman_step_index_t si) {
   //return (*(kalman->step_get_covariance_type))(); // currently the same for all steps
 
   if (farray_size(kalman->steps) == 0)
-    return NULL;
+    return '-'; // an error indicator
 
   if (si < 0)
     si = farray_last_index(kalman->steps);

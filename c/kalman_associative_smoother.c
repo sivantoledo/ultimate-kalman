@@ -1207,7 +1207,7 @@ void kalman_smooth_associative(kalman_options_t options, kalman_step_equations_t
   concurrent_set_t *filtered_created_steps = concurrent_set_create(l, step_free);
 
   //prefix_sums_pointers(filteringAssociativeOperation, &((kalman->steps->elements)[1]), (void**) filtered, filtered_created_steps, l - 1, 1);
-  prefix_sums_pointers(filteringAssociativeOperation, &(elements[1]), (void**) filtered, filtered_created_steps, l - 1, 1);
+  prefix_sums_pointers(filteringAssociativeOperation, (void**) &(elements[1]), (void**) filtered, filtered_created_steps, l - 1, 1);
 
   foreach_in_range_two(filtered_to_state_new, elements, filtered, l, l - 1);
 
@@ -1225,7 +1225,7 @@ void kalman_smooth_associative(kalman_options_t options, kalman_step_equations_t
   step_t **smoothed = (step_t**) malloc( l * sizeof(step_t*) );
   concurrent_set_t *smoothed_created_steps = concurrent_set_create(l, step_free);
 
-  prefix_sums_pointers(smoothingAssociativeOperation, elements, (void**) smoothed, smoothed_created_steps, l, -1);
+  prefix_sums_pointers(smoothingAssociativeOperation, (void**) elements, (void**) smoothed, smoothed_created_steps, l, -1);
 
   foreach_in_range_two(smoothed_to_state_new, equations, smoothed, l, l-1);
 
