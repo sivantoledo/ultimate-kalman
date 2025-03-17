@@ -28,7 +28,7 @@ struct spin_mutex_st {
 };
 
 static int nthreads = 0;
-static int blocksize = 10;
+static int blocksize = 16;
 
 void parallel_set_thread_limit(int number_of_threads) {
   if (number_of_threads > 0) {
