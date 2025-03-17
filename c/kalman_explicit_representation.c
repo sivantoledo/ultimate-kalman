@@ -95,6 +95,7 @@ static void* step_create() {
 
   s->state = NULL;
   s->covariance = NULL;
+  s->covariance_type = 'C';
 
   assert(s != NULL);
   return s;
