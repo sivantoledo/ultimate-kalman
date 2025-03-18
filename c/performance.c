@@ -175,7 +175,6 @@ void matrix_mutate_apply_qt(kalman_matrix_t* QR, kalman_matrix_t* TAU, kalman_ma
 
 kalman_matrix_t* generateRandomOrthonormal(int rows, int cols) {
 	int i,j;
-	int n;
 
 	if (rows==1 || cols == 1) {
 		kalman_matrix_t* QR = matrix_create(rows,cols);
@@ -283,7 +282,7 @@ double perftest_smooth(
 }
 
 static int streq(char* constant, char* value) {
-  int l = strlen(constant);
+  size_t l = strlen(constant);
   if (strncmp(constant,value,l)==0 && strlen(value)==l) {
     printf("streq %s == %s => %d\n",constant,value,1);
     return 1;

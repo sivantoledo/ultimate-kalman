@@ -94,7 +94,7 @@ void matrix_mutate_scale_accumulate(
 }
 
 static int streq(char* constant, char* value) {
-  int l = strlen(constant);
+  size_t l = strlen(constant);
   if (strncmp(constant,value,l)==0 && strlen(value)==l) {
     printf("streq %s == %s => %d\n",constant,value,1);
     return 1;
