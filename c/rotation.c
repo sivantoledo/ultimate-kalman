@@ -26,6 +26,8 @@
 #include "kalman.h"
 #include "parallel.h"
 
+#include "cmdline_args.h"
+
 double PI = 3.141592653589793;
 
 /*
@@ -101,39 +103,35 @@ static int streq(char* constant, char* value) {
   return 0;
 }
 
-static kalman_options_t parse_arguments(int argc, char* argv[]) {
-  kalman_options_t options = KALMAN_ALGORITHM_ULTIMATE;
-  for (int i=1; i<argc; i++) {
-    if (streq("ultimate",    argv[i])) options = KALMAN_ALGORITHM_ULTIMATE;
-    if (streq("conventional",argv[i])) options = KALMAN_ALGORITHM_CONVENTIONAL;
-    if (streq("oddeven",     argv[i])) options = KALMAN_ALGORITHM_ODDEVEN;
-    if (streq("associative", argv[i])) options = KALMAN_ALGORITHM_ASSOCIATIVE;
-  }
-
-  return options;
-}
-
 int main(int argc, char* argv[]) {
 
-	printf("rotation starting\n");
 
-	printf("results should be identical to those produced by rotation(UltimateKalman,5,2) in MATLAB\n");
+  //int n, k;
+  int nthreads, blocksize;
+  char *algorithm;
+  int present;
+
+  parse_args(argc, argv);
+  //present = get_int_param   ("n",         &n, 6);
+  //present = get_int_param   ("k",         &k, 100000);
+  present = get_string_param("algorithm", &algorithm, "ultimate");
+  present = get_int_param   ("nthreads",  &nthreads,  -1);
+  present = get_int_param   ("blocksize", &blocksize, -1);
+  check_unused_args();
+
+  //printf("rotation n=%d k=%d algorithm=%d nthreads=%d blocksize=%d (-1 means do not set)\n");
+  printf("rotation algorithm=%s nthreads=%d blocksize=%d (-1 means do not set)\n",algorithm,nthreads,blocksize);
+
+  kalman_options_t options = KALMAN_ALGORITHM_ULTIMATE;
+  if (streq("ultimate",    algorithm)) options = KALMAN_ALGORITHM_ULTIMATE;
+  if (streq("conventional",algorithm)) options = KALMAN_ALGORITHM_CONVENTIONAL;
+  if (streq("oddeven",     algorithm)) options = KALMAN_ALGORITHM_ODDEVEN;
+  if (streq("associative", algorithm)) options = KALMAN_ALGORITHM_ASSOCIATIVE;
+
+  printf("results should be identical to those produced by rotation(UltimateKalman,5,2) in MATLAB\n");
 	
-    kalman_options_t options = parse_arguments(argc,argv);
-
-	char* nthreads_string = getenv("NTHREADS");
-	int nthreads = 0;
-	if (nthreads_string != NULL && sscanf(nthreads_string,"%d",&nthreads)==1) {
-		parallel_set_thread_limit(nthreads);
-		printf("limiting to %d threads/cores\n",nthreads);
-	}
-
-	char* blocksize_string = getenv("TBB_BLOCKSIZE");
-	int blocksize = 0;
-	if (blocksize_string != NULL && sscanf(blocksize_string,"%d",&blocksize)==1) {
-		parallel_set_blocksize(blocksize);
-		printf("setting blocksize to %d\n",blocksize);
-	}
+  if (nthreads != -1)  parallel_set_thread_limit(nthreads);
+  if (blocksize != -1) parallel_set_blocksize(blocksize);
 
 	int i;
 	

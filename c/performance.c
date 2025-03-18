@@ -33,6 +33,8 @@ int gettimeofday(struct timeval * tp, struct timezone * tzp);
 #include "kalman.h"
 #include "parallel.h"
 
+#include "cmdline_args.h"
+
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
@@ -290,50 +292,36 @@ static int streq(char* constant, char* value) {
   return 0;
 }
 
-static kalman_options_t parse_arguments(int argc, char* argv[]) {
-  kalman_options_t options = KALMAN_ALGORITHM_ULTIMATE;
-  for (int i=1; i<argc; i++) {
-    if (streq("ultimate",    argv[i])) options = KALMAN_ALGORITHM_ULTIMATE;
-    if (streq("conventional",argv[i])) options = KALMAN_ALGORITHM_CONVENTIONAL;
-    if (streq("oddeven",     argv[i])) options = KALMAN_ALGORITHM_ODDEVEN;
-    if (streq("associative", argv[i])) options = KALMAN_ALGORITHM_ASSOCIATIVE;
-  }
-
-  return options;
-}
-
 int main(int argc, char* argv[]) {
 
-	printf("performance testing starting (start with two arguments, dimension and count)\n");
+  int n, k;
+  int nocov;
+  int nthreads, blocksize;
+  char *algorithm;
+  int present;
 
-	if (argc < 3) {
-		printf("usage: performance dimension count [ultimate/conventional/oddeven/associative]\n");
-		printf("       using defaults\n");
-	}
+  parse_args(argc, argv);
+  present = get_int_param    ("n",         &n, 6);
+  present = get_int_param    ("k",         &k, 100000);
+  present = get_string_param ("algorithm", &algorithm, "ultimate");
+  present = get_int_param    ("nthreads",  &nthreads,  -1);
+  present = get_int_param    ("blocksize", &blocksize, -1);
+  present = get_boolean_param("nocov",     &nocov,      0);
+  check_unused_args();
 
-	int n = 6;
-	int count = 100000;
+  printf("performance n=%d k=%d nocov=%d algorithm=%s nthreads=%d blocksize=%d (-1 means do not set)\n",n,k,nocov,algorithm,nthreads,blocksize);
 
-	if (argc >= 2) sscanf(argv[1],"%d",&n);
-	if (argc >= 3) sscanf(argv[2],"%d",&count);
+  kalman_options_t options = KALMAN_ALGORITHM_ULTIMATE;
+  if (streq("ultimate",    algorithm)) options  = KALMAN_ALGORITHM_ULTIMATE;
+  if (streq("conventional",algorithm)) options  = KALMAN_ALGORITHM_CONVENTIONAL;
+  if (streq("oddeven",     algorithm)) options  = KALMAN_ALGORITHM_ODDEVEN;
+  if (streq("associative", algorithm)) options  = KALMAN_ALGORITHM_ASSOCIATIVE;
+  if (nocov)                           options |= KALMAN_NO_COVARIANCE;
 
-	kalman_options_t options = parse_arguments(argc,argv);
+  if (nthreads != -1)  parallel_set_thread_limit(nthreads);
+  if (blocksize != -1) parallel_set_blocksize(blocksize);
 
-	printf("performance testing smooth dimension=%d step count=%d, starting\n",n,count);
-
-	char* nthreads_string = getenv("NTHREADS");
-	int nthreads = 0;
-	if (nthreads_string != NULL && sscanf(nthreads_string,"%d",&nthreads)==1) {
-		parallel_set_thread_limit(nthreads);
-		printf("limiting to %d threads/cores\n",nthreads);
-	}
-
-	char* blocksize_string = getenv("TBB_BLOCKSIZE");
-	int blocksize = 0;
-	if (blocksize_string != NULL && sscanf(blocksize_string,"%d",&blocksize)==1) {
-		parallel_set_blocksize(blocksize);
-		printf("setting blocksize to %d\n",blocksize);
-	}
+	printf("performance testing smoothing\n");
 
 	double t = 0.0;
 
@@ -342,19 +330,19 @@ int main(int argc, char* argv[]) {
 		t = perftest_smooth(options,
 		                    matrix_create_identity(6,6), matrix_create_from_rowwise(F6, 6, 6), matrix_create_constant(6,1,0.0),      matrix_create_identity(6,6), 'W',
 			  	                                         matrix_create_from_rowwise(G6, 6, 6), matrix_create_from_rowwise(o6, 6, 1), matrix_create_identity(6,6), 'W',
-					        count);
+					        k);
 		break;
 	case 48:
 		t = perftest_smooth(options,
 		                    matrix_create_identity(48,48), matrix_create_from_rowwise(F48, 48, 48), matrix_create_constant(48,1,0.0),      matrix_create_identity(48,48), 'W',
 			  	                                           matrix_create_from_rowwise(G48, 48, 48), matrix_create_from_rowwise(o48, 48, 1), matrix_create_identity(48,48), 'W',
-					        count);
+					        k);
 		break;
 	default:
 		t = perftest_smooth(options,
 		                    matrix_create_identity(n,n), generateRandomOrthonormal(n, n), matrix_create_constant(n,1,0.0), matrix_create_identity(n,n), 'W',
 				                                         generateRandomOrthonormal(n, n), generateRandomOrthonormal(n, 1), matrix_create_identity(n,n), 'W',
-					        count);
+					        k);
 		break;
 		//printf("dimension must be 6 or 48, exiting\n");
 		//return 1;

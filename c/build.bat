@@ -47,6 +47,7 @@ SET ULTIMATE_OBJECTS=kalman_ultimate.obj ^
                      matrix_ops.obj ^
                      flexible_arrays.obj ^
                      concurrent_set.obj ^
+                     cmdline_args.obj ^
                      gettimeofday.obj
                      
 REM -DBUILD_DEBUG_PRINTOUTS
@@ -78,6 +79,7 @@ cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% flexible_arrays.c
 cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% concurrent_set.c 
 cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% parallel_sequential.c 
 cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% gettimeofday.c 
+cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% cmdline_args.c 
 
 cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% parallel_tbb.cpp 
 
