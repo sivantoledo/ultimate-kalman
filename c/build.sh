@@ -105,7 +105,10 @@ for C_SOURCE in $CLIENTS_C; do
     gcc -c -O2 $INT_TYPES $C_SOURCE
 done
 
+echo compiling parallel_tbb.cpp
 g++ -c -O2 $INCDIR $INT_TYPES -std=c++14 parallel_tbb.cpp
+
+echo compiling parallel_sequential.c
 gcc -c -O2 $INCDIR $INT_TYPES            parallel_sequential.c
 
 echo LINKING
