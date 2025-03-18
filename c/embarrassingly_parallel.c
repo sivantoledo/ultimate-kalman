@@ -84,26 +84,26 @@ typedef struct step_st {
     kalman_matrix_t* TAU;
 } step_t;
 
-void ep_alloc_struct(void *indices_v, int n, parallel_index_t start, parallel_index_t end) {
+void ep_alloc_struct(void *indices_v, parallel_index_t n, parallel_index_t start, parallel_index_t end) {
   step_t** indices = (step_t**) indices_v;
 
-  for (int i = start; i < end; ++i) {
+  for (parallel_index_t i = start; i < end; ++i) {
     indices[i] = (step_t*) malloc(sizeof(step_t));
   }
 }
 
-void ep_alloc_matrix(void *indices_v, int n, parallel_index_t start, parallel_index_t end) {
+void ep_alloc_matrix(void *indices_v, parallel_index_t n, parallel_index_t start, parallel_index_t end) {
   step_t **indices = (step_t**) indices_v;
 
-  for (int i = start; i < end; ++i) {
+  for (parallel_index_t i = start; i < end; ++i) {
     indices[i]->A = matrix_create(2 * n, n);
   }
 }
 
-void ep_fill_matrix(void *indices_v, int n, parallel_index_t start, parallel_index_t end) {
+void ep_fill_matrix(void *indices_v, parallel_index_t n, parallel_index_t start, parallel_index_t end) {
   step_t **indices = (step_t**) indices_v;
 
-  for (int i = start; i < end; ++i) {
+  for (parallel_index_t i = start; i < end; ++i) {
     for (int r = 0; r < 2 * n; r++) {
       for (int c = 0; c < n; c++) {
         matrix_set(indices[i]->A, r, c, (double) (r + c));
@@ -112,10 +112,10 @@ void ep_fill_matrix(void *indices_v, int n, parallel_index_t start, parallel_ind
   }
 }
 
-void ep_create(void *indices_v, int n, parallel_index_t start, parallel_index_t end) {
+void ep_create(void *indices_v, parallel_index_t n, parallel_index_t start, parallel_index_t end) {
   step_t **indices = (step_t**) indices_v;
 
-  for (int i = start; i < end; ++i) {
+  for (parallel_index_t i = start; i < end; ++i) {
     indices[i] = (step_t*) malloc(sizeof(step_t));
     //indices[i] -> A = matrix_create_copy(A);
     indices[i]->A = matrix_create(2 * n, n);
@@ -127,10 +127,10 @@ void ep_create(void *indices_v, int n, parallel_index_t start, parallel_index_t 
   }
 }
 
-void ep_factor(void *indices_v, int n, parallel_index_t start, parallel_index_t end) {
+void ep_factor(void *indices_v, parallel_index_t n, parallel_index_t start, parallel_index_t end) {
   step_t **indices = (step_t**) indices_v;
 
-  for (int i = start; i < end; ++i) {
+  for (parallel_index_t i = start; i < end; ++i) {
     indices[i]->TAU = matrix_create_mutate_qr(indices[i]->A);
   }
 }
