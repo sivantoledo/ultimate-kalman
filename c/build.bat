@@ -1,14 +1,5 @@
 setlocal
 
- 
-@ECHO OFF
-	
-IF "%1"=="" (
-  SET test=rotation
-) ELSE (
-  SET test=%1%
-)
-
 @ECHO ON
 
 REM call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
@@ -94,36 +85,10 @@ cl %C_FLAGS% -Feblastest.exe        %ULTIMATE_OBJECTS% parallel_sequential.obj b
 cl %C_FLAGS% -Feperformance_par.exe %ULTIMATE_OBJECTS% parallel_tbb.obj        performance.obj %BLAS_LAPACK_LIBS% 
 cl %C_FLAGS% -Ferotation_par.exe    %ULTIMATE_OBJECTS% parallel_tbb.obj        rotation.obj    %BLAS_LAPACK_LIBS% 
 
-ECHO cl ^
-  %C_FLAGS% ^
-  -Fe%test%.exe ^
-  -I. ^
-  %BLAS_LAPACK_FLAGS% ^
-  -DBUILD_WIN32_GETTIMEOFDAY ^
-  -DKALMAN_STEP_INDEX_TYPE_INT32 ^
-  -DFARRAY_INDEX_TYPE_INT32 ^
-  -DPARALLEL_INDEX_TYPE_INT32 ^
-  kalman_ultimate.c ^
-  kalman_conventional.c ^
-  kalman_oddeven_smoother.c ^
-  kalman_associative_smoother.c ^
-  kalman_base.c ^
-  kalman_explicit_representation.c ^
-  matrix_ops.c ^
-  flexible_arrays.c ^
-  concurrent_set.c ^
-  parallel_sequential.c ^
-  %test%.c ^
-  %BLAS_LAPACK_LIBS% 
-  
-
 DEL *.obj
   
 ECHO generated test programs
 
-:: %test%.exe %2 %3 %4 %5 %6 %7 %8 %9
-::ECHO done running test 
-  
 ECHO To run the generated binaries, invoke 
 ECHO   "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" intel64
 ECHO on the command line, to ensure that Windows can find the required DLLs.
