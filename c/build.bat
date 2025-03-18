@@ -25,9 +25,8 @@ SET BLAS_LAPACK_LIBS=mkl_intel_lp64.lib mkl_sequential.lib mkl_core_dll.lib
 REM define MKL_ILP64 for 64-bit integers
 
 ::SET ULTIMATE_FLAGS=-DBUILD_WIN32_GETTIMEOFDAY 
-SET ULTIMATE_FLAGS=-DKALMAN_STEP_INDEX_TYPE_INT32 ^
-                   -DFARRAY_INDEX_TYPE_INT32 ^
-                   -DPARALLEL_INDEX_TYPE_INT32
+SET ULTIMATE_FLAGS=-DKALMAN_STEP_INDEX_TYPE_INT32 -DFARRAY_INDEX_TYPE_INT32 -DPARALLEL_INDEX_TYPE_INT32
+SET ULTIMATE_FLAGS=-DKALMAN_STEP_INDEX_TYPE_INT64 -DFARRAY_INDEX_TYPE_INT64 -DPARALLEL_INDEX_TYPE_INT64
                      
 SET ULTIMATE_OBJECTS=kalman_ultimate.obj ^
                      kalman_conventional.obj ^
@@ -74,16 +73,17 @@ cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% cmdline_args.c
 
 cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% parallel_tbb.cpp 
 
+cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% embarrassingly_parallel.c 
 cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% performance.c 
 cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% rotation.c 
 cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% blastest.c 
 
-cl %C_FLAGS% -Feperformance.exe     %ULTIMATE_OBJECTS% parallel_sequential.obj performance.obj %BLAS_LAPACK_LIBS% 
-cl %C_FLAGS% -Ferotation.exe        %ULTIMATE_OBJECTS% parallel_sequential.obj rotation.obj    %BLAS_LAPACK_LIBS% 
-cl %C_FLAGS% -Feblastest.exe        %ULTIMATE_OBJECTS% parallel_sequential.obj blastest.obj    %BLAS_LAPACK_LIBS% 
+cl %C_FLAGS% -Feperformance.exe             %ULTIMATE_OBJECTS% parallel_sequential.obj performance.obj            %BLAS_LAPACK_LIBS% 
+cl %C_FLAGS% -Ferotation.exe                %ULTIMATE_OBJECTS% parallel_sequential.obj rotation.obj               %BLAS_LAPACK_LIBS% 
+cl %C_FLAGS% -Feblastest.exe                %ULTIMATE_OBJECTS% parallel_sequential.obj blastest.obj               %BLAS_LAPACK_LIBS% 
 
-cl %C_FLAGS% -Feperformance_par.exe %ULTIMATE_OBJECTS% parallel_tbb.obj        performance.obj %BLAS_LAPACK_LIBS% 
-cl %C_FLAGS% -Ferotation_par.exe    %ULTIMATE_OBJECTS% parallel_tbb.obj        rotation.obj    %BLAS_LAPACK_LIBS% 
+cl %C_FLAGS% -Feperformance_par.exe         %ULTIMATE_OBJECTS% parallel_tbb.obj        performance.obj             %BLAS_LAPACK_LIBS% 
+cl %C_FLAGS% -Feembarrassingly_parallel.exe %ULTIMATE_OBJECTS% parallel_tbb.obj        embarrassingly_parallel.obj %BLAS_LAPACK_LIBS% 
 
 DEL *.obj
   

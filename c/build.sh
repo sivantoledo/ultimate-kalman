@@ -24,7 +24,7 @@ matrix_ops.c \
 flexible_arrays.c \
 concurrent_set.c"
 
-CLIENTS_C="blastest.c rotation.c performance.c"
+CLIENTS_C="blastest.c rotation.c performance.c embarrasingly_parallel.c"
 
 ULTIMATE_O="${ULTIMATE_C//.c/.o}"
 CLIENTS_O="${CLIENTS_C//.c/.o}"
@@ -114,8 +114,16 @@ for CLIENT in $CLIENTS; do
     gcc $ULTIMATE_O parallel_sequential.o ${CLIENT}.o -o $CLIENT $LIBDIR $SEQLIBS
 done
 
-echo linking performance_par
-g++ $ULTIMATE_O parallel_tbb.o performance.o -o performance_par $LIBDIR $PARLIBS
+for CLIENT in $CLIENTS; do
+    echo linking $CLIENT_par
+    g++ $ULTIMATE_O parallel_tbb.o ${CLIENT}.o -o $CLIENT_par $LIBDIR $PARLIBS
+done
+
+#echo linking performance_par
+#g++ $ULTIMATE_O parallel_tbb.o performance.o -o performance_par $LIBDIR $PARLIBS
+#
+#echo "linking embarrassingly_parallel (with TBB)"
+#g++ $ULTIMATE_O parallel_tbb.o embarrassingly_parallel.o -o embarrassingly_parallel $LIBDIR $PARLIBS
 
 echo On Linux ARM, run \"export LD_LIBRARY_PATH=/opt/arm/armpl_24.10_gcc/lib/\"
 case "$(uname)" in 
@@ -125,11 +133,16 @@ case "$(uname)" in
 	case "$(uname -m)" in
 	    aarch64)
 		echo "Linux ARM, to set environment variables to run programs, run (under bash)"
-		echo export LD_LIBRARY_PATH=/opt/arm/armpl_24.10_gcc/lib/
+		echo "export LD_LIBRARY_PATH=/opt/arm/armpl_24.10_gcc/lib/"
 		;;
 	    x86_64)
-		echo "Linux Intel, to set environment variables to run programs, run (under bash)"
-		echo source /opt/intel/oneapi/setvars.sh
+		if grep -q "EPYC" /proc/cpuinfo; then
+		   echo "Linux AMD, to set environment variables to run programs, run (under bash)"
+		   echo "export LD_LIBRARY_PATH=/specific/amd-gcc/5.0.0/gcc/lib_LP64"
+  		else # assuming an Intel CPU
+		   echo "Linux Intel, to set environment variables to run programs, run (under bash)"
+		   echo "source /opt/intel/oneapi/setvars.sh"
+		fi
 		;;
 	esac
 	;;
