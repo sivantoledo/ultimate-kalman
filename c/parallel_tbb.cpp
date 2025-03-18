@@ -91,7 +91,7 @@ void foreach_in_range(void (*func)(void*, parallel_index_t, parallel_index_t, pa
           void* temp = sum;
           for (parallel_index_t i = r.begin(); i != r.end(); ++i) {
             //int j = i + 1;
-            int j = i;
+            parallel_index_t j = i;
             if (stride == -1) {
               j = length - 1 - i;
             }
