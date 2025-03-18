@@ -96,7 +96,7 @@ void ep_alloc_matrix(void *indices_v, parallel_index_t n, parallel_index_t start
   step_t **indices = (step_t**) indices_v;
 
   for (parallel_index_t i = start; i < end; ++i) {
-    indices[i]->A = matrix_create(2 * n, n);
+    indices[i]->A = matrix_create((int32_t) (2 * n), (int32_t) n);
   }
 }
 
@@ -118,7 +118,7 @@ void ep_create(void *indices_v, parallel_index_t n, parallel_index_t start, para
   for (parallel_index_t i = start; i < end; ++i) {
     indices[i] = (step_t*) malloc(sizeof(step_t));
     //indices[i] -> A = matrix_create_copy(A);
-    indices[i]->A = matrix_create(2 * n, n);
+    indices[i]->A = matrix_create((int32_t) (2 * n), (int32_t) n);
     for (int r = 0; r < 2 * n; r++) {
       for (int c = 0; c < n; c++) {
         matrix_set(indices[i]->A, r, c, (double) (r + c));
