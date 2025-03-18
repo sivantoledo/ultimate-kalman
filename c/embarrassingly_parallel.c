@@ -84,8 +84,7 @@ typedef struct step_st {
     kalman_matrix_t* TAU;
 } step_t;
 
-//void ep_alloc_struct(kalman_t* kalman, step_t* *indices, int n, size_t start, size_t end) {
-void ep_alloc_struct(void *indices_v, int n, size_t start, size_t end) {
+void ep_alloc_struct(void *indices_v, int n, parallel_index_t start, parallel_index_t end) {
   step_t** indices = (step_t**) indices_v;
 
   for (int i = start; i < end; ++i) {
@@ -93,7 +92,7 @@ void ep_alloc_struct(void *indices_v, int n, size_t start, size_t end) {
   }
 }
 
-void ep_alloc_matrix(void *indices_v, int n, size_t start, size_t end) {
+void ep_alloc_matrix(void *indices_v, int n, parallel_index_t start, parallel_index_t end) {
   step_t **indices = (step_t**) indices_v;
 
   for (int i = start; i < end; ++i) {
@@ -101,7 +100,7 @@ void ep_alloc_matrix(void *indices_v, int n, size_t start, size_t end) {
   }
 }
 
-void ep_fill_matrix(void *indices_v, int n, size_t start, size_t end) {
+void ep_fill_matrix(void *indices_v, int n, parallel_index_t start, parallel_index_t end) {
   step_t **indices = (step_t**) indices_v;
 
   for (int i = start; i < end; ++i) {
@@ -113,7 +112,7 @@ void ep_fill_matrix(void *indices_v, int n, size_t start, size_t end) {
   }
 }
 
-void ep_create(void *indices_v, int n, size_t start, size_t end) {
+void ep_create(void *indices_v, int n, parallel_index_t start, parallel_index_t end) {
   step_t **indices = (step_t**) indices_v;
 
   for (int i = start; i < end; ++i) {
@@ -128,7 +127,7 @@ void ep_create(void *indices_v, int n, size_t start, size_t end) {
   }
 }
 
-void ep_factor(void *indices_v, int n, size_t start, size_t end) {
+void ep_factor(void *indices_v, int n, parallel_index_t start, parallel_index_t end) {
   step_t **indices = (step_t**) indices_v;
 
   for (int i = start; i < end; ++i) {
