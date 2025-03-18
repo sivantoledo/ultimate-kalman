@@ -102,7 +102,7 @@ typedef struct kalman_st {
     int32_t (*step_get_dimension)(void *step_v);
     kalman_matrix_t* (*step_get_state)(void *step_v);
     kalman_matrix_t* (*step_get_covariance)(void *step_v);
-    char (*step_get_covariance_type)();
+    char (*step_get_covariance_type)(void *step_v);
 
 } kalman_t;
 
