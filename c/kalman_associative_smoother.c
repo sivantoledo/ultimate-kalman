@@ -1065,7 +1065,7 @@ static void filtered_to_state_new(void* elements_v, void* filtered_v, kalman_ste
   }
 }
 
-static void smoothed_to_state_new(kalman_step_equations_t* equations_v, void* smoothed_v, kalman_step_index_t l, kalman_step_index_t start, kalman_step_index_t end) {
+static void smoothed_to_state_new(void* equations_v, void* smoothed_v, kalman_step_index_t l, kalman_step_index_t start, kalman_step_index_t end) {
   //kalman_t *kalman = (kalman_t*) kalman_v;
   //step_t **smoothed = (step_t**) smoothed_v;
   kalman_step_equations_t** equations = (kalman_step_equations_t**) equations_v;
