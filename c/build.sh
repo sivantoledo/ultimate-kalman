@@ -10,8 +10,8 @@ fi
 # On Intel servers, we installed Intel's oneAPI package, which includes both TBB and MKL (which includes optimized BLAS and LAPACK).
 # On ARM servers (Graviton3), we installed tbb from Ubuntu's libtbb-dev package, and the ARM Performance Libraries (downloaded as a tar file).
 
-echo On Linux Intel, run \"source /opt/intel/oneapi/setvars.sh\" under bash to set environment variables
-echo On Linux ARM, run \"export LD_LIBRARY_PATH=/opt/arm/armpl_24.10_gcc/lib/\"
+# echo On Linux Intel, run \"source /opt/intel/oneapi/setvars.sh\" under bash to set environment variables
+# echo On Linux ARM, run \"export LD_LIBRARY_PATH=/opt/arm/armpl_24.10_gcc/lib/\"
 
 ULTIMATE_C="\
 kalman_ultimate.c \
@@ -22,9 +22,10 @@ kalman_base.c \
 kalman_explicit_representation.c \
 matrix_ops.c \
 flexible_arrays.c \
-concurrent_set.c"
+concurrent_set.c \
+cmdline_args.c"
 
-CLIENTS_C="blastest.c rotation.c performance.c embarrasingly_parallel.c"
+CLIENTS_C="blastest.c rotation.c performance.c embarrassingly_parallel.c"
 
 ULTIMATE_O="${ULTIMATE_C//.c/.o}"
 CLIENTS_O="${CLIENTS_C//.c/.o}"
@@ -104,7 +105,7 @@ for C_SOURCE in $CLIENTS_C; do
     gcc -c -O2 $INT_TYPES $C_SOURCE
 done
 
-g++ -c -O2 $INCDIR $INT_TYPES -std=c++11 parallel_tbb.cpp
+g++ -c -O2 $INCDIR $INT_TYPES -std=c++14 parallel_tbb.cpp
 gcc -c -O2 $INCDIR $INT_TYPES            parallel_sequential.c
 
 echo LINKING
@@ -115,17 +116,10 @@ for CLIENT in $CLIENTS; do
 done
 
 for CLIENT in $CLIENTS; do
-    echo linking $CLIENT_par
-    g++ $ULTIMATE_O parallel_tbb.o ${CLIENT}.o -o $CLIENT_par $LIBDIR $PARLIBS
+    echo linking ${CLIENT}_par
+    g++ $ULTIMATE_O parallel_tbb.o ${CLIENT}.o -o ${CLIENT}_par $LIBDIR $PARLIBS
 done
 
-#echo linking performance_par
-#g++ $ULTIMATE_O parallel_tbb.o performance.o -o performance_par $LIBDIR $PARLIBS
-#
-#echo "linking embarrassingly_parallel (with TBB)"
-#g++ $ULTIMATE_O parallel_tbb.o embarrassingly_parallel.o -o embarrassingly_parallel $LIBDIR $PARLIBS
-
-echo On Linux ARM, run \"export LD_LIBRARY_PATH=/opt/arm/armpl_24.10_gcc/lib/\"
 case "$(uname)" in 
     Darwin)
         ;;
