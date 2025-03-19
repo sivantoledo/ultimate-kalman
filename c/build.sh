@@ -5,7 +5,7 @@ INT_TYPES="-DKALMAN_STEP_INDEX_TYPE_INT32 -DFARRAY_INDEX_TYPE_INT32 -DPARALLEL_I
 
 ARMPL_PATH="/opt/arm/armpl_24.10_gcc"
 AMDPL_PATH="/specific/amd-gcc/5.0.0/gcc"
-ONEAPI_PATH="/opt/intel/oneapi/"
+ONEAPI_PATH="/opt/intel/oneapi"
 
 ULTIMATE_C="\
 kalman_ultimate.c \
