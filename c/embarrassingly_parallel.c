@@ -160,22 +160,9 @@ int main(int argc, char *argv[]) {
   struct timeval begin, end;
   long seconds, microseconds;
 
-  //A = matrix_create(2 * n, n);
-  //for (int r = 0; r < 2 * n; r++) {
-  //  for (int c = 0; c < n; c++) {
-  //    matrix_set(A, r, c, generateGaussian(0.0, 1.0));
-  //  }
-  //}
-
   gettimeofday(&begin, 0);
 
   step_t **indices = (step_t**) malloc(k * sizeof(step_t*));
-
-  //#ifdef PARALLEL
-  //parallel_for_c(NULL, indices, n, k, 8, ep_create);
-  //#else
-  //ep_create(NULL, indices, n, 0, k);
-  //#endif
 
   foreach_in_range(ep_alloc_struct, indices, n, k);
 
