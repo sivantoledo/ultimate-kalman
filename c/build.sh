@@ -1,18 +1,11 @@
 #!/bin/bash
 
-INT_TYPES="-DKALMAN_STEP_INDEX_TYPE_INT64 -DFARRAY_INDEX_TYPE_INT64 -DPARALLEL_INDEX_TYPE_INT64"
+# INT_TYPES="-DKALMAN_STEP_INDEX_TYPE_INT64 -DFARRAY_INDEX_TYPE_INT64 -DPARALLEL_INDEX_TYPE_INT64"
 INT_TYPES="-DKALMAN_STEP_INDEX_TYPE_INT32 -DFARRAY_INDEX_TYPE_INT32 -DPARALLEL_INDEX_TYPE_INT32"
 
 ARMPL_PATH="/opt/arm/armpl_24.10_gcc"
-
-LIBDIR="-L${ARMPL_PATH}/lib/"
-echo $LIBDIR
-exit
-# On Intel servers, we installed Intel's oneAPI package, which includes both TBB and MKL (which includes optimized BLAS and LAPACK).
-# On ARM servers (Graviton3), we installed tbb from Ubuntu's libtbb-dev package, and the ARM Performance Libraries (downloaded as a tar file).
-
-# echo On Linux Intel, run \"source /opt/intel/oneapi/setvars.sh\" under bash to set environment variables
-# echo On Linux ARM, run \"export LD_LIBRARY_PATH=/opt/arm/armpl_24.10_gcc/lib/\"
+AMDPL_PATH="/specific/amd-gcc/5.0.0/gcc"
+ONEAPI_PATH="/opt/intel/oneapi/"
 
 ULTIMATE_C="\
 kalman_ultimate.c \
@@ -51,7 +44,7 @@ case "$(uname)" in
 	case "$(uname -m)" in
 	    aarch64)
 			echo "ARM"
-			LIBDIR="-L/opt/arm/armpl_24.10_gcc/lib/"
+			LIBDIR="-L${ARMPL_PATH}/lib/"
 			INCDIR="-DBUILD_BLAS_UNDERSCORE"
 			# sequential libraries; not sure why -lpthread was used, but it was included
 			SEQLIBS="                  -larmpl_lp64 -lpthread -lm -ldl"
@@ -62,7 +55,7 @@ case "$(uname)" in
 	    x86_64)
 		if grep -q "EPYC" /proc/cpuinfo; then
 		   echo "Building for AMD EPYC"
-		   LIBDIR="-L/specific/amd-gcc/5.0.0/gcc/lib_LP64"
+		   LIBDIR="-L${AMDPL_PATH}/lib_LP64"
 		   INCDIR="-DBUILD_BLAS_UNDERSCORE"
 		   # sequential libraries; not sure why -lpthread was used, but it was included
 		   SEQLIBS="                  -lflame -lblis-mt -laoclutils -lgomp -lpthread -lm -ldl"
@@ -70,7 +63,7 @@ case "$(uname)" in
 		   # parallel with nested TBB parallelism
 		   PRNLIBS="-ltbbmalloc_proxy -lflame -lblis-mt -laoclutils -lpthread -lm -ldl -ltbb"
 		else # assuming an Intel CPU
-		    source /opt/intel/oneapi/setvars.sh
+		    source ${ONEAPI_PATH}/setvars.sh
 		    
 		    LIBDIR=""
 		    INCDIR="-DBUILD_MKL"
@@ -127,18 +120,18 @@ case "$(uname)" in
     Linux)
 	case "$(uname -m)" in
 	    aarch64)
-		echo "Linux ARM, to set environment variables to run programs, run (under bash)"
-		echo "export LD_LIBRARY_PATH=/opt/arm/armpl_24.10_gcc/lib/"
-		;;
+			echo "Linux ARM, to set environment variables to run programs, run (under bash)"
+			echo "export LD_LIBRARY_PATH=${ARMPL_PATH}/lib/"
+			;;
 	    x86_64)
-		if grep -q "EPYC" /proc/cpuinfo; then
-		   echo "Linux AMD, to set environment variables to run programs, run (under bash)"
-		   echo "export LD_LIBRARY_PATH=/specific/amd-gcc/5.0.0/gcc/lib_LP64"
-  		else # assuming an Intel CPU
-		   echo "Linux Intel, to set environment variables to run programs, run (under bash)"
-		   echo "source /opt/intel/oneapi/setvars.sh"
-		fi
-		;;
+			if grep -q "EPYC" /proc/cpuinfo; then
+		 		echo "Linux AMD, to set environment variables to run programs, run (under bash)"
+		 		echo "export LD_LIBRARY_PATH=${AMDPL_PATH}/lib_LP64"
+  			else # assuming an Intel CPU
+		  		echo "Linux Intel, to set environment variables to run programs, run (under bash)"
+		  		echo "source ${ONEAPI_PATH}/setvars.sh"
+			fi
+			;;
 	esac
 	;;
 esac
