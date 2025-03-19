@@ -1,22 +1,29 @@
 classdef KalmanNative < handle
-    % UltimateKalman   An implementation of the Paige-Saunders Kalman
-    % filter and smoother by Sivan Toledo, Tel Aviv University.
+    % KalmanNative   An interface to the native implementation of the
+    %                UltimateKalman library (through a mex interface)
     %
-    % The filter is advanced by calling evolve and then observe every
-    % step.
+    % For a full documentation of the API, see KalmanBase
     %
-    % To predict the next state(s) before providing the observations
-    % (possibly before you have them) call observe and then filtered. Then
-    % you can roll back and provide observations.
+    % Meaningful fields in options structure:
+    %    algorithm - string indicating which native algorithm to invoke.
+    %                'ultimate', 'conventional',
+    %                'oddeven', and 'associative'
+    %    estimateCovariance - boolean indicating whether to compute
+    %                 covariance matrices of state estimates (default is true)
     %
-    % UltimateKalman Methods:
-    %    evolve   - Evolve the state using a linear matrix equation
-    %    observe  - Provide observations of the current state
-    %    estimate - Return the most up to date estimate of a state vector
-    %    forget   - Forget the oldest steps to save memory meory
-    %    rollback - Roll back the object to an earlier step
-    %    latest   - The index of the last step that was observed
-    %    earliest - The index of the earliest step that has not been forgoten
+    % For a thorough description, see the articles:
+    %
+    %	Sivan Toledo. Algorithm 1051: UltimateKalman, flexible kaoptoinlman
+    %	filtering and
+    %   smoothing using orthogonal transformations. ACM Transactions on 
+    %   Mathematical Software, 50(4):1-19, 2024.
+    %   https://doi.org/10.1145/3699958
+    %
+    %	Shahaf Gargir and Sivan Toledo. A Parallel-in-time Kalman smoothing 
+    %   using orthogonal transformations. In Proceedings of the IEEE 
+    %   International Parallel and Distributed Processing Symposium (IPDPS), 2025.    
+    % 
+    % Copyright 2020-2024 Sivan Toledo, Tel Aviv University.
 
     properties (Access = private)
         handle;

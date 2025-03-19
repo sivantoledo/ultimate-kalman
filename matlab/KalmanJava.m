@@ -1,22 +1,20 @@
 classdef KalmanJava < handle
-    % UltimateKalman   An implementation of the Paige-Saunders Kalman
-    % filter and smoother by Sivan Toledo, Tel Aviv University.
+    % KalmanJava   An interface to the Java implementation of the
+    %              UltimateKalman library
     %
-    % The filter is advanced by calling evolve and then observe every
-    % step.
+    % For a full documentation of the API, see KalmanBase
     %
-    % To predict the next state(s) before providing the observations
-    % (possibly before you have them) call observe and then filtered. Then
-    % you can roll back and provide observations.
+    % Meaningful fields in options structure: none
     %
-    % UltimateKalman Methods:
-    %    evolve   - Evolve the state using a linear matrix equation observe
-    %    - Provide observations of the current state estimate - Return the
-    %    most up to date estimate of a state vector forget   - Forget the
-    %    oldest steps to save memory meory rollback - Roll back the object
-    %    to an earlier step latest   - The index of the last step that was
-    %    observed earliest - The index of the earliest step that has not
-    %    been forgoten
+    % For a thorough description, see the article:
+    %
+    %	Sivan Toledo. Algorithm 1051: UltimateKalman, flexible kaoptoinlman
+    %	filtering and
+    %   smoothing using orthogonal transformations. ACM Transactions on 
+    %   Mathematical Software, 50(4):1-19, 2024.
+    %   https://doi.org/10.1145/3699958
+    % 
+    % Copyright 2020-2024 Sivan Toledo, Tel Aviv University.
 
     properties (Access = private)
         handle;

@@ -1,12 +1,21 @@
 classdef KalmanOddevenSmoother < KalmanExplicitRepresentation
-    % KalmanOddevenSmoother   A Kalman/RTS (Rauch, Tung, and Striebel) 
-    %                          linear smoother. The algorithm uses an odd-even
-    %                          QR reduction that can be easily parallelized.
-    %                          The implementation here is for testing and
-    %                          presentation of the algorithm and is
-    %                          not parallel.
+    % KalmanOddevenSmoother   An implementation of the Gargir-Toledo 
+    %                         parallel Kalman smoother.
+    %
+    % KalmanOddEvenSmoother implements these abstract methods:
+    %    smooth   - Compute smooth estimates of all the stored states
+    %
+    % KalmanOddEvenSmoother derives from KalmanExplicitRepresentation,
+    % which implements the evolve and observe methods.
+    %
+    % For a full documentation of the API, see KalmanBase.
+    %
+    % For a thorough description, see the article:
+    %	Shahaf Gargir and Sivan Toledo. A Parallel-in-time Kalman smoothing 
+    %   using orthogonal transformations. In Proceedings of the IEEE 
+    %   International Parallel and Distributed Processing Symposium (IPDPS), 2025.
     % 
-    % Copyright 2024 Shahaf Gargir and Sivan Toledo, Tel Aviv University.
+    % Copyright 2020-2024 Shahaf Gargir and Sivan Toledo, Tel Aviv University.
 
     methods (Access = private)
         function parallel_smooth (kalman,indices)

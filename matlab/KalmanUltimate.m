@@ -1,22 +1,27 @@
 classdef KalmanUltimate < KalmanBase
-    % UltimateKalman   An implementation of the Paige-Saunders Kalman
-    % filter and smoother by Sivan Toledo, Tel Aviv University.
+    % KalmanUltimate   An implementation of the Paige-Saunders Kalman
+    %                  filter and smoother by Sivan Toledo, Tel Aviv University.
     %
-    % The filter is advanced by calling evolve and then observe every
-    % step.
-    %
-    % To predict the next state(s) before providing the observations
-    % (possibly before you have them) call observe and then estimate. Then
-    % you can roll back and provide observations.
-    %
-    % UltimateKalman Methods:
+    % KalmanUltimate implements these abstract methods:
     %    evolve   - Evolve the state using a linear matrix equation 
     %    observe  - Provide observations of the current state 
-    %    estimate - Return the most up to date estimate of a state vector 
-    %    forget   - Forget the oldest steps to save memory meory 
-    %    rollback - Roll back the object to an earlier step 
-    %    latest   - The index of the last step that was observed 
-    %    earliest - The index of the earliest step that has not been forgoten
+    %    smooth   - Compute smooth estimates of all the stored states
+    %
+    % Meaningful fields in options structure:
+    %    covarianceEstimates - string that speficies the algorithm to
+    %                 compute covariance matrices. Valid values are:
+    %                 'PaigeSaunders' (default) using orthogonal
+    %                     transformations
+    %                 'SelInv' using a selective inversion algorithm
+    %                 matrices of state estimates (slow if set to true) 
+    %
+    % For a full documentation of the API, see KalmanBase
+    %
+    % For a thorough description, see the article:
+    %	Sivan Toledo. Algorithm 1051: UltimateKalman, flexible kalman filtering and 
+    %   smoothing using orthogonal transformations. ACM Transactions on 
+    %   Mathematical Software, 50(4):1-19, 2024.
+    %   https://doi.org/10.1145/3699958
     % 
     % Copyright 2020-2024 Sivan Toledo, Tel Aviv University.
 
