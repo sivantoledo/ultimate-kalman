@@ -18,10 +18,9 @@ matrix_ops.c \
 flexible_arrays.c \
 concurrent_set.c \
 cmdline_args.c"
+ULTIMATE_O="${ULTIMATE_C//.c/.o}"
 
 CLIENTS_C="blastest.c rotation.c performance.c embarrassingly_parallel.c"
-
-ULTIMATE_O="${ULTIMATE_C//.c/.o}"
 CLIENTS_O="${CLIENTS_C//.c/.o}"
 CLIENTS="${CLIENTS_C//.c/}"
 

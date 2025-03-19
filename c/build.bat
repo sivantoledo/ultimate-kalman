@@ -1,89 +1,64 @@
-setlocal
+setlocal EnableDelayedExpansion
 
 @ECHO ON
 
+:: SET INT_TYPES=-DKALMAN_STEP_INDEX_TYPE_INT32 -DFARRAY_INDEX_TYPE_INT32 -DPARALLEL_INDEX_TYPE_INT32
+SET INT_TYPES=-DKALMAN_STEP_INDEX_TYPE_INT64 -DFARRAY_INDEX_TYPE_INT64 -DPARALLEL_INDEX_TYPE_INT64
+                     
+:: possible mkl setvars args: ilp64
 REM call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
 call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
 call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" intel64
-
-::echo %MKLROOT%
-::echo %INCLUDE%
-
-:: possible mkl setvars args: ilp64
-
-:: /Og rather than /Ox ?
 
 SET C_FLAGS=/Zc:__cplusplus /Zp8 /GR /W3 /EHs /nologo /MD /O2 /Oy- -DNDEBUG
 
 SET BLAS_LAPACK_FLAGS=-DBUILD_MKL
 
-:: OpenMP (default) MKL
+:: OpenMP (default) MKL, 64-bit pointers (lp64) but 32-bit row and column indices (ilp64 for 64-bit integers)
 :: SET BLAS_LAPACK_LIBS=mkl_intel_lp64_dll.lib mkl_intel_thread_dll.lib mkl_core_dll.lib libiomp5md.lib
 SET BLAS_LAPACK_LIBS=mkl_intel_lp64.lib mkl_intel_thread.lib mkl_core_dll.lib libiomp5md.lib
 :: Single-threaded library
 SET BLAS_LAPACK_LIBS=mkl_intel_lp64.lib mkl_sequential.lib mkl_core_dll.lib 
-REM define MKL_ILP64 for 64-bit integers
 
-::SET ULTIMATE_FLAGS=-DBUILD_WIN32_GETTIMEOFDAY 
-SET ULTIMATE_FLAGS=-DKALMAN_STEP_INDEX_TYPE_INT32 -DFARRAY_INDEX_TYPE_INT32 -DPARALLEL_INDEX_TYPE_INT32
-SET ULTIMATE_FLAGS=-DKALMAN_STEP_INDEX_TYPE_INT64 -DFARRAY_INDEX_TYPE_INT64 -DPARALLEL_INDEX_TYPE_INT64
-                     
-SET ULTIMATE_OBJECTS=kalman_ultimate.obj ^
-                     kalman_conventional.obj ^
-                     kalman_oddeven_smoother.obj ^
-                     kalman_associative_smoother.obj ^
-                     kalman_base.obj ^
-                     kalman_explicit_representation.obj ^
-                     matrix_ops.obj ^
-                     flexible_arrays.obj ^
-                     concurrent_set.obj ^
-                     cmdline_args.obj ^
-                     gettimeofday.obj
-                     
-REM -DBUILD_DEBUG_PRINTOUTS
-REM -DBUILD_BLAS_STRLEN_END
-REM -DBUILD_BLAS_UNDERSCORE
+SET ULTIMATE_C=kalman_ultimate.c ^
+               kalman_conventional.c ^
+               kalman_oddeven_smoother.c ^
+               kalman_associative_smoother.c ^
+               kalman_base.c ^
+               kalman_explicit_representation.c ^
+               matrix_ops.c ^
+               flexible_arrays.c ^
+               concurrent_set.c ^
+               cmdline_args.c ^
+               gettimeofday.c
+               
+SET CLIENTS=blastest rotation performance embarrassingly_parallel
 
-REM echo show %path% to see which directories store the MKL dll's
-REM echo %path%
+ECHO UltimateKalman flags: %INT_TYPES%
 
-ECHO generating test program %test%.exe
-
-ECHO UltimateKalman flags: %ULTIMATE_FLAGS%
-
-:: kalman_ultimate.c ^
-:: kalman_filter_smoother.c
-:: kalman_oddeven.c
-
-:: del %test%.exe
 del *.exe *.obj
 
-cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% kalman_ultimate.c 
-cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% kalman_conventional.c 
-cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% kalman_oddeven_smoother.c 
-cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% kalman_associative_smoother.c 
-cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% kalman_base.c 
-cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% kalman_explicit_representation.c 
-cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% matrix_ops.c 
-cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% flexible_arrays.c 
-cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% concurrent_set.c 
-cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% parallel_sequential.c 
-cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% gettimeofday.c 
-cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% cmdline_args.c 
+set "ULTIMATE_O="
+for %%F in (%ULTIMATE_C%) do (
+  cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %INT_TYPES% %%F 
+  
+  set "name=%%F"
+  set "name=!name:.c=.obj!"
+  set "ULTIMATE_O=!ULTIMATE_O! !name!"
+)
 
-cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% parallel_tbb.cpp 
+echo %ULTIMATE_O%
 
-cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% embarrassingly_parallel.c 
-cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% performance.c 
-cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% rotation.c 
-cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %ULTIMATE_FLAGS% blastest.c 
+cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %INT_TYPES% parallel_sequential.c
+cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %INT_TYPES% parallel_tbb.cpp 
 
-cl %C_FLAGS% -Feperformance.exe             %ULTIMATE_OBJECTS% parallel_sequential.obj performance.obj            %BLAS_LAPACK_LIBS% 
-cl %C_FLAGS% -Ferotation.exe                %ULTIMATE_OBJECTS% parallel_sequential.obj rotation.obj               %BLAS_LAPACK_LIBS% 
-cl %C_FLAGS% -Feblastest.exe                %ULTIMATE_OBJECTS% parallel_sequential.obj blastest.obj               %BLAS_LAPACK_LIBS% 
-
-cl %C_FLAGS% -Feperformance_par.exe         %ULTIMATE_OBJECTS% parallel_tbb.obj        performance.obj             %BLAS_LAPACK_LIBS% 
-cl %C_FLAGS% -Feembarrassingly_parallel.exe %ULTIMATE_OBJECTS% parallel_tbb.obj        embarrassingly_parallel.obj %BLAS_LAPACK_LIBS% 
+for %%C in (%CLIENTS%) do (
+    cl /c %C_FLAGS% -I. %BLAS_LAPACK_FLAGS% %INT_TYPES% %%C.c
+	echo building %%C.exe
+    cl %C_FLAGS% -Fe%%C.exe %ULTIMATE_O% parallel_sequential.obj %%C.obj %BLAS_LAPACK_LIBS% 
+	echo building %%C_par.exe
+    cl %C_FLAGS% -Fe%%C_par.exe %ULTIMATE_O% parallel_tbb.obj        %%C.obj %BLAS_LAPACK_LIBS% 
+)
 
 DEL *.obj
   
