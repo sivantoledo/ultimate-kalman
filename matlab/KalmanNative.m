@@ -31,6 +31,8 @@ classdef KalmanNative < handle
 
     methods (Access = public)
         function kalman = KalmanNative(options)
+            KalmanNative.initializeClass();
+
             if nargin==0
                 options = struct();
             end
@@ -273,4 +275,20 @@ classdef KalmanNative < handle
         end
         
     end % methods
+
+    methods (Static, Access = private)
+        function initializeClass()
+            persistent isInitialized
+            if ~isempty(isInitialized)
+                return
+            end
+
+            fprintf('performing one-time initialization of KalmanNative\n')
+            currentFile = mfilename('fullpath');
+            [currentDir, ~, ~] = fileparts(currentFile);
+            cdir = fullfile(currentDir, '../c')
+            addpath(cdir)
+            isInitialized = true;
+        end
+    end    
 end
