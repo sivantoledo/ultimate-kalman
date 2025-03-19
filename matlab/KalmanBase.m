@@ -112,8 +112,12 @@ classdef (Abstract) KalmanBase < handle
             %     ptr_s = s - earliest + 1;
             % end
             l = length(kalman.steps);
-            ptr_s = kalman.indexOfStep(s);
-            kalman.steps = { kalman.steps{ptr_s+1:l} };
+            if nargin<2
+                kalman.steps = { kalman.steps{l:l} };
+            else
+                ptr_s = kalman.indexOfStep(s);
+                kalman.steps = { kalman.steps{ptr_s+1:l} };
+            end
         end
 
         function rollback(kalman,s)
