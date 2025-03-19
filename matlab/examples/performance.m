@@ -17,7 +17,6 @@ rng(seed);
 q = 1;
 
 labels = {};
-labels
 
 for k = 1:length(factories)
     factory = factories{k}
@@ -34,14 +33,14 @@ for k = 1:length(factories)
         c = zeros(n,1);
         o = randn(m,1);
 
-        K   = CovarianceMatrix(eye(n), 'C');
-        C   = CovarianceMatrix(eye(m), 'C');
+        %K   = CovarianceMatrix(eye(n), 'C');
+        %C   = CovarianceMatrix(eye(m), 'C');
+        K   = CovarianceMatrix(eye(n), 'W');
+        C   = CovarianceMatrix(eye(m), 'W');
 
         kalman = factory();
         label=class(kalman);
-        class(label)
         labels{k} = label;
-        labels
 
         tstart=tic;
         t(:,q) = kalman.perftest([],F,c,K,G,o,C,count,decimation);

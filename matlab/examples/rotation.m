@@ -116,6 +116,7 @@ disp('covariance matrix of smoothed state 0:');
 Eexplicit = E.explicit()
 disp('W such that W^T*W = cov^-1:');
 W = E.weigh(eye(2))
+
 fprintf('std deviation of first state coordinate %.2e (of first observation %.2e)\n',...
         sqrt(Eexplicit(1,1)),observationStd);
 
