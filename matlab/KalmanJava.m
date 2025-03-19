@@ -22,6 +22,8 @@ classdef KalmanJava < handle
 
     methods (Access = public)
         function kalman = KalmanJava(options)
+            KalmanJava.initializeClass();
+
             kalman = kalman@handle();
             % kalman.handle = sivantoledo.kalman.UltimateKalman();
             kalman.handle = javaObject("sivantoledo.kalman.UltimateKalman");
@@ -216,21 +218,65 @@ classdef KalmanJava < handle
     end % methods
 
     methods (Static, Access = private)
+        function initializeClass()
+            persistent isInitialized
+            if ~isempty(isInitialized)
+                return
+            end
+
+            fprintf('performing one-time initialization of KalmanJava\n')
+
+            warning('off','MATLAB:javaclasspath:invalidFile');
+
+            currentFile = mfilename('fullpath');
+            [currentDir, ~, ~] = fileparts(currentFile);
+            jarfile = fullfile(currentDir, '../java', 'ultimatekalman.jar')
+            acmfile = fullfile(currentDir, '../java', 'commons-math3-3.6.1.jar')
+
+            lastwarn('');
+            try
+                javaaddpath(jarfile);
+            catch err % octave error handling
+                error('UltimateKalman Java library (jar file) is missing, build it first; see user guide for instructions');
+            end
+            [str,id] = lastwarn; % Matlab error handling
+            switch id
+                case 'MATLAB:javaclasspath:invalidFile'
+                    error('UltimateKalman Java library (jar file) is missing, build it first; see user guide for instructions');
+            end
+
+            lastwarn('');
+            try
+                javaaddpath(acmfile);
+            catch err % octave error handling
+                error('Apache Commons Math Java library (jar file) is missing, install it first; see user guide for instructions');
+            end
+            [str,id] = lastwarn; % Matlab error handling
+            switch id
+                case 'MATLAB:javaclasspath:invalidFile'
+                    error('Apache Commons Math Java library (jar file) is missing, install it first; see user guide for instructions');
+            end
+
+            warning('on','MATLAB:javaclasspath:invalidFile');
+
+            isInitialized = true;
+        end
+
         function jC = jcov(C)
             [R,type] = C.rep();
             switch type
                 case 'w'
-                    R = UltimateKalmanJava.jvec(R);
+                    R = KalmanJava.jvec(R);
                     t = javaMethod('valueOf','sivantoledo.kalman.DiagonalCovarianceMatrix$Representation','DIAGONAL_INVERSE_STANDARD_DEVIATIONS');
                     % jC = sivantoledo.kalman.DiagonalCovarianceMatrix(R,t);
                     jC = javaObject('sivantoledo.kalman.DiagonalCovarianceMatrix',R,t);
                 case 'W'
-                    R = UltimateKalmanJava.jmat(R);
+                    R = KalmanJava.jmat(R);
                     t = javaMethod('valueOf','sivantoledo.kalman.RealCovarianceMatrix$Representation','INVERSE_FACTOR');
                     % jC = sivantoledo.kalman.RealCovarianceMatrix(R,t);
                     jC = javaObject('sivantoledo.kalman.RealCovarianceMatrix',R,t);
                 case 'U'
-                    R = UltimateKalmanJava.jmat(R);
+                    R = KalmanJava.jmat(R);
                     t = javaMethod('valueOf','sivantoledo.kalman.RealCovarianceMatrix$Representation','FACTOR');
                     % jC = sivantoledo.kalman.RealCovarianceMatrix(R,t);
                     jC = javaObject('sivantoledo.kalman.RealCovarianceMatrix',R,t);
