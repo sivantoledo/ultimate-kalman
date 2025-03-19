@@ -1,4 +1,4 @@
-function t = performance(kalmans, seed, sizes, count, decimation)
+function t = performance(factories, seed, sizes, count, decimation)
 % PERFORMANCE a function to test the performance of UltimateKalman
 %             implementations
 %
@@ -6,7 +6,7 @@ function t = performance(kalmans, seed, sizes, count, decimation)
 %      factories:  a cell array of functions that return UltimateKalman
 %                  objects
 %      seed:       random-number generator seed
-%      sizes:      state-vector dimensions to test the implemenations on 
+%      sizes:      state-vector dimensions to test the implemenations on
 %      count:      how many time steps to simulate and filter
 %      decimation: number of time steps between timestamps
 %
@@ -16,25 +16,32 @@ rng(seed);
 
 q = 1;
 
-for k = 1:length(kalmans)
-    implementation = kalmans{k}
+labels = {};
+labels
 
-for s = 1:length(sizes)
+for k = 1:length(factories)
+    factory = factories{k}
 
-    n = sizes(s)
+    for s = 1:length(sizes)
 
-    l = n;
-    m = n;
+        n = sizes(s)
 
-    [F,~] = qr( randn(n,n) );
-    [G,~] = qr( randn(m,n) );
-    c = zeros(n,1);
-    o = randn(m,1);
+        l = n;
+        m = n;
 
-    K   = CovarianceMatrix(eye(n), 'C');
-    C   = CovarianceMatrix(eye(m), 'C');
+        [F,~] = qr( randn(n,n) );
+        [G,~] = qr( randn(m,n) );
+        c = zeros(n,1);
+        o = randn(m,1);
 
-    kalman = factory(implementation);
+        K   = CovarianceMatrix(eye(n), 'C');
+        C   = CovarianceMatrix(eye(m), 'C');
+
+        kalman = factory();
+        label=class(kalman);
+        class(label)
+        labels{k} = label;
+        labels
 
         tstart=tic;
         t(:,q) = kalman.perftest([],F,c,K,G,o,C,count,decimation);
@@ -66,8 +73,8 @@ linewidth  = 1.25;
 markersize = 8;
 
 colors = [red
-          yellow
-          green];
+    yellow
+    green];
 
 %close all
 figure
@@ -82,29 +89,29 @@ end
 xlim([0 decimation*(size(r,1)-1)]);
 ylim([0 1.33*max(medians)])
 if length(sizes) > 1
-  legend(num2str(sizes'),'Location','SouthEast');
-  title(kalmans{1})
+    legend(num2str(sizes'),'Location','SouthEast');
+    title(labels{1})
 else
-  legend(kalmans,'Location','SouthEast');
-  title(sprintf('n = %d',sizes(1)));
+    legend(labels,'Location','SouthEast');
+    title(sprintf('n = %d',sizes(1)));
 end
 xlabel('step');
 ylabel('time (ms)')
 hold off;
 %exportgraphics(gca,'../outputs/stress_6_96.pdf');
 
-function kalman = factory(implementation)
-    switch implementation
-        case 'C'
-            kalman = UltimateKalmanNative;
-        case 'Java'
-            kalman = UltimateKalmanJava;
-        case 'MATLAB'
-            kalman = UltimateKalman;
-        otherwise
-            error("implementation should be 'M', 'N', or 'J' (for MATLAB, native, or Java)");
+    function kalman = factoryxxx(implementation)
+        switch implementation
+            case 'C'
+                kalman = UltimateKalmanNative;
+            case 'Java'
+                kalman = UltimateKalmanJava;
+            case 'MATLAB'
+                kalman = UltimateKalman;
+            otherwise
+                error("implementation should be 'M', 'N', or 'J' (for MATLAB, native, or Java)");
+        end
     end
-end
 
 end
 
