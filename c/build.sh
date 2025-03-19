@@ -3,6 +3,11 @@
 INT_TYPES="-DKALMAN_STEP_INDEX_TYPE_INT64 -DFARRAY_INDEX_TYPE_INT64 -DPARALLEL_INDEX_TYPE_INT64"
 INT_TYPES="-DKALMAN_STEP_INDEX_TYPE_INT32 -DFARRAY_INDEX_TYPE_INT32 -DPARALLEL_INDEX_TYPE_INT32"
 
+ARMPL_PATH="/opt/arm/armpl_24.10_gcc"
+
+LIBDIR="-L${ARMPL_PATH}/lib/"
+echo $LIBDIR
+exit
 # On Intel servers, we installed Intel's oneAPI package, which includes both TBB and MKL (which includes optimized BLAS and LAPACK).
 # On ARM servers (Graviton3), we installed tbb from Ubuntu's libtbb-dev package, and the ARM Performance Libraries (downloaded as a tar file).
 
@@ -45,14 +50,14 @@ case "$(uname)" in
     Linux)
 	case "$(uname -m)" in
 	    aarch64)
-		echo "ARM"
-		LIBDIR="-L/opt/arm/armpl_24.10_gcc/lib/"
-		INCDIR="-DBUILD_BLAS_UNDERSCORE"
-		# sequential libraries; not sure why -lpthread was used, but it was included
-		SEQLIBS="                  -larmpl_lp64 -lpthread -lm -ldl"
-		PARLIBS="-ltbbmalloc_proxy -larmpl_lp64 -lpthread -lm -ldl -ltbb -lpthread -lm -ldl -ltbb"
-		# parallel with nested TBB parallelism
-		PRNLIBS="-ltbbmalloc_proxy -larmpl_lp64 -lpthread -lm -ldl -ltbb -lpthread -lm -ldl -ltbb"
+			echo "ARM"
+			LIBDIR="-L/opt/arm/armpl_24.10_gcc/lib/"
+			INCDIR="-DBUILD_BLAS_UNDERSCORE"
+			# sequential libraries; not sure why -lpthread was used, but it was included
+			SEQLIBS="                  -larmpl_lp64 -lpthread -lm -ldl"
+			PARLIBS="-ltbbmalloc_proxy -larmpl_lp64 -lpthread -lm -ldl -ltbb -lpthread -lm -ldl -ltbb"
+			# parallel with nested TBB parallelism
+			PRNLIBS="-ltbbmalloc_proxy -larmpl_lp64 -lpthread -lm -ldl -ltbb -lpthread -lm -ldl -ltbb"
 	    ;;
 	    x86_64)
 		if grep -q "EPYC" /proc/cpuinfo; then
