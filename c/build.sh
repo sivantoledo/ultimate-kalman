@@ -27,13 +27,13 @@ CLIENTS="${CLIENTS_C//.c/}"
 case "$(uname)" in 
     Darwin)
         LIBDIR=""
-        INCDIR="-I$(brew --prefix tbb)/include -DBUILD_BLAS_UNDERSCORE -DMACOS"
+        INCDIR="-I$(brew --prefix tbb)/include -DBUILD_BLAS_UNDERSCORE"
         SEQLIBS="-L$(brew --prefix openblas)/lib -llapack -lblas -lm"
         PARLIBS="-ltbbmalloc_proxy -ltbb -framework Accelerate -llapack -lblas -lm -lc"
         PARLIBS="-L$(brew --prefix openblas)/lib -llapack -lblas -lm -L$(brew --prefix tbb)/lib -ltbb -ltbbmalloc -ltbbmalloc_proxy"
 
         LIBDIR=""
-        INCDIR="-I$(brew --prefix tbb)/include -DBUILD_BLAS_UNDERSCORE -DMACOS"
+        INCDIR="-I$(brew --prefix tbb)/include -DBUILD_BLAS_UNDERSCORE"
         SEQLIBS="-framework Accelerate -llapack -lblas -lm"
         PARLIBS="-framework Accelerate -llapack -lblas -lm -L$(brew --prefix tbb)/lib -ltbb -ltbbmalloc -ltbbmalloc_proxy"
 
