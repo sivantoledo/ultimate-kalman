@@ -439,7 +439,7 @@ void matrix_mutate_apply_qt(matrix_t* QR, matrix_t* TAU, matrix_t* C) {
 }
 
 // mutates b
-void matrix_mutate_trisolve(matrix_t* U, matrix_t* b) {
+void matrix_mutate_trisolve(char* triangle, matrix_t* U, matrix_t* b) {
 	assert(U != NULL);
 	assert(b != NULL);
 	assert(matrix_rows(U) == matrix_cols(U));
@@ -468,7 +468,7 @@ void matrix_mutate_trisolve(matrix_t* U, matrix_t* b) {
 #else
      dtrtrs
 #endif
-           ("U","N","N", &N, &NRHS, U->elements, &LDA, b->elements, &LDB, &INFO
+           (triangle,"N","N", &N, &NRHS, U->elements, &LDA, b->elements, &LDB, &INFO
 #ifdef BUILD_BLAS_STRLEN_END
     ,1,1,1
 #endif
@@ -484,10 +484,48 @@ void matrix_mutate_trisolve(matrix_t* U, matrix_t* b) {
 #endif
 }
 
-matrix_t* matrix_create_trisolve(matrix_t* U, matrix_t* b) {
-	matrix_t* x = matrix_create_copy(b);
-	matrix_mutate_trisolve(U,x);
-	return x;
+matrix_t* matrix_create_trisolve(char* triangle, matrix_t* U, matrix_t* b) {
+    matrix_t* x = matrix_create_copy(b);
+    matrix_mutate_trisolve("U",U,x);
+    return x;
+}
+
+void matrix_mutate_chol(matrix_t* L) {
+    assert(L != NULL);
+    assert(matrix_rows(L) == matrix_cols(L));
+
+    blas_int_t N,LDA,INFO;
+
+    //if (debug) printf("**** %d %d %d %d\n",matrix_rows(A),matrix_ld(A),matrix_rows(kalman->current->state),matrix_ld(kalman->current->state));
+
+    N   = matrix_cols(L);
+    LDA = matrix_ld(L);
+
+#ifdef BUILD_BLAS_UNDERSCORE
+     dpotrf_
+#else
+     dpotrf
+#endif
+           ("L",&N, L->elements, &LDA, &INFO
+#ifdef BUILD_BLAS_STRLEN_END
+    ,1
+#endif
+);
+    if (INFO != 0) {
+#ifdef BUILD_DEBUG_PRINTOUTS
+        printf("dpotrf INFO=%d\n",INFO);
+#endif
+    }
+    assert(INFO==0);
+#ifdef BUILD_DEBUG_PRINTOUTS
+    printf("dpotrf done\n");
+#endif
+}
+
+matrix_t* matrix_create_chol(matrix_t* A) {
+	matrix_t* L = matrix_create_copy(A);
+	matrix_mutate_chol(L);
+	return L;
 }
 
 // mutates C
@@ -549,7 +587,7 @@ matrix_t* matrix_create_mldivide(matrix_t* A, matrix_t* B) {
 	matrix_mutate_apply_qt(R,Q,B);
 
 	matrix_mutate_triu(R);
-	matrix_t* A_inverse =  matrix_create_trisolve(R,B);
+	matrix_t* A_inverse =  matrix_create_trisolve("U",R,B);
 
 	matrix_free(R);
 	matrix_free(Q);

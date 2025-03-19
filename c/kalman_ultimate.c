@@ -499,7 +499,7 @@ static void observe(kalman_t *kalman, matrix_t *G_i, matrix_t *o_i, matrix_t *C_
 
     if (matrix_rows(kalman_current->Rdiag) == n_i) {
 
-      state = matrix_create_trisolve(kalman_current->Rdiag, y);
+      state = matrix_create_trisolve("U",kalman_current->Rdiag, y);
 
       /*
 
@@ -572,7 +572,7 @@ static void smooth(kalman_t *kalman) {
       matrix_mutate_gemm(-1.0, i->Rsupdiag, prev_state, 1.0, i->state);
     }
     //printf("smth %d: %d X %d ; %d\n",si,matrix_rows(i->Rdiag),matrix_cols(i->Rdiag),matrix_rows(i->state));
-    matrix_mutate_trisolve(i->Rdiag, i->state);
+    matrix_mutate_trisolve("U",i->Rdiag, i->state);
     prev_state = i->state;
   }
 

@@ -1,6 +1,11 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
+#if defined(BUILD_MEX) && defined(BUILD_MATLAB)
+#include <stdlib.h>
+
+#else // not MATLAB MEX
+
 #include <stdlib.h>
 
 // Helper macro to pad size to the next multiple of 64
@@ -17,5 +22,7 @@
     })
 #else // Linux (and other POSIX systems with C11)
     #define malloc(x) aligned_alloc(64, PAD_TO_64(x))
-#endif
-#endif
+#endif // APPLE
+#endif // Windows
+
+#endif // not MATLAB MEX

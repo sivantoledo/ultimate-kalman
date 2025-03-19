@@ -530,7 +530,7 @@ static void Solve_Estimates(void* steps_v, kalman_step_index_t length, kalman_st
 			matrix_t* new_b = matrix_create_subtract(o_i, mul);
 
 			matrix_mutate_triu(R);
-			step_i->state = matrix_create_trisolve(R,new_b);
+			step_i->state = matrix_create_trisolve("U",R,new_b);
 
 			matrix_free(mul);
 			matrix_free(new_b);
@@ -554,7 +554,7 @@ static void Solve_Estimates(void* steps_v, kalman_step_index_t length, kalman_st
 			matrix_t* new_b = matrix_create_subtract(new_b_mid, mul2);
 
 			matrix_mutate_triu(R);
-			step_i->state = matrix_create_trisolve(R,new_b);
+			step_i->state = matrix_create_trisolve("U",R,new_b);
 
 			matrix_free(mul1);
 			matrix_free(mul2);
@@ -575,7 +575,7 @@ static void Solve_Estimates(void* steps_v, kalman_step_index_t length, kalman_st
 
 			matrix_mutate_triu(R);
 
-			step_i->state = matrix_create_trisolve(R,new_b);
+			step_i->state = matrix_create_trisolve("U",R,new_b);
 
 			matrix_free(mul);
 			matrix_free(new_b);
@@ -601,24 +601,24 @@ static void Convert_LDLT(void* steps_v, kalman_step_index_t length, kalman_step_
 		
 		if (j == 0){
 			matrix_t* X = step->X;
-			matrix_t* X_inv = matrix_create_trisolve(R,X);
+			matrix_t* X_inv = matrix_create_trisolve("U",R,X);
 			matrix_free(X);
 			step->X = X_inv;
 
 		}else if (j != length - 1){
 			matrix_t* F_tilde = step->F_tilde;
-			matrix_t* F_tilde_inv = matrix_create_trisolve(R,F_tilde);
+			matrix_t* F_tilde_inv = matrix_create_trisolve("U",R,F_tilde);
 			matrix_free(F_tilde);
 			step->F_tilde = F_tilde_inv;	
 
 			matrix_t* Y = step->Y;
-			matrix_t* Y_inv = matrix_create_trisolve(R,Y);
+			matrix_t* Y_inv = matrix_create_trisolve("U",R,Y);
 			matrix_free(Y);
 			step->Y = Y_inv;	
 			
 		}else{
 			matrix_t* F_tilde = step->F_tilde;
-			matrix_t* F_tilde_inv = matrix_create_trisolve(R,F_tilde);
+			matrix_t* F_tilde_inv = matrix_create_trisolve("U",R,F_tilde);
 			matrix_free(F_tilde);
 			step->F_tilde = F_tilde_inv;		
 		}
@@ -984,7 +984,7 @@ static void smooth_recursive(kalman_options_t options, step_t** steps, kalman_st
 		// ==========================================
 		// End Cov Change 3
 		// ==========================================
-		singleStep->state = matrix_create_trisolve(G,o);
+		singleStep->state = matrix_create_trisolve("U",G,o);
 		
 		matrix_free(TAU);
 		matrix_free(G);

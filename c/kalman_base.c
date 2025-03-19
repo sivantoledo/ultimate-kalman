@@ -102,7 +102,7 @@ matrix_t* kalman_covariance_matrix_weigh(matrix_t *cov, char cov_type, matrix_t 
       //if (debug) printf("cov U %d %d %d %d\n",matrix_cols(cov),matrix_rows(cov),matrix_cols(A),matrix_rows(A));
 
       // is this correct for 'F'?
-      WA = matrix_create_trisolve(cov, A);
+      WA = matrix_create_trisolve("L",cov, A);
       /*
        assert(matrix_cols(cov) == matrix_rows(A));
 
@@ -137,6 +137,11 @@ matrix_t* kalman_covariance_matrix_weigh(matrix_t *cov, char cov_type, matrix_t 
           matrix_set(WA, i, j, matrix_get(cov, i, 0) * matrix_get(A, i, j));
         }
       }
+      break;
+    case 'C':
+      matrix_t* L = matrix_create_chol(cov);
+      WA = matrix_create_trisolve("L",cov, A);
+
       break;
     default:
       printf("unknown covariance-matrix type %c\n", cov_type);

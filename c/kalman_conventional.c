@@ -262,7 +262,7 @@ static void observe(kalman_t *kalman, matrix_t *G_i, matrix_t *o_i, matrix_t *C_
     matrix_mutate_chop(W_i_o_i, n_i, 1); // it might have been tall
     matrix_mutate_triu(W_i_G_i);
 
-    kalman_current->assimilatedState = matrix_create_trisolve(W_i_G_i, W_i_o_i);
+    kalman_current->assimilatedState = matrix_create_trisolve("U",W_i_G_i, W_i_o_i);
 
     matrix_t *R_trans = matrix_create_transpose(W_i_G_i);
     matrix_t *R_trans_R = matrix_create_multiply(R_trans, W_i_G_i);

@@ -341,7 +341,7 @@ static void build_filtering_element_new(kalman_step_equations_t* equations[], st
     matrix_mutate_apply_qt(R, Q, W_i_o_i);
 
     matrix_mutate_triu(R);
-    matrix_t* m0 = matrix_create_trisolve(R, W_i_o_i);
+    matrix_t* m0 = matrix_create_trisolve("U",R, W_i_o_i);
 
     matrix_t* RT  = matrix_create_transpose(R);
     matrix_t* RTR = matrix_create_multiply(RT, R);
@@ -532,7 +532,7 @@ static void build_filtering_element(kalman_t *kalman, kalman_step_index_t i) {
     matrix_mutate_apply_qt(R, Q, W_i_o_i);
 
     matrix_mutate_triu(R);
-    matrix_t *m0 = matrix_create_trisolve(R, W_i_o_i);
+    matrix_t *m0 = matrix_create_trisolve("U",R, W_i_o_i);
 
     matrix_t *RT = matrix_create_transpose(R);
     matrix_t *RTR = matrix_create_multiply(RT, R);
