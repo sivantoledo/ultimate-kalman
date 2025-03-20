@@ -566,7 +566,7 @@ UltimateKalman
 \end_inset
 
  is a library that implements efficient and flexible Kalman filtering and
- smoothing algorithms.
+ smoothing algorithms, including parallel (multi-core) smoothers.
  The library contains 
 \begin_inset Flex Proglang
 status open
@@ -599,6 +599,9 @@ Java
 
  implementations (currently, the Java implementations does not contain all
  the algorithms).
+ The library is robust: it includes mechanisms for testing and evaluating
+ the performance of all the implementations, as well as with a set of well-docum
+ented examples.
  The library is available on GitHub at 
 \begin_inset Flex URL
 status open
@@ -698,12 +701,10 @@ literal "false"
 \end_inset
 
 
-\begin_inset Note Note
-status open
-
-\begin_layout Plain Layout
-CITE
-\end_layout
+\begin_inset CommandInset citation
+LatexCommand cite
+key "10.1109/TAC.2020.2976316"
+literal "false"
 
 \end_inset
 
@@ -1267,7 +1268,7 @@ name "sec:matrices-and-vectors"
 
 \end_inset
 
-The representation of vectors and matrices
+The Representation of Vectors and Matrices
 \end_layout
 
 \begin_layout Standard
@@ -1427,7 +1428,7 @@ name "sec:covariance-matrices"
 
 \end_inset
 
-The representation of covariance matrices
+The Representation of Covariance Matrices
 \end_layout
 
 \begin_layout Standard
@@ -1822,7 +1823,7 @@ name "sec:matlab"
 
 \end_inset
 
-The MATLAB programming interface
+The MATLAB Programming Interface
 \end_layout
 
 \begin_layout Standard
@@ -1931,12 +1932,10 @@ literal "false"
 \end_inset
 
 
-\begin_inset Note Note
-status open
-
-\begin_layout Plain Layout
-CITE RTS
-\end_layout
+\begin_inset CommandInset citation
+LatexCommand cite
+key "10.2514/3.3166"
+literal "false"
 
 \end_inset
 
@@ -1957,12 +1956,10 @@ literal "false"
 \end_inset
 
 
-\begin_inset Note Note
-status open
-
-\begin_layout Plain Layout
-CITE
-\end_layout
+\begin_inset CommandInset citation
+LatexCommand cite
+key "10.1109/TAC.2020.2976316"
+literal "false"
 
 \end_inset
 
@@ -3213,12 +3210,10 @@ estimateCovariance
 \end_inset
 
 
-\begin_inset Note Note
-status open
-
-\begin_layout Plain Layout
-CITE SS
-\end_layout
+\begin_inset CommandInset citation
+LatexCommand cite
+key "10.1109/ICASSP40776.2020.9054686"
+literal "false"
 
 \end_inset
 
@@ -3284,7 +3279,8 @@ KalmanOddevenSmoother
 \family default
  and the 
 \family typewriter
-KalmanAssociativeSmoother
+KalmanAssociative\SpecialChar softhyphen
+Smoother
 \family default
  implementations do not return filtered estimated, only smoothed estimates.
  They both extend a second abstract class, 
@@ -3312,7 +3308,7 @@ name "sec:java"
 
 \end_inset
 
-The Java programming interface
+The Java Programming Interface
 \end_layout
 
 \begin_layout Standard
@@ -3358,7 +3354,7 @@ covariance
 .
 \end_layout
 
-\begin_layout Subsection*
+\begin_layout Subsection
 Building and Running the Java Code
 \end_layout
 
@@ -3919,7 +3915,9 @@ KALMAN_ALGORITHM_CONVENTIONAL
 \family default
 , 
 \family typewriter
-KALMAN_ALGORITHM_ODDEVEN
+KALMAN_\SpecialChar softhyphen
+ALGORITHM_\SpecialChar softhyphen
+ODDEVEN
 \family default
 , and 
 \family typewriter
@@ -4209,7 +4207,7 @@ void parallel_set_blocksize   (int b);
 \end_layout
 
 \begin_layout Subsection
-Building and Running the C Outside Matlab
+Building and Running the C Codes Outside MATLAB
 \end_layout
 
 \begin_layout Standard
@@ -4243,7 +4241,7 @@ C++
 
 \end_inset
 
-, the software includes three example programs that call 
+, the software includes several example programs that call 
 \begin_inset Flex Pkg
 status open
 
@@ -4414,7 +4412,11 @@ Building Under Windows
 \end_layout
 
 \begin_layout Standard
-The Windows build script uses the BLAS and LAPACK libraries from MKL
+The Windows build script 
+\family typewriter
+build.bat
+\family default
+ uses the BLAS and LAPACK libraries from MKL
 \begin_inset space ~
 \end_inset
 
@@ -4777,7 +4779,7 @@ Under Linux,
 \family typewriter
 build.sh
 \family default
- uses the 
+ is set up to use high-performance 
 \begin_inset Flex Pkg
 status open
 
@@ -4797,8 +4799,62 @@ LAPACK
 
 \end_inset
 
- libraries that are installed in the Ubuntu Linux distribution using the
- commands
+ libraries, normally libraries provides by the CPU vendor:
+\end_layout
+
+\begin_layout Itemize
+On Intel CPUs, the script uses both MKL
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "MKL"
+literal "false"
+
+\end_inset
+
+ and TBB from Intel's free oneAPI base development kit.
+ Install using the instructions on Intel's web site.
+ The script contains a variable that must be set up to the path where oneAPI
+ was installed.
+ This path is normally 
+\family typewriter
+/opt/intel/oneAPI
+\family default
+, but if you installed it elsewhere, you will need to update this path in
+ the script.
+\end_layout
+
+\begin_layout Itemize
+On AMD CPUs, the script uses the BLAS and LAPACK from the AMD performance
+ libraries, which you can download freely from the AMD web site.
+ Again there is a path that might need to be modified.
+ You will also need to install TBB separately.
+ On Ubuntu Linux, you can install it using the command 
+\family typewriter
+sudo apt install libtbb-dev
+\family default
+.
+\end_layout
+
+\begin_layout Itemize
+On ARM processors, the script uses the BLAS and LAPACK from the ARM performance
+ libraries, which you can download freely from the ARM web site.
+ Again there is a path that might need to be modified.
+ You will also need to install TBB separately.
+ On Ubuntu Linux, you can install it using the command 
+\family typewriter
+sudo apt install libtbb-dev
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+In principle, for testing you can also use the BLAS and LAPACK libraries
+ that the Linux distribution provides.
+ On Ubuntu, you can install them using the commands
 \begin_inset listings
 inline false
 status open
@@ -4815,61 +4871,9 @@ sudo apt install liblapack-dev
 
 \end_inset
 
-These software packages install the libraries in a directory that is already
- on the search path, so no special configuration of the search path is required.
- These particular implementations of the 
-\begin_inset Flex Pkg
-status open
-
-\begin_layout Plain Layout
-BLAS
-\end_layout
-
-\end_inset
-
- and 
-\begin_inset Flex Pkg
-status open
-
-\begin_layout Plain Layout
-LAPACK
-\end_layout
-
-\end_inset
-
- are not high-performance implementations, but since 
-\begin_inset Flex Pkg
-status open
-
-\begin_layout Plain Layout
-UltimateKalman
-\end_layout
-
-\end_inset
-
- typically handles fairly small matrices, a high-performance library like
- Intel's 
-\begin_inset Flex Pkg
-status open
-
-\begin_layout Plain Layout
-MKL
-\end_layout
-
-\end_inset
-
- may not provide performance benefits.
- However, 
-\begin_inset Flex Pkg
-status open
-
-\begin_layout Plain Layout
-MKL
-\end_layout
-
-\end_inset
-
- is also available for Linux and you can certainly use it.
+For small state dimensions these libraries might perform similarly to the
+ vendor's high-performance libraries, but for large dimensions the CPU-vendor's
+ libraries typically perform better.
 \end_layout
 
 \begin_layout Subsubsection*
@@ -4925,7 +4929,18 @@ Running Example Programs
 \end_layout
 
 \begin_layout Standard
-The build script builds four binaries from three example source files:
+The build script builds two binaries from each of the four example source
+ files, a sequential binary and a multi-threaded binary compiled using TBB.
+ The multi-threaded binaries have names that end with 
+\family typewriter
+_par
+\family default
+, such as 
+\family typewriter
+performance_par
+\family default
+.
+ The examples are:
 \end_layout
 
 \begin_layout Itemize
@@ -4947,7 +4962,8 @@ rotation
 \family default
  performs the same computation that the expression 
 \family typewriter
-rotation(KalmanUltimate,5,2)
+rotation(\SpecialChar softhyphen
+KalmanUltimate,5,2)
 \family default
  performs in the 
 \begin_inset Flex Proglang
@@ -4966,6 +4982,51 @@ Rotation.java
 .
  This example shows how to use UltimateKalman to filter and smooth, and
  it shows how the APIs in the three languages are related to each other.
+\begin_inset Newline newline
+\end_inset
+
+The program accepts up to 3 parameters, specified on the command-line as
+ key-value pairs: 
+\family typewriter
+nthreads
+\family default
+, 
+\family typewriter
+blocksize
+\family default
+, and 
+\family typewriter
+algorithm
+\family default
+.
+ The first takes an integer value (e.g., 
+\family typewriter
+nthreads=4
+\family default
+) and limits TBB to use this number of operating-system threads, and hence
+ this number of cores.
+ If you omit this parameter, TBB will use all the cores available.
+ The second controls TBB's block size, the number of elements that are processed
+ sequentially in parallel loops.
+ The default value is 16.
+ The third tells the program which algorithm to use, with possible values
+ 
+\family typewriter
+Ultimate
+\family default
+, 
+\family typewriter
+Conventional
+\family default
+, 
+\family typewriter
+Oddeven
+\family default
+, and 
+\family typewriter
+Associative
+\family default
+.
 \end_layout
 
 \begin_layout Itemize
@@ -4997,7 +5058,9 @@ performance
 .
  These choices avoid the risk of numerical problems, including overflows
  or underflows.
- The program measures and reports the running time of the smoother.
+ The program measures and reports the running time it takes to set up the
+ problem and to perform filtering (unless the algorithm selected is a smoother),
+ and the time it takes to perform smoothing.
  You specify 
 \begin_inset Formula $n$
 \end_inset
@@ -5015,21 +5078,31 @@ performance
 \begin_inset Formula $n=48$
 \end_inset
 
- results in exactly the same numerical input as the Matlab version (with
+ results in exactly the same numerical input as the MATLAB version (with
  seed 1 for the random-number generator).
- This program is sequential.
-\end_layout
+\begin_inset Newline newline
+\end_inset
 
-\begin_layout Itemize
-
+The program accepts all the parameters that 
 \family typewriter
-performance_par
+rotation
 \family default
- is identical to 
+ accepts, but also 
 \family typewriter
-performance
+n
 \family default
-, but it uses TBB to parallelize the Oddeven and Associative smoothers.
+, 
+\family typewriter
+k
+\family default
+, and 
+\family typewriter
+nocov
+\family default
+.
+ The last is a binary parameter that tells the program, if set, to not compute
+ the covariance matrices of the state estimates.
+ 
 \end_layout
 
 \begin_layout Subsubsection*
@@ -6234,7 +6307,7 @@ name "sec:testing-and-examples"
 
 \end_inset
 
-Code Examples 
+MATLAB Tests and Code Examples 
 \end_layout
 
 \begin_layout Standard
@@ -6248,7 +6321,7 @@ UltimateKalman
 
 \end_inset
 
- includes five 
+ includes several 
 \begin_inset Flex Proglang
 status open
 
@@ -6258,11 +6331,81 @@ MATLAB
 
 \end_inset
 
- example functions, stored in the 
+ example and testing functions, stored in the 
 \family typewriter
 examples
 \family default
- sub-directory, that demonstrate how to use the library:
+ sub-directory.
+ They demonstrate how to use the library and help test it.
+ The directory also contains a function that builds the MATLAB-callable
+ version of the C libray.
+ All of these MATLAB files are documented with comments that can be accessed
+ through the MATLAB 
+\family typewriter
+help
+\family default
+ command (e.g., 
+\family typewriter
+help rotation
+\family default
+).
+ Not all the examples work with all the Kalman filtering and smoothing algorithm
+s.
+ 
+\end_layout
+
+\begin_layout Standard
+The script 
+\family typewriter
+UltimateKalman_build_mex
+\family default
+ builds the MATLAB-callable version of the C (native) library.
+ The produced native library is a file in a format called a mex file.
+ 
+\end_layout
+
+\begin_layout Standard
+The examples take as input a Kalman filter factory function, which allows
+ them to instantiate one or more instances of the same algorithm.
+ You construct these factory functions by calling 
+\family typewriter
+kalmanFactory
+\family default
+ function, which accepts the name of a class and optionally a structure
+ with options for its constructor.
+ For example:
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+ultimateFactory = kalmanFactory('UltimateKalman');
+\end_layout
+
+\begin_layout Plain Layout
+
+nativeFactory   = kalmanFactory('KalmanNative',struct('algorithm','Conventional'
+));
+\end_layout
+
+\begin_layout Plain Layout
+
+rotation( ultimateFactory, 5, 2 );
+\end_layout
+
+\begin_layout Plain Layout
+
+rotation( nativeFactory,   5, 2 );
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The examples are:
 \end_layout
 
 \begin_layout Itemize
@@ -6292,6 +6435,9 @@ Java
 \end_inset
 
 , as described above).
+ This example should work with all the Kalman algorithms, but in implementations
+ that only smooth (do not filter), it will obviously not produce filtered
+ stated.
 \end_layout
 
 \begin_layout Itemize
@@ -6314,6 +6460,13 @@ add_remove.m
 \end_inset
 
  to add or remove parameters from a dynamic system.
+ This example does not work with the conventional Kalman filter-smoother
+ and does not work with the associative smoother, which both do not support
+ non-identity 
+\begin_inset Formula $H_{i}$
+\end_inset
+
+s.
 \end_layout
 
 \begin_layout Itemize
@@ -6344,7 +6497,11 @@ clock_offsets.m
 \family default
 , implementing clock-offset estimation in a distributed sensor system.
  This example demonstrates how to handle parameters that appear only in
- one step.
+ one step and it too depends on non-identity 
+\begin_inset Formula $H_{i}$
+\end_inset
+
+s.
 \end_layout
 
 \begin_layout Standard
@@ -6364,6 +6521,47 @@ UltimateKalman
 \end_layout
 
 \begin_layout Standard
+The file 
+\family typewriter
+performance.m
+\family default
+ contains a function that tests and plots the performance of Kalman filters
+ and smoothers.
+ Its behavior is described in the next section.
+\end_layout
+
+\begin_layout Standard
+The file 
+\family typewriter
+compare.m
+\family default
+ contains a function that runs two Kalman filters and/or smoothers on the
+ same synthetic problem and compares their result.
+ Its main function is to test the correctness of one algorithm or implementation
+ to another known to be correct.
+ It does not currently provide a complete coverage of all the code in all
+ the implementation, but it is still very effective in detecting bugs.
+ The gold standard for the known-correct filter/smoother is the 
+\family typewriter
+KalmanSparse
+\family default
+ implementation, which is the simplest so its correctness is easiest to
+ validate analytically, but it is slow, especially when filtering.
+ A reasonable strategy is to use it to validate the correctness of another
+ filter/smoother once, say 
+\family typewriter
+KalmanUltimate
+\family default
+, and then to use this filter/smoother to test the other implementations
+ and algorithms.
+ The main current limitation of this function is that it always uses 
+\begin_inset Formula $H_{i}=I$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
 The script 
 \family typewriter
 replication.m
@@ -6377,7 +6575,19 @@ examples
 \begin_inset space ~
 \end_inset
 
-5 of the article on UltimateKalman.
+5 of the article on UltimateKalman
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "doi:10.1145/3699958"
+literal "false"
+
+\end_inset
+
+.
  Comparing the generated figures to those in the article provides visual
  evidence that the code runs correctly.
  The script can run not only the 
@@ -6488,6 +6698,69 @@ noprefix "false"
 \end_inset
 
 .
+ To run the script to generate the graphs inn
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "doi:10.1145/3699958"
+literal "false"
+
+\end_inset
+
+, run it with no arguments or with the arguments
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+replication(kalmanFactory('KalmanUltimate'), ...
+\end_layout
+
+\begin_layout Plain Layout
+
+    false, ...
+\end_layout
+
+\begin_layout Plain Layout
+
+    { kalmanFactory('KalmanUltimate'), ...
+\end_layout
+
+\begin_layout Plain Layout
+
+      kalmanFactory('KalmanJava'),     ...
+\end_layout
+
+\begin_layout Plain Layout
+
+      kalmanFactory('KalmanNative')    ...
+\end_layout
+
+\begin_layout Plain Layout
+
+    });
+\end_layout
+
+\end_inset
+
+To test another implementation, run it with another factory as the first
+ argument, as in 
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+replication(kalmanFactory('KalmanNative',struct('algorithm','Ultimate')));
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
@@ -6629,6 +6902,35 @@ The method takes a timestamp every
  steps.
 \end_layout
 
+\begin_layout Standard
+The function 
+\family typewriter
+performance
+\family default
+ uses the 
+\family typewriter
+perftest
+\family default
+ method to measure and plot the performance of one or more filters/smoothers.
+ You invoke it on a cell array of factories and provide several parameters:
+ a seed for the random-number generator, an array of state dimensions to
+ test, the number of state in each test, and the number of time steps between
+ timestamps.
+ Graphs produced by this function are presented in
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "doi:10.1145/3699958"
+literal "false"
+
+\end_inset
+
+.
+\end_layout
+
 \begin_layout Section
 \begin_inset CommandInset label
 LatexCommand label
@@ -6735,7 +7037,7 @@ The
 status open
 
 \begin_layout Plain Layout
-Java
+MATLAB
 \end_layout
 
 \end_inset

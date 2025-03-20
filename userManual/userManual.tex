@@ -139,11 +139,14 @@ Transformations}
 \global\long\def\irange{\boldsymbol{:}}%
 
 UltimateKalman is a library that implements efficient and flexible
-Kalman filtering and smoothing algorithms. The library contains MATLAB,
-C, and Java implementations (currently, the Java implementations
-does not contain all the algorithms). The library is available on
-GitHub at \url{https://github.com/sivantoledo/ultimate-kalman}. The
-release history of the library is as follows:
+Kalman filtering and smoothing algorithms, including parallel (multi-core)
+smoothers. The library contains MATLAB, C, and Java implementations
+(currently, the Java implementations does not contain all the algorithms).
+The library is robust: it includes mechanisms for testing and evaluating
+the performance of all the implementations, as well as with a set
+of well-documented examples. The library is available on GitHub at
+\url{https://github.com/sivantoledo/ultimate-kalman}. The release
+history of the library is as follows:
 \begin{itemize}
 \item \textbf{Release 1.2.0} contains the sequential UltimateKalman algorithm,
 which is documented carefully in an article in the ACM Transactions
@@ -158,10 +161,10 @@ user guide from that release, not this document.
 \item \textbf{Release 2.0.0} contains three additional algorithms in MATLAB
 and C, including two parallel-in-time smoothers, the Odd-Even smoother
 proposed in an article by Gargir and Toledo~\cite{toappear:IPDPS2025}
-and the smoother proposed by Särkkä and García-Fernández~. The code
-in this release was used to perform the experiments reported by Gargir
-and Toledo~\cite{toappear:IPDPS2025}; the release is meant mostly
-to document these experiments, not for adoption by users.
+and the smoother proposed by Särkkä and García-Fernández~\cite{10.1109/TAC.2020.2976316}.
+The code in this release was used to perform the experiments reported
+by Gargir and Toledo~\cite{toappear:IPDPS2025}; the release is meant
+mostly to document these experiments, not for adoption by users.
 \item \textbf{Release 2.1.0} is a significantly cleaned up version of the
 codes described by Gargir and Toledo~\cite{toappear:IPDPS2025}.
 It is meant to be adopted by users. This is the version described
@@ -240,8 +243,8 @@ are represented. Section~\ref{sec:matlab} presents the programming
 interface of the MATLAB implementation and how to add it to MATLAB's
 search path.
 
-\section{\label{sec:matrices-and-vectors}The representation of vectors and
-matrices}
+\section{\label{sec:matrices-and-vectors}The Representation of Vectors and
+Matrices}
 
 The MATLAB implementation uses native MATLAB matrices and vectors.
 The Java implementation uses the types \texttt{RealMatrix} and \texttt{RealVector}
@@ -267,8 +270,8 @@ a vector of \texttt{NaN}s (not-a-number, a floating point value that
 indicates that the value is not available) and a diagonal matrix whose
 diagonal elements are \texttt{NaN}.
 
-\section{\label{sec:covariance-matrices}The representation of covariance
-matrices}
+\section{\label{sec:covariance-matrices}The Representation of Covariance
+Matrices}
 
 Like all Kalman filters, UltimateKalman consumes covariance matrices
 that describe the distribution of the error terms and produces covariance
@@ -335,7 +338,7 @@ representation); the C implementation includes one function that returns
 the type of the covariance matrix (a single character) and another
 that returns the factor $W$ or the explicit matrix $C$.
 
-\section{\label{sec:matlab}The MATLAB programming interface}
+\section{\label{sec:matlab}The MATLAB Programming Interface}
 
 The MATLAB implementation resides in the \texttt{matlab} directory
 of the distribution archive. To be able to use it, you must add this
@@ -348,15 +351,15 @@ a collection of handle (reference) classes called \texttt{KalmanUltimate},
 and \texttt{KalmanSparse}. The first four classes implement, respectively,
 the UltimateKalman algorithm~\cite{doi:10.1145/3699958,PaigeSaunders:1977:Kalman},
 a conventional Kalman filter~\cite{Kalman:1960:KalmanFilter} and
-RTS smoother~, the Gargir-Toledo parallel smoother~\cite{toappear:IPDPS2025},
-and the parallel smoother by Särkkä and García-Fernández~. The fifth
-implementation, \texttt{KalmanSparse}, uses an explicit sparse QR
-factorizations to filter and smooth; it is inefficient, especially
-when filtering, and is meant only for testing the correctness of other
-implementations. It is particularly simple and therefore it is particularly
-easy to ensure that it is correct. The interface of all these classes
-is exactly the same. The constructor takes one optional argument,
-a structure that specifies algorithmic options.
+RTS smoother~\cite{10.2514/3.3166}, the Gargir-Toledo parallel smoother~\cite{toappear:IPDPS2025},
+and the parallel smoother by Särkkä and García-Fernández~\cite{10.1109/TAC.2020.2976316}.
+The fifth implementation, \texttt{KalmanSparse}, uses an explicit
+sparse QR factorizations to filter and smooth; it is inefficient,
+especially when filtering, and is meant only for testing the correctness
+of other implementations. It is particularly simple and therefore
+it is particularly easy to ensure that it is correct. The interface
+of all these classes is exactly the same. The constructor takes one
+optional argument, a structure that specifies algorithmic options.
 
 \begin{lstlisting}
 kalman = KalmanUltimate(options)
@@ -488,6 +491,7 @@ as fields of the \texttt{options} structure. Most of the implementations
 process only a subset of the options (some process none), as shown
 in Table~\ref{tab:matlab-options}.
 \begin{table}
+\begin{centering}
 \begin{tabular}{ll>{\raggedright}p{0.2\textwidth}ccccccc}
 field name & type & values (default is 1st) & \begin{turn}{90}
 \texttt{KalmanUltimate}
@@ -506,11 +510,14 @@ field name & type & values (default is 1st) & \begin{turn}{90}
 \end{turn}\tabularnewline
 \hline 
 \texttt{estimateCovariance} & boolean & \texttt{true, false} & $\checkmark$ &  & $\checkmark$ &  &  &  & \tabularnewline
+\cline{1-6} \cline{2-6} \cline{3-6} \cline{4-6} \cline{5-6} \cline{6-6} 
 \texttt{covarianceEstimates} & string & \texttt{'PaigeSaunders', 'SelInv'} & $\checkmark$ &  &  &  &  &  & \tabularnewline
+\cline{1-6} \cline{2-6} \cline{3-6} \cline{4-6} \cline{5-6} \cline{6-6} 
 \texttt{smoothOnly} & boolean & \texttt{false, true} &  &  &  &  & $\checkmark$ &  & \tabularnewline
+\cline{1-6} \cline{2-6} \cline{3-6} \cline{4-6} \cline{5-6} \cline{6-6} 
 \texttt{algorithm} & string & \texttt{'Ultimate', 'Conventional', 'Oddeven', 'Associative'} &  &  &  &  &  & $\checkmark$ & \tabularnewline
 \end{tabular}
-
+\par\end{centering}
 \caption{\label{tab:matlab-options}Options that affect the behavior of the
 MATLAB implementations.}
 
@@ -522,7 +529,7 @@ The meaning of the options is as follows:
 that the covariance matrices of the state estimates are not required.
 Not computing them saves time in these algorithms. This is particularly
 useful in smoothers that are used as a building block of a non-linear
-smoother~.
+smoother~\cite{10.1109/ICASSP40776.2020.9054686}.
 \item The \texttt{covarianceEstimates} field specifies which method to use
 to compute the covariance matrices of the state estimates, when more
 than one method is available. 
@@ -539,7 +546,7 @@ which algorithm to use.
 All the implementations extend an abstract class called \texttt{KalmanBase},
 which implements most of the methods that handle modifications of
 the sequence of steps (forgetting, rolling back, etc.). The \texttt{KalmanOddevenSmoother}
-and the \texttt{KalmanAssociativeSmoother} implementations do not
+and the \texttt{KalmanAssociative\-Smoother} implementations do not
 return filtered estimated, only smoothed estimates. They both extend
 a second abstract class, \texttt{KalmanExplicitRepresentation}, in
 which the \texttt{evolve} and \texttt{observe} methods simply record
@@ -548,7 +555,7 @@ implementations are sequential but they exhibit the parallel algorithms
 in a clear way that is hopefully easy to implement in parallel programming
 environments.
 
-\section{\label{sec:java}The Java programming interface}
+\section{\label{sec:java}The Java Programming Interface}
 
 The programming interface to the Java implementation is nearly identical.
 The implementing class is \texttt{sivantoledo\LyXZeroWidthSpace .kalman\LyXZeroWidthSpace .UltimateKalman}.
@@ -557,7 +564,7 @@ from the MATLAB interface only in that the \texttt{estimate} methods
 return only one value, the state estimate. To obtain the matching
 covariance matrix, client code must call a separate method, \texttt{covariance}.
 
-\subsection*{Building and Running the Java Code}
+\subsection{Building and Running the Java Code}
 
 The Java implementation resides under the \texttt{java} directory
 of the distribution archive. The sources are in the \texttt{src} subdirectory.
@@ -608,7 +615,8 @@ kalman_t*        kalman_create_options (kalman_options_t options);
 void             kalman_free           (kalman_t* kalman);
 
 void             kalman_evolve    (kalman_t* kalman, int32_t n_i,                                                      
-                                   kalman_matrix_t* H_i, kalman_matrix_t* F_i, kalman_matrix_t* c_i,
+                                   kalman_matrix_t* H_i, 
+                                   kalman_matrix_t* F_i, kalman_matrix_t* c_i,
                                    kalman_matrix_t* K_i, char K_i_type);
 void             kalman_observe   (kalman_t* kalman,                                                               
                                    kalman_matrix_t* G_i, kalman_matrix_t* o_i,
@@ -663,7 +671,7 @@ only one parameter is supported). Different options are ORed together.
 The option values defined in \texttt{kalman.h} are:
 \begin{itemize}
 \item \texttt{KALMAN\_ALGORITHM\_ULTIMATE}, \texttt{KALMAN\_ALGORITHM\_CONVENTIONAL},
-\texttt{KALMAN\_ALGORITHM\_ODDEVEN}, and \texttt{KALMAN\_ALGORITHM\_ASSOCIATIVE},
+\texttt{KALMAN\_\-ALGORITHM\_\-ODDEVEN}, and \texttt{KALMAN\_ALGORITHM\_ASSOCIATIVE},
 which specify which algorithm to use. Specify exactly one of these
 bit values.
 \item \texttt{KALMAN\_NO\_COVARIANCE}, which tells the UltimateKalman and
@@ -746,49 +754,41 @@ void parallel_set_blocksize   (int b);
 \end{lstlisting}
 
 
-\subsection{Building and Running the C Outside Matlab}
+\subsection{Building and Running the C Codes Outside MATLAB}
 
 To help you integrate UltimateKalman into your own native code in
-C or C++, the software includes three example programs that call
+C or C++, the software includes several example programs that call
 UltimateKalman and Windows and Linux/MacOS scripts that build executable
-versions of the three programs. The scripts compile one of the programs
-along with UltimateKalman, link it with BLAS and LAPACK libraries,
-and run it. You should be able to use these scripts as examples of
-how to compile and link UltimateKalman. 
+versions of the three programs.  You should be able to use these
+scripts as examples of how to compile and link UltimateKalman. 
 
 These C programs, the C implementation of UltimateKalman, and the
 build scripts are all under the \texttt{c} directory of the distribution
 archive.
 
-The three sample programs are \texttt{rotation.c}, a C implementation
-of one of the example MATLAB programs, \texttt{performance.c}, a
-program designed to measure the running time of UltimateKalman, and
-\texttt{blastest.c}, a small program intended only to test the interface
-to the BLAS and LAPACK libraries. The program \texttt{rotation.c}
-performs the same computation that the expression \texttt{rotation(KalmanUltimate,5,2)}
-performs in MATLAB and should output the same numerical results,
-just like \texttt{Rotation.java}. The program \texttt{performance.c}
-implements a Kalman smoother on problems with $n_{i}=m_{i}=6$ or
-$n_{i}=m_{i}=48$ using orthonormal matrices for $F_{i}$ and $G_{i}$
-and with $H_{i}=I$. It measures and reports the running time of the
-smoother.
+\subsubsection*{Building Under Windows}
 
-If you invoke the build script, \texttt{build.bat} or \texttt{build.sh},
-with no arguments, it build and runs \texttt{rotation.c}. To build
-and run one of the other programs, invoke the script with the argument
-\texttt{blastest} or \texttt{performance}.
+The Windows build script \texttt{build.bat} uses the BLAS and LAPACK
+libraries from MKL~\cite{MKL}. Both MKL and TBB are installed as
+part of the oneAPI Base Kit, a set of free development tools from
+Intel. The kit includes additional components but for UltimateKalman,
+only thse components are required. We tested the library with the
+2024.1 and 2025.0 versions of oneAPI, as well as some older ones.
+Upgrading oneMKL should not require any change in the build script.
 
-The Windows script, \texttt{build.bat}, uses the Microsoft C command-line
-compiler (\texttt{cl}) that comes with Microsoft's Visual Studio Community
-2022~\cite{VSCommunity}, a free integrated development environment,
-and the BLAS and LAPACK libraries that are part of Intel's free
-oneAPI Math Kernel Library (MKL)~\cite{MKL}. Here is what you should
-expect to see on the console when you build and run \texttt{blastest}
-(ellipsis stand for deleted output that is not particularly interesting;
-the output of the \texttt{blastest} program is shown in bold):
+The script also uses Microsoft's C/C++ compiler (\texttt{cl}) from
+the free Visual Studio Community Edition. We tested the library with
+versions 2019 and 2022~\cite{VSCommunity}. The build script is currently
+set up to use the 2022 version. If you installed a different version,
+you will need to update the path to the script that sets up the development
+tool in \texttt{build.bat}.
+
+Assuming that these prerequisites have been installed, you can build
+the example programs by executing \texttt{build.bat}. The script will
+build the programs and it will tell you to execute another script
+so that Windows can find the MKL libraries at run time.
 \begin{lstlisting}
-C:\Users\stoledo\github\ultimate-kalman\c>build.bat blastest
-...
+C:\Users\stoledo\github\ultimate-kalman\c>build.bat
 **********************************************************************
 ** Visual Studio 2022 Developer Command Prompt v17.9.2
 ** Copyright (c) 2022 Microsoft Corporation
@@ -798,66 +798,162 @@ C:\Users\stoledo\github\ultimate-kalman\c>build.bat blastest
    Initializing Visual Studio command-line environment...
    Visual Studio version 17.9.2 environment configured.
    "C:\Program Files\Microsoft Visual Studio\2022\Community\"
+   Visual Studio command-line environment initialized for: 'x64'
+:  advisor -- latest
 :  compiler -- latest
+:  dev-utilities -- latest
+:  ipp -- latest
 :  mkl -- latest
+:  ocloc -- latest
+:  pti -- latest
 :  tbb -- latest
+:  umf -- latest
 :: oneAPI environment initialized ::
-generating test program blastest.exe
-ultimatekalman.c
-ultimatekalman.c(39): warning C4005: 'blas_int_t': macro redefinition
-ultimatekalman.c(28): note: see previous definition of 'blas_int_t'
-blastest.c
-Generating Code...
-generated test program
-~BLAS test starting~
-~A = matrix_print 2 3~
-~1 2 3~
-~4 5 6~
-~B = matrix_print 3 2~
-~7 8~
-~9 10~
-~12 13~
-~C = matrix_print 2 2~
-~125 137~
-~293 323~
-~Result should be:~
-~  125  137~
-~  293  323~
-~BLAS test done~
-done running test
-build script done
+kalman_ultimate.c
+kalman_conventional.c
+kalman_oddeven_smoother.c
+kalman_associative_smoother.c
+...
+generated test programs
+To run the generated binaries, invoke
+  "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" intel64
+on the command line, to ensure that Windows can find the required DLLs.
+\end{lstlisting}
+You can see in the output the setup of Visual Studio, then the setup
+of oneAPI, and then the compilation of the source files. Once you
+run \texttt{setvars.bat} so that Windows can find the libraries, you
+can run the test programs. The output of \texttt{blastest.exe}, the
+simplest example program, should look like this:
+\begin{lstlisting}
+C:\Users\stoledo\github\ultimate-kalman\c>blastest
+BLAS test starting
+A = matrix_print 2 3
+1 2 3
+4 5 6
+B = matrix_print 3 2
+7 8
+9 10
+12 13
+C = matrix_print 2 2
+125 137
+293 323
+Result should be:
+  125  137
+  293  323
+BLAS test done
 \end{lstlisting}
 
-When you run the Windows executable program yourself, make sure that
-the directory where the MKL dynamically-linked libraries (\texttt{dll}
-files) are stored is on your \texttt{path}. The same is true, of course,
-for your own programs that use UltimateKalman. The installation of
-MKL does not modify the path to include this library, but it does
-provide a script that modifies the search path appropriately. In the
-version of MKL that I used, this script is \texttt{c:\textbackslash Program
-Files (x86)\textbackslash Intel\textbackslash oneAPI\textbackslash setvars.bat}. 
 
-Under Linux, \texttt{build.sh} uses the BLAS and LAPACK libraries
-that are installed in the Ubuntu Linux distribution using the commands
+\subsubsection*{Building Under Linux}
+
+Under Linux, \texttt{build.sh} is set up to use high-performance BLAS
+and LAPACK libraries, normally libraries provides by the CPU vendor:
+\begin{itemize}
+\item On Intel CPUs, the script uses both MKL~\cite{MKL} and TBB from
+Intel's free oneAPI base development kit. Install using the instructions
+on Intel's web site. The script contains a variable that must be set
+up to the path where oneAPI was installed. This path is normally \texttt{/opt/intel/oneAPI},
+but if you installed it elsewhere, you will need to update this path
+in the script.
+\item On AMD CPUs, the script uses the BLAS and LAPACK from the AMD performance
+libraries, which you can download freely from the AMD web site. Again
+there is a path that might need to be modified. You will also need
+to install TBB separately. On Ubuntu Linux, you can install it using
+the command \texttt{sudo apt install libtbb-dev}.
+\item On ARM processors, the script uses the BLAS and LAPACK from the ARM
+performance libraries, which you can download freely from the ARM
+web site. Again there is a path that might need to be modified. You
+will also need to install TBB separately. On Ubuntu Linux, you can
+install it using the command \texttt{sudo apt install libtbb-dev}.
+\end{itemize}
+In principle, for testing you can also use the BLAS and LAPACK libraries
+that the Linux distribution provides. On Ubuntu, you can install them
+using the commands
 \begin{lstlisting}
 sudo apt install libblas-dev
 sudo apt install liblapack-dev
 \end{lstlisting}
-These software packages install the libraries in a directory that
-is already on the search path, so no special configuration of the
-search path is required. These particular implementations of the BLAS
-and LAPACK are not high-performance implementations, but since UltimateKalman
-typically handles fairly small matrices, a high-performance library
-like Intel's MKL may not provide performance benefits. However, MKL
-is also available for Linux and you can certainly use it.
+For small state dimensions these libraries might perform similarly
+to the vendor's high-performance libraries, but for large dimensions
+the CPU-vendor's libraries typically perform better.
 
-To successfully link UltimateKalman with other implementations of
-the BLAS and LAPACK, you may need to set some preprocessor variables
-that control how UltimateKalman calls these libraries. Most of the
-variations are due to the fact that these libraries were originally
-implemented in Fortran. The preprocessor variables that control the
-behavior of UltimateKalman are listed and explained in Table~\ref{tab:C-pre-variables}.
+\subsubsection*{Building Under MacOS}
 
+The \texttt{build.sh} script assumes that on MacOS, XCode is installed
+(Apple's development environment), which provides a C/C++ compiler.
+The script also assumes that TBB has been installed using Homebrew,
+a popular package manager for MacOS. The compiler is invoked in the
+script using the \texttt{gcc} command, but the actual compiler is
+not the GNU C compiler (\texttt{gcc}) but \texttt{clang}. The BLAS
+and LAPACK libraries that we use in the MacOS build are from Apple's
+Accelerate framework, a collection of high-performance libraries.
+
+To install TBB using Homebrew, first install Homebrew (if not already
+installed) and then issue the commands \texttt{brew update} and \texttt{brew
+install tbb}. To inspect the installed version, use the command \texttt{brew
+info tbb}.
+
+\subsubsection*{Running Example Programs}
+
+The build script builds two binaries from each of the four example
+source files, a sequential binary and a multi-threaded binary compiled
+using TBB. The multi-threaded binaries have names that end with \texttt{\_par},
+such as \texttt{performance\_par}. The examples are:
+\begin{itemize}
+\item \texttt{blastest}, a simple program that only tests that UltimateKalman
+is able to call BLAS and LAPACK functions correctly. If this program
+fails to compile, to link, or to run, there is a problem with the
+BLAS and LAPACK libraries. 
+\item \texttt{rotation} performs the same computation that the expression
+\texttt{rotation(\-KalmanUltimate,5,2)} performs in the MATLAB version
+and should output the same numerical results, just like \texttt{Rotation.java}.
+This example shows how to use UltimateKalman to filter and smooth,
+and it shows how the APIs in the three languages are related to each
+other.\\
+The program accepts up to 3 parameters, specified on the command-line
+as key-value pairs: \texttt{nthreads}, \texttt{blocksize}, and \texttt{algorithm}.
+The first takes an integer value (e.g., \texttt{nthreads=4}) and limits
+TBB to use this number of operating-system threads, and hence this
+number of cores. If you omit this parameter, TBB will use all the
+cores available. The second controls TBB's block size, the number
+of elements that are processed sequentially in parallel loops. The
+default value is 16. The third tells the program which algorithm to
+use, with possible values \texttt{Ultimate}, \texttt{Conventional},
+\texttt{Oddeven}, and \texttt{Associative}.
+\item \texttt{performance} implements a Kalman smoother on problems with
+$n_{i}=m_{i}=n$ and $k$ steps. The matrices $F_{i}$ and $G_{i}$
+are orthonormal and $H_{i}=I$. These choices avoid the risk of numerical
+problems, including overflows or underflows. The program measures
+and reports the running time it takes to set up the problem and to
+perform filtering (unless the algorithm selected is a smoother), and
+the time it takes to perform smoothing. You specify $n$ and $k$
+on the command line. Setting $n=6$ or $n=48$ results in exactly
+the same numerical input as the MATLAB version (with seed 1 for the
+random-number generator).\\
+The program accepts all the parameters that \texttt{rotation} accepts,
+but also \texttt{n}, \texttt{k}, and \texttt{nocov}. The last is a
+binary parameter that tells the program, if set, to not compute the
+covariance matrices of the state estimates. 
+\end{itemize}
+
+\subsubsection*{Modifying Build Parameters}
+
+Certain aspects of UltimateKalman can be modified by defining preprocessor
+macros, listed in Table~\ref{tab:C-pre-variables}:
+\begin{itemize}
+\item The BLAS and LAPACK were originally Fortran libraries and different
+implementations of them must be called from C in different ways. Several
+proprocessor macros select the calling convention. The build scripts
+set these up for several popular libraries. 
+\item Step numbers (indices of states) can be represented by 32-bit or 64-bit
+numbers. Three preprocessor macros, which should be set consistently,
+control this choice: \texttt{KALMAN\_STEP\_INDEX\_TYPE\_INT32}, \texttt{FARRAY\_INDEX\_TYPE\_INT32},
+and \texttt{PARALLEL\_INDEX\_TYPE\_INT32} (to use 64-bit integers,
+replace \texttt{INT32} by \texttt{INT64}; it is also possible to use
+unsigned integer typed, but we advise against this). 
+\item Two preprocessor macros listed at the bottom of the table control
+debug outputs. They should normally not be set.
+\end{itemize}
 \begin{table}
 \begin{centering}
 \begin{tabular}{ll>{\raggedright}p{0.4\textwidth}}
@@ -872,9 +968,14 @@ a matrix; usually either \texttt{int32\_t} or \texttt{int64\_t}\tabularnewline
 \texttt{HAS\_LAPACK\_H} & no & specifies that the \texttt{lapack.h} header is available\tabularnewline
 \texttt{BUILD\_BLAS\_UNDERSCORE} & no & add an underscore to names of BLAS and LAPACK functions\tabularnewline
 \texttt{BUILD\_BLAS\_STRLEN\_END} & no & add string-length arguments to calls to the BLAS and LAPACK\tabularnewline
+\hline 
+\texttt{KALMAN\_STEP\_INDEX\_TYPE\_INT32} & exactly one & Specifies 32-bit step numbers\tabularnewline
+\texttt{KALMAN\_STEP\_INDEX\_TYPE\_INT64} & exactly one & Speficies 64-bit step numbers\tabularnewline
+\texttt{FARRAY\_INDEX\_TYPE\_INT32/64} & yes & Must be consistent with \texttt{KALMAN\_STEP\_INDEX\_TYPE}\tabularnewline
+\texttt{PARALLEL\_INDEX\_TYPE\_INT32/64} & yes & Must be consistent with \texttt{KALMAN\_STEP\_INDEX\_TYPE}\tabularnewline
+\hline 
 \texttt{BUILD\_DEBUG\_PRINTOUTS} & no & generates run-time debug printouts\tabularnewline
 \texttt{NDEBUG} & no & suppresses run-time assertion checking\tabularnewline
-\texttt{BUILD\_WIN32\_GETTIMEOFDAY} & no & required under Windows; do not use under Linux or MacOS\tabularnewline
 \hline 
 \end{tabular}
 \par\end{centering}
@@ -884,38 +985,103 @@ aspects of its behavior.}
 \end{table}
 
 
-\section{\label{sec:testing-and-examples}Code Examples }
+\section{\label{sec:testing-and-examples}MATLAB Tests and Code Examples }
 
-The software distribution of UltimateKalman includes five MATLAB
-example functions, stored in the \texttt{examples} sub-directory,
-that demonstrate how to use the library:
+The software distribution of UltimateKalman includes several MATLAB
+example and testing functions, stored in the \texttt{examples} sub-directory.
+They demonstrate how to use the library and help test it. The directory
+also contains a function that builds the MATLAB-callable version of
+the C libray. All of these MATLAB files are documented with comments
+that can be accessed through the MATLAB \texttt{help} command (e.g.,
+\texttt{help rotation}). Not all the examples work with all the Kalman
+filtering and smoothing algorithms. 
+
+The script \texttt{UltimateKalman\_build\_mex} builds the MATLAB-callable
+version of the C (native) library. The produced native library is
+a file in a format called a mex file. 
+
+The examples take as input a Kalman filter factory function, which
+allows them to instantiate one or more instances of the same algorithm.
+You construct these factory functions by calling \texttt{kalmanFactory}
+function, which accepts the name of a class and optionally a structure
+with options for its constructor. For example:
+\begin{lstlisting}
+ultimateFactory = kalmanFactory('UltimateKalman');
+nativeFactory   = kalmanFactory('KalmanNative',struct('algorithm','Conventional'));
+rotation( ultimateFactory, 5, 2 );
+rotation( nativeFactory,   5, 2 );
+\end{lstlisting}
+
+The examples are:
 \begin{itemize}
 \item \texttt{rotation.m}, modeling a rotating point in the plane (this
 example is also implemented in C and Java, as described above).
+This example should work with all the Kalman algorithms, but in implementations
+that only smooth (do not filter), it will obviously not produce filtered
+stated.
 \item \texttt{constant.m}, modeling an fixed scalar or a scalar that increases
 linearly with time, and with observation covariance matrices that
 are identical in all steps except perhaps for one exceptional step.
 \item \texttt{add\_remove.m}, demonstrating how to use $H_{i}$ to add or
-remove parameters from a dynamic system.
+remove parameters from a dynamic system. This example does not work
+with the conventional Kalman filter-smoother and does not work with
+the associative smoother, which both do not support non-identity $H_{i}$s.
 \item \texttt{projectile.m}, implementing the model and filter of a projectile
 described by Humpherys et al.~\cite{AFreshLook2012}.
 \item \texttt{clock\_offsets.m}, implementing clock-offset estimation in
 a distributed sensor system. This example demonstrates how to handle
-parameters that appear only in one step.
+parameters that appear only in one step and it too depends on non-identity
+$H_{i}$s.
 \end{itemize}
 The mathematical details of these models are described in the article
 that describes UltimateKalman. 
 
+The file \texttt{performance.m} contains a function that tests and
+plots the performance of Kalman filters and smoothers. Its behavior
+is described in the next section.
+
+The file \texttt{compare.m} contains a function that runs two Kalman
+filters and/or smoothers on the same synthetic problem and compares
+their result. Its main function is to test the correctness of one
+algorithm or implementation to another known to be correct. It does
+not currently provide a complete coverage of all the code in all the
+implementation, but it is still very effective in detecting bugs.
+The gold standard for the known-correct filter/smoother is the \texttt{KalmanSparse}
+implementation, which is the simplest so its correctness is easiest
+to validate analytically, but it is slow, especially when filtering.
+A reasonable strategy is to use it to validate the correctness of
+another filter/smoother once, say \texttt{KalmanUltimate}, and then
+to use this filter/smoother to test the other implementations and
+algorithms. The main current limitation of this function is that it
+always uses $H_{i}=I$.
+
 The script \texttt{replication.m}, also in the \texttt{examples} sub-directory,
 runs all of these examples and optionally generates the figures shown
-in Section~5 of the article on UltimateKalman. Comparing the generated
-figures to those in the article provides visual evidence that the
-code runs correctly. The script can run not only the MATLAB implementation,
-but also the C and Java implementations. This script assumes that
-the corresponding libraries have already been built. The version of
-the C library that MATLAB uses is built using the \texttt{UltimateKalman\_build\_\LyXZeroWidthSpace mex.m}
+in Section~5 of the article on UltimateKalman~\cite{doi:10.1145/3699958}.
+Comparing the generated figures to those in the article provides visual
+evidence that the code runs correctly. The script can run not only
+the MATLAB implementation, but also the C and Java implementations.
+This script assumes that the corresponding libraries have already
+been built. The version of the C library that MATLAB uses is built
+using the \texttt{UltimateKalman\_build\_\LyXZeroWidthSpace mex.m}
 script, as explained in Section~\ref{sec:c-lang} above. The Java
 version should be built outside MATLAB, as explained in Section~\ref{sec:java}.
+To run the script to generate the graphs inn~\cite{doi:10.1145/3699958},
+run it with no arguments or with the arguments
+\begin{lstlisting}
+replication(kalmanFactory('KalmanUltimate'), ...
+    false, ...
+    { kalmanFactory('KalmanUltimate'), ...
+      kalmanFactory('KalmanJava'),     ...
+      kalmanFactory('KalmanNative')    ...
+    });
+\end{lstlisting}
+To test another implementation, run it with another factory as the
+first argument, as in 
+\begin{lstlisting}
+replication(kalmanFactory('KalmanNative',struct('algorithm','Ultimate')));
+\end{lstlisting}
+
 
 \section{\label{sec:performance-testing}Support for Performance Testing}
 
@@ -938,6 +1104,14 @@ methods are called from Java, and the MATLAB methods from MATLAB.
 The method takes a timestamp every $d$ steps and returns a vector
 with the average wall-clock running time per step in each nonoverlapping
 group of $d$ steps.
+
+The function \texttt{performance} uses the \texttt{perftest} method
+to measure and plot the performance of one or more filters/smoothers.
+You invoke it on a cell array of factories and provide several parameters:
+a seed for the random-number generator, an array of state dimensions
+to test, the number of state in each test, and the number of time
+steps between timestamps. Graphs produced by this function are presented
+in~\cite{doi:10.1145/3699958}.
 
 \section{\label{sec:step-data-structure}Data Structures for the Step Sequence}
 
@@ -964,7 +1138,7 @@ the data structure to support appending, trimming from both sides,
 and direct access to a step with a given index, again in constant
 or amortized constant time.
 
-The Java implementation stores the steps in a cell array. The implementation
+The MATLAB implementation stores the steps in a cell array. The implementation
 is simple, but not as efficient as the data structure that is used
 by the C version.
 
