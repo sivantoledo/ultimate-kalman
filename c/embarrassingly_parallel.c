@@ -1,7 +1,13 @@
 /*
- * ultimatekalman.c
+ * embarrasingly_parallel.c
  *
- * (C) Sivan Toledo, 2022
+ * A program for testing the scalability of the building blocks of the
+ * Gargir-Toledo parallel Kalman smoother, using parallel for loops
+ * with no data dependencies. This is an ideal case whose speedups in
+ * a given environment provide upper bounds on the speedups that the
+ * Gargir-Toledo smoother is likely to achieve.
+ *
+ * Copyright (C) Sivan Toledo, 2024-2025
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,9 +47,6 @@ double generateGaussian(double mean, double stddev) {
   return z0 * stddev + mean;
 }
 
-//kalman_matrix_t* matrix_create_mutate_qr(kalman_matrix_t* A);
-//void matrix_mutate_apply_qt(kalman_matrix_t* QR, kalman_matrix_t* TAU, kalman_matrix_t* C);
-
 kalman_matrix_t* generateRandomOrthonormal(int rows, int cols) {
   int i, j;
   //int n;
@@ -76,8 +79,6 @@ kalman_matrix_t* generateRandomOrthonormal(int rows, int cols) {
 
   return A;
 }
-
-//kalman_matrix_t *A;
 
 typedef struct step_st {
     kalman_matrix_t* A;
@@ -191,26 +192,6 @@ int main(int argc, char *argv[]) {
   seconds = end.tv_sec - begin.tv_sec;
   microseconds = end.tv_usec - begin.tv_usec;
   times[3] = seconds + microseconds * 1e-6;
-
-  /*
-   gettimeofday(&end, 0);
-   seconds      = end.tv_sec  - begin.tv_sec;
-   microseconds = end.tv_usec - begin.tv_usec;
-   times[2]          = seconds + microseconds*1e-6;
-
-   gettimeofday(&end, 0);
-   seconds      = end.tv_sec  - begin.tv_sec;
-   microseconds = end.tv_usec - begin.tv_usec;
-   times[3]          = seconds + microseconds*1e-6;
-
-   printf("embarrassingly parallel testing took %.2e seconds\n",times[1]);
-
-   printf("performance testing breakdown %.2e %.2e %.2e %.2e (create, factor, nothing, nothing)\n",
-   times[0],
-   times[1]-times[0],
-   times[2]-times[1],
-   times[3]-times[2]);
-   */
 
   printf("embarrassingly parallel testing took %.2e seconds\n", times[3]);
 
