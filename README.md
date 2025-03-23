@@ -6,9 +6,11 @@ This repository contains the source code of several Kalman filters and smoothers
 
 - Release v2.0.0 contains two parallel Kalman smoothers, as well as a conventional sequential Kalman filter and smoother. These implementations are described in an article by Shahaf Gargir and Sivan Toledo accepted to IPDPS 2025. The actual parallel implementations are available only in C/C++, but there are also sequential Matlab implementations of all the algorithms, for clarity. The Matlab implementation is now modular and uses a class hierarchy, to eliminate code duplication (so it is no longer monolithic).
 
+- Release 2.1.0 is a significantly cleaned up version of the codes described by Gargir and Toledo. It is meant to be adopted by users. This is the version described in this guide.The C codes in this release use the same API as the implementation in Release 1.2.0, but the code has been split into multiple files so the build is more complicated. The MATLAB version also retains the same API, but class names have changed. The Java implementation is identical to the implementation in Release 1.2.0.
+
 ## User Guide
 
-A detailed user guide (for version 1.2.0!) is available in [userManual/userManual.pdf](userManual/userManual.pdf).
+A detailed user guide is available in [userManual/userManual.pdf](userManual/userManual.pdf).
 
 ## License
 
