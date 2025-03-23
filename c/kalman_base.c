@@ -1,5 +1,12 @@
 /*
- * ultimatekalman.c
+ * kalman_base.c
+ *
+ * An implemenation of generic operations for Kalman filters and smoothres
+ * (management of the step sequence). Filter-spefici operations like
+ * evolve(...), observe(...), and smooth(...) are defined in separate files.
+ *
+ * This file also defines the polymorphic structure that represents a Kalman
+ * filter and/or smoother.
  *
  * (C) Sivan Toledo, 2022
  */

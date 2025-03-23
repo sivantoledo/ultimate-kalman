@@ -1,7 +1,7 @@
 /*
  * parallel_sequential.c
  *
- * A sequential implementation of the parallel primitives (mostly for testing the algorithms).
+ * A sequential implementation of the parallel primitives (mostly for computing speedups).
  *
  * Copyright (c) 2024-2025 Sivan Toledo and Shahaf Gargir
  */

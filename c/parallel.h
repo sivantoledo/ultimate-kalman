@@ -1,7 +1,8 @@
 /*
  * parallel.h
  *
- * Definitions of the parallel primitives.
+ * Definitions of the parallel primitives for a collection of Kalman
+ * filters and smoothers.
  *
  * Copyright (c) 2024-2025 Sivan Toledo and Shahaf Gargir
  */

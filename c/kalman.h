@@ -1,3 +1,11 @@
+/*
+ * kalman.h
+ *
+ * Declarations for polymorphic Kalman filters and smoothers.
+ *
+ * Copyright (C) Sivan Toledo 2022-2025
+ */
+
 #ifndef ULTIMATE_KALMAN_H
 #define ULTIMATE_KALMAN_H
 

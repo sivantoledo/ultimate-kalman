@@ -1,3 +1,11 @@
+/*
+ * ultimatekalmanmex.c
+ *
+ * A mex (matlab native dynamiclly-linked library) interface to the C implementation of
+ * the UltimateKalman collection of Kalman filters and smoothers.
+ *
+ * Copyright (C) Sivan Toledo 2022-2025.
+ */
 #include "mex.h"
 
 /*

@@ -1,3 +1,10 @@
+/*
+ * memory.h
+ *
+ * Redefinition of malloc to achieve cache-line alignment under multiple platforms.
+ *
+ * Copyright (C) Sivan Toledo 2022-2025.
+ */
 #ifndef MEMORY_H
 #define MEMORY_H
 

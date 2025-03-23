@@ -1,8 +1,10 @@
 
 /*
- * Sivan Toledo, 2024.
+ * rotation.c
  *
- * Example program for UltimateKalman in C.
+ * Example program for UltimateKalman in C, a version of rotation.m in C.
+ *
+ * Copyright (C) Sivan Toledo, 2024-2025
  */
 
 #include <stdio.h>

@@ -2,7 +2,8 @@
 /*
  * Sivan Toledo, 2024.
  *
- * Example program for UltimateKalman in C.
+ * Example program for UltimateKalman in C. This program focuses on measuring the
+ * filtering and smoothing performance.
  */
 
 #include <stdio.h>

@@ -1,6 +1,13 @@
 /*
  * kalman_explicit_representation.c
  *
+ * An implementation of a do-nothing Kalman, which only stores
+ * the evolution and observation equations for later processing,
+ * typically by a smoother.
+ *
+ * Based on the polymorphic representation in kalman_base.c.
+ *
+ *
  * (C) Sivan Toledo and Shahaf Gargir, 2024-2025
  */
 #include <stdio.h>

@@ -1,6 +1,12 @@
 /*
  * matrix_ops.c
  *
+ * Implementations of matrix and vector operations for a collection
+ * of Kalman filters and smoothers.
+ *
+ * The functions use LAPACK and BLAS functions to perform all the nontrivial
+ * operations.
+ *
  * (C) Sivan Toledo, 2022-2025
  */
 #include <stdio.h>

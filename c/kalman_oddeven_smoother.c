@@ -1,6 +1,12 @@
 /*
  * kalman_oddeven.c
  *
+ * A parallel linear Kalman smoother as propsed in the article:
+ *  Shahaf Gargir and Sivan Toledo.
+ * Parallel-in-time Kalman smoothing using orthogonal transformations.
+ * In Proceedings of the IEEE International Parallel and Distributed Processing Symposium (IPDPS), 2025.
+ * https://arxiv.org/abs/2502.11686
+ *
  * (C) Sivan Toledo and Shahaf Gargir, 2024-2025
  */
 #include <stdio.h>

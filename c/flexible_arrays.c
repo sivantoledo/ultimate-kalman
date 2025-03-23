@@ -1,6 +1,10 @@
 /*
  * flexible_arrays.c
  *
+ * An implementation of a flexible array-of-pointers data structure.
+ * Amortized constant-time access, insertion at the end, and deletion
+ * from both sides.
+ *
  * (C) Sivan Toledo, 2022-2025
  */
 #include <stdio.h>

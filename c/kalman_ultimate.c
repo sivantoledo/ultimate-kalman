@@ -1,6 +1,18 @@
 /*
  * kalman_ultimate.c
  *
+ * An implementation of a linear Kalman filter and smoother using
+ * orthogonal operations. The algorithm is a variant of the Paige-Saunders
+ * algorithm.
+ *
+ * Based on the polymorphic representation in kalman_base.c.
+ *
+ * For a full description, see the article:
+ * Sivan Toledo.
+ * Algorithm 1051: UltimateKalman, flexible kalman filtering and smoothing using orthogonal transformations.
+ * ACM Transactions on Mathematical Software, 50(4):1-19, 2024.
+ * https://doi.org/10.1145/3699958
+ *
  * (C) Sivan Toledo, 2022
  */
 #include <stdio.h>

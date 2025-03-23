@@ -1,6 +1,13 @@
 /*
  * kalman_associative.c
  *
+ * A parallel linear Kalman smoother as propsed in the article:
+ *  Temporal Parallelization of Bayesian Smoothers
+ *  by Simo Sarkka, Angel F. Garcia-Fernendez
+ *  IEEE Transactions on Automatic Control, 66(1), pages 299-306, 2021
+ *  doi 10.1109/TAC.2020.2976316
+ *  https://arxiv.org/abs/1905.13002
+ *
  * (C) Sivan Toledo and Shahaf Gargir, 2024-2025
  */
 #include <stdio.h>

@@ -1,5 +1,8 @@
 /*
- * kalman_filter_smoother.c
+ * kalman_conventional.c
+ *
+ * An implementation of a conventional linear Kalman filter and (RTS) smoother.
+ * Based on the polymorphic representation in kalman_base.c.
  *
  * (C) Sivan Toledo, 2024-2025
  */
