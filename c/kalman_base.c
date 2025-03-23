@@ -73,6 +73,7 @@ matrix_t* kalman_covariance_matrix_weigh(matrix_t *cov, char cov_type, matrix_t 
 #endif
 
   matrix_t *WA = NULL;
+  matrix_t* L =  NULL;
 
   int32_t i, j, rows, cols;
 
@@ -146,7 +147,7 @@ matrix_t* kalman_covariance_matrix_weigh(matrix_t *cov, char cov_type, matrix_t 
       }
       break;
     case 'C':
-      matrix_t* L = matrix_create_chol(cov);
+      L = matrix_create_chol(cov);
       WA = matrix_create_trisolve("L",cov, A);
 
       break;
