@@ -149,6 +149,8 @@ matrix_t* kalman_covariance_matrix_weigh(matrix_t *cov, char cov_type, matrix_t 
     case 'C':
       L = matrix_create_chol(cov);
       WA = matrix_create_trisolve("L",cov, A);
+      matrix_free(L);
+      L = NULL;
 
       break;
     default:
@@ -361,7 +363,7 @@ void kalman_forget(kalman_t *kalman, kalman_step_index_t si) {
     void *step = farray_drop_first(kalman->steps);
     (*(kalman->step_free))(step);
 #ifdef BUILD_DEBUG_PRINTOUTS
-		printf("forget new first %d\n",(int) farray_first_index(kalman->steps));
+		printf("forget new first %d\n",(int) farray_first_index(kalman->steps)
 #endif
   }
 #ifdef BUILD_DEBUG_PRINTOUTS
