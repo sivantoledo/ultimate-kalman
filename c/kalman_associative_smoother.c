@@ -502,8 +502,6 @@ static void build_filtering_element_new(kalman_step_equations_t* equations[], st
     matrix_free(K);
     matrix_free(S);
   }
-  fprintf(stderr,">> z %d\n", i);
-
 }
 
 #ifdef OBSOLETE
