@@ -946,7 +946,8 @@ GNU Octave
 
 \end_inset
 
-.
+ (version 2.x seems not to work under Octave due to the use of abstract classes;
+ version 1.x does).
  The 
 \begin_inset Flex Proglang
 status open
