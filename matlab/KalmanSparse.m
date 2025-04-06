@@ -178,11 +178,21 @@ classdef KalmanSparse < KalmanBase
                     kalman.current.end);
                 b = kalman.rhs( 1:kalman.rhsLength );
 
-                [Qtb,R] = qr(A,b);
-                u = R \ Qtb;
+                if (size(A,1)<size(A,2))
+                    kalman.current.estimatedState = NaN * ones(kalman.current.dimension,1);
+                    kalman.current.estimatedCovariance = CovarianceMatrix( NaN * ones(kalman.current.dimension,kalman.current.dimension),'C');
+                else
+                    [Qtb,R] = qr(A,b);
+                    u = R \ Qtb;
 
-                kalman.current.estimatedState      = u(kalman.current.start:kalman.current.end);
-                kalman.current.estimatedCovariance = CovarianceMatrix( full(R(kalman.current.start:kalman.current.end,kalman.current.start:kalman.current.end)), 'W');
+                    kalman.current.estimatedState      = u(kalman.current.start:kalman.current.end);
+                    kalman.current.estimatedCovariance = CovarianceMatrix( full(R(kalman.current.start:kalman.current.end,kalman.current.start:kalman.current.end)), 'W');
+                end
+                %[Qtb,R] = qr(A,b);
+                %u = R \ Qtb;
+
+                %kalman.current.estimatedState      = u(kalman.current.start:kalman.current.end);
+                %kalman.current.estimatedCovariance = CovarianceMatrix( full(R(kalman.current.start:kalman.current.end,kalman.current.start:kalman.current.end)), 'W');
             end
         end
 
@@ -235,11 +245,16 @@ classdef KalmanSparse < KalmanBase
                     kalman.current.end);
                 b = kalman.rhs( 1:kalman.rhsLength );
 
-                [Qtb,R] = qr(A,b);
-                u = R \ Qtb;
+                if (size(A,1)<size(A,2))
+                    kalman.current.estimatedState = NaN * ones(kalman.current.dimension,1);
+                    kalman.current.estimatedCovariance = CovarianceMatrix( NaN * ones(kalman.current.dimension,kalman.current.dimension),'C');
+                else
+                    [Qtb,R] = qr(A,b);
+                    u = R \ Qtb;
 
-                kalman.current.estimatedState      = u(kalman.current.start:kalman.current.end);
-                kalman.current.estimatedCovariance = CovarianceMatrix( full(R(kalman.current.start:kalman.current.end,kalman.current.start:kalman.current.end)), 'W');
+                    kalman.current.estimatedState      = u(kalman.current.start:kalman.current.end);
+                    kalman.current.estimatedCovariance = CovarianceMatrix( full(R(kalman.current.start:kalman.current.end,kalman.current.start:kalman.current.end)), 'W');
+                end
             end
 
             kalman.steps{ length(kalman.steps)+1 } = kalman.current;
