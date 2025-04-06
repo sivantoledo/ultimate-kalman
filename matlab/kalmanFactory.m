@@ -29,7 +29,7 @@ if nargin<2
     options = struct();
 end
 
-kalmanClasses = {'KalmanAssociativeSmoother', 'KalmanConventional', 'KalmanExplicitRepresentation', 'KalmanJava', 'KalmanNative', 'KalmanOddevenSmoother', 'KalmanSparse', 'KalmanUltimate'}';
+kalmanClasses = {'KalmanAssociativeSmoother', 'KalmanConventional', 'KalmanPython', 'KalmanExplicitRepresentation', 'KalmanJava', 'KalmanNative', 'KalmanOddevenSmoother', 'KalmanSparse', 'KalmanUltimate'}';
 
 if ~ischar(className) || ~ismember(className, kalmanClasses)
     names='';
