@@ -33,7 +33,7 @@ classdef KalmanOddevenSmoother < KalmanExplicitRepresentation
 
             if (length(indices) == 1)
                 singleStep = kalman.steps{indices(1)};
-                singleStep.estimatedState = singleStep.G \ singleStep.o;
+                singleStep.estimatedState = singleStep.C \ singleStep.o;
 
                 kalman.steps{indices(1)} = singleStep;
                 return
@@ -45,27 +45,27 @@ classdef KalmanOddevenSmoother < KalmanExplicitRepresentation
                 i = indices(j + 1);
 
                 if (j + 1 == l) % Last index
-                    G_i = kalman.steps{i}.G;
-                    [Q,R_tilde] = qr(G_i);
+                    C_i = kalman.steps{i}.C;
+                    [Q,R_tilde] = qr(C_i);
                     kalman.steps{i}.R_tilde = R_tilde;
 
                     kalman.steps{i}.o = Q' * kalman.steps{i}.o;
                 else
                     i_p_1 = indices(j + 2);
-                    G_i = kalman.steps{i}.G;
-                    F_i_p_1 = kalman.steps{i_p_1}.F;
-                    H_i_p_1 = kalman.steps{i_p_1}.H;
+                    C_i = kalman.steps{i}.C;
+                    B_i_p_1 = kalman.steps{i_p_1}.B;
+                    D_i_p_1 = kalman.steps{i_p_1}.D;
 
-                    [Q,R_tilde] = qr([G_i ; F_i_p_1]);
+                    [Q,R_tilde] = qr([C_i ; B_i_p_1]);
                     kalman.steps{i}.R_tilde = R_tilde(1:size(R_tilde,2),1:size(R_tilde,2));
                     Q_T = Q';
 
                     o_c = [kalman.steps{i}.o ; kalman.steps{i_p_1}.c];
-                    kalman.steps{i}.X = Q_T(1:size(G_i,1),:) * [zeros(size(G_i)) ; H_i_p_1];
-                    kalman.steps{i}.o = Q_T(1:size(G_i,1),:) * o_c;
+                    kalman.steps{i}.X = Q_T(1:size(C_i,1),:) * [zeros(size(C_i)) ; D_i_p_1];
+                    kalman.steps{i}.o = Q_T(1:size(C_i,1),:) * o_c;
 
-                    kalman.steps{i_p_1}.H_tilde = Q_T(size(G_i,1)+1:end,:) * [zeros(size(G_i)) ; H_i_p_1];
-                    kalman.steps{i_p_1}.c = Q_T(size(G_i,1)+1:end,:) * o_c;
+                    kalman.steps{i_p_1}.D_tilde = Q_T(size(C_i,1)+1:end,:) * [zeros(size(C_i)) ; D_i_p_1];
+                    kalman.steps{i_p_1}.c = Q_T(size(C_i,1)+1:end,:) * o_c;
                 end
             end
 
@@ -77,25 +77,25 @@ classdef KalmanOddevenSmoother < KalmanExplicitRepresentation
                     continue
                 end
                 R_tilde = kalman.steps{i}.R_tilde;
-                F_i = kalman.steps{i}.F;
-                H_i = kalman.steps{i}.H;
+                B_i = kalman.steps{i}.B;
+                D_i = kalman.steps{i}.D;
 
-                [Q,R] = qr([H_i ; R_tilde]);
+                [Q,R] = qr([D_i ; R_tilde]);
                 kalman.steps{i}.R = R(1:size(R,2),1:size(R,2));
                 Q_T = Q';
 
                 c_o = [kalman.steps{i}.c ; kalman.steps{i}.o];
-                kalman.steps{i}.F_tilde = Q_T(1:size(F_i,1),:) * [F_i ; zeros(size(R_tilde))];
-                kalman.steps{i}.c = Q_T(1:size(F_i,1),:) * c_o;
+                kalman.steps{i}.B_tilde = Q_T(1:size(B_i,1),:) * [B_i ; zeros(size(R_tilde))];
+                kalman.steps{i}.c = Q_T(1:size(B_i,1),:) * c_o;
 
-                kalman.steps{i}.Z = Q_T(size(F_i,1)+1:end,:) * [F_i ; zeros(size(R_tilde))];
-                kalman.steps{i}.o = Q_T(size(F_i,1)+1:end,:) * c_o;
+                kalman.steps{i}.Z = Q_T(size(B_i,1)+1:end,:) * [B_i ; zeros(size(R_tilde))];
+                kalman.steps{i}.o = Q_T(size(B_i,1)+1:end,:) * c_o;
 
                 if (j + 1 ~= l) % Not last index
                     X = kalman.steps{i}.X;
-                    kalman.steps{i}.Y = Q_T(1:size(F_i,1),:) * [zeros(size(F_i)) ; X];
+                    kalman.steps{i}.Y = Q_T(1:size(B_i,1),:) * [zeros(size(B_i)) ; X];
 
-                    kalman.steps{i}.X_tilde = Q_T(size(F_i,1)+1:end,:) * [zeros(size(F_i)) ; X];
+                    kalman.steps{i}.X_tilde = Q_T(size(B_i,1)+1:end,:) * [zeros(size(B_i)) ; X];
                 end
             end
 
@@ -103,17 +103,17 @@ classdef KalmanOddevenSmoother < KalmanExplicitRepresentation
                 i = indices(j + 1);
                 i_p_1 = indices(j + 2);
 
-                H_tilde = kalman.steps{i_p_1}.H_tilde;
-                G_i_p_1 = kalman.steps{i_p_1}.G;
+                D_tilde = kalman.steps{i_p_1}.D_tilde;
+                C_i_p_1 = kalman.steps{i_p_1}.C;
 
-                [Q,R] = qr([H_tilde ; G_i_p_1]);
-                kalman.steps{i_p_1}.G_tilde = R(1:size(R,2),1:size(R,2));
+                [Q,R] = qr([D_tilde ; C_i_p_1]);
+                kalman.steps{i_p_1}.C_tilde = R(1:size(R,2),1:size(R,2));
                 Q_T = Q';
 
                 c_o = [kalman.steps{i_p_1}.c ; kalman.steps{i_p_1}.o];
-                kalman.steps{i_p_1}.c = Q_T(1:size(H_tilde,1),:) * c_o;
+                kalman.steps{i_p_1}.c = Q_T(1:size(D_tilde,1),:) * c_o;
 
-                kalman.steps{i_p_1}.o = Q_T(size(H_tilde,1)+1:end,:) * c_o;
+                kalman.steps{i_p_1}.o = Q_T(size(D_tilde,1)+1:end,:) * c_o;
 
             end
 
@@ -123,35 +123,35 @@ classdef KalmanOddevenSmoother < KalmanExplicitRepresentation
             last = indices(l);
 
             if (mod(l,2) == 1)
-                G_tilde = kalman.steps{l_m_1}.G_tilde;
+                C_tilde = kalman.steps{l_m_1}.C_tilde;
                 o_i = kalman.steps{l_m_1}.c;
 
                 Z = kalman.steps{last}.Z;
                 c_i = kalman.steps{last}.o;
 
 
-                [Q,R] = qr([G_tilde ; Z]);
-                kalman.steps{l_m_1}.G_tilde = R(1:size(R,2),1:size(R,2));
+                [Q,R] = qr([C_tilde ; Z]);
+                kalman.steps{l_m_1}.C_tilde = R(1:size(R,2),1:size(R,2));
                 Q_T = Q';
 
-                kalman.steps{l_m_1}.c = Q_T(1:size(G_tilde,1),:) * [o_i ; c_i];
+                kalman.steps{l_m_1}.c = Q_T(1:size(C_tilde,1),:) * [o_i ; c_i];
 
-                kalman.steps{last}.o = Q_T(size(G_tilde,1)+1:end,:) * [o_i ; c_i];
+                kalman.steps{last}.o = Q_T(size(C_tilde,1)+1:end,:) * [o_i ; c_i];
                 % else
-                %     G_tilde = kalman.steps{l_m_1}.G_tilde;
+                %     C_tilde = kalman.steps{l_m_1}.C_tilde;
                 %     o_i = kalman.steps{l_m_1}.c;
                 %
-                %     F_tilde = kalman.steps{last}.F_tilde;
+                %     B_tilde = kalman.steps{last}.B_tilde;
                 %     c_i = kalman.steps{last}.c;
                 %
                 %
-                %     [Q,R] = qr([G_tilde ; F_tilde]);
-                %     kalman.steps{l_m_1}.G_tilde = R(1:size(R,2),1:size(R,2));
+                %     [Q,R] = qr([C_tilde ; B_tilde]);
+                %     kalman.steps{l_m_1}.C_tilde = R(1:size(R,2),1:size(R,2));
                 %     Q_T = Q';
                 %
-                %     kalman.steps{l_m_1}.c = Q_T(1:size(G_tilde,1),:) * [o_i ; c_i];
+                %     kalman.steps{l_m_1}.c = Q_T(1:size(C_tilde,1),:) * [o_i ; c_i];
                 %
-                %     kalman.steps{last}.o = Q_T(size(G_tilde,1)+1:end,:) * [o_i ; c_i];
+                %     kalman.steps{last}.o = Q_T(size(C_tilde,1)+1:end,:) * [o_i ; c_i];
             end
 
 
@@ -162,11 +162,11 @@ classdef KalmanOddevenSmoother < KalmanExplicitRepresentation
                 i = indices(j + 1);
                 i_p_1 = indices(j + 2);
 
-                G_tilde = kalman.steps{i_p_1}.G_tilde;
+                C_tilde = kalman.steps{i_p_1}.C_tilde;
                 o = kalman.steps{i_p_1}.c;
 
-                % H_tilde = kalman.steps{i + 1}.H_tilde;
-                % G_tilde = kalman.steps{i + 1}.G_tilde;
+                % D_tilde = kalman.steps{i + 1}.D_tilde;
+                % C_tilde = kalman.steps{i + 1}.C_tilde;
 
                 if (j ~= 0)
                     Z = kalman.steps{i}.Z;
@@ -174,14 +174,14 @@ classdef KalmanOddevenSmoother < KalmanExplicitRepresentation
                     c = kalman.steps{i}.o;
 
                     % recursive_kalman.evolve(size(Z,2),X_tilde,-Z,c_i,CovarianceMatrix(ones(1,size(Z,1)),'w'))
-                    kalman.steps{i_p_1}.F = Z;
-                    kalman.steps{i_p_1}.H = X_tilde;
+                    kalman.steps{i_p_1}.B = Z;
+                    kalman.steps{i_p_1}.D = X_tilde;
 
                     kalman.steps{i_p_1}.c = c;
                 end
 
-                % recursive_kalman.observe(G_tilde,o_i,CovarianceMatrix(ones(1,size(G_tilde,1)),'w'))
-                kalman.steps{i_p_1}.G = G_tilde;
+                % recursive_kalman.observe(C_tilde,o_i,CovarianceMatrix(ones(1,size(C_tilde,1)),'w'))
+                kalman.steps{i_p_1}.C = C_tilde;
                 kalman.steps{i_p_1}.o = o;
             end
 
@@ -209,20 +209,20 @@ classdef KalmanOddevenSmoother < KalmanExplicitRepresentation
                     x_i_p_1 = kalman.steps{i_p_1}.estimatedState;
                     x_i_m_1 = kalman.steps{i_m_1}.estimatedState;
 
-                    F_tilde = kalman.steps{i}.F_tilde;
+                    B_tilde = kalman.steps{i}.B_tilde;
                     Y = kalman.steps{i}.Y;
                     c = kalman.steps{i}.c;
 
-                    kalman.steps{i}.estimatedState = R \ (c - F_tilde * x_i_m_1 - Y * x_i_p_1);
+                    kalman.steps{i}.estimatedState = R \ (c - B_tilde * x_i_m_1 - Y * x_i_p_1);
                 else
                     i_m_1 = indices(j);
 
                     x_i_m_1 = kalman.steps{i_m_1}.estimatedState;
 
-                    F_tilde = kalman.steps{i}.F_tilde;
+                    B_tilde = kalman.steps{i}.B_tilde;
                     c = kalman.steps{i}.c;
 
-                    kalman.steps{i}.estimatedState = R \ (c - F_tilde * x_i_m_1);
+                    kalman.steps{i}.estimatedState = R \ (c - B_tilde * x_i_m_1);
                 end
             end
         end
@@ -242,13 +242,13 @@ classdef KalmanOddevenSmoother < KalmanExplicitRepresentation
                 %kalman.steps{i}
                 if kalman.steps{i}.step > 0
                     K_i = kalman.steps{i}.K;
-                    kalman.steps{i}.F = - K_i.weigh(kalman.steps{i}.F);
+                    kalman.steps{i}.B = - K_i.weigh(kalman.steps{i}.F);
                     kalman.steps{i}.c =   K_i.weigh(kalman.steps{i}.c);
-                    kalman.steps{i}.H =   K_i.weigh(kalman.steps{i}.H);
+                    kalman.steps{i}.D =   K_i.weigh(kalman.steps{i}.H);
                 end
                 if isfield(kalman.steps{i},'G')
                     C_i = kalman.steps{i}.C;
-                    kalman.steps{i}.G = C_i.weigh(kalman.steps{i}.G);
+                    kalman.steps{i}.C = C_i.weigh(kalman.steps{i}.G);
                     kalman.steps{i}.o = C_i.weigh(kalman.steps{i}.o);
                 end
 
