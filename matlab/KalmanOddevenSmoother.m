@@ -67,16 +67,17 @@ classdef KalmanOddevenSmoother < KalmanExplicitRepresentation
                     nn = size(B_i_p_1,2); % == size(C_i,2)
 
                     [Q,R_tilde] = qr([C_i ; B_i_p_1]);
+                    ll = min(nn,size(R_tilde,1));
                     assert(size(R_tilde,2) == nn);
-                    kalman.steps{i}.R_tilde = R_tilde(1:nn,1:nn);
+                    kalman.steps{i}.R_tilde = R_tilde(1:ll,1:nn);
                     Q_T = Q';
 
                     o_c = [kalman.steps{i}.o ; kalman.steps{i_p_1}.c];
-                    kalman.steps{i}.X = Q_T(1:nn,:) * [zeros(mm,nn) ; D_i_p_1];
-                    kalman.steps{i}.o = Q_T(1:nn,:) * o_c;
+                    kalman.steps{i}.X = Q_T(1:ll,:) * [zeros(mm,size(D_i_p_1,2)) ; D_i_p_1];
+                    kalman.steps{i}.o = Q_T(1:ll,:) * o_c;
 
-                    kalman.steps{i_p_1}.D_tilde = Q_T(nn+1:end,:) * [zeros(mm,nn) ; D_i_p_1];
-                    kalman.steps{i_p_1}.c = Q_T(nn+1:end,:) * o_c;
+                    kalman.steps{i_p_1}.D_tilde = Q_T(ll+1:end,:) * [zeros(mm,size(D_i_p_1,2)) ; D_i_p_1];
+                    kalman.steps{i_p_1}.c = Q_T(ll+1:end,:) * o_c;
                end
             end
 
@@ -328,6 +329,9 @@ classdef KalmanOddevenSmoother < KalmanExplicitRepresentation
                     C_i = kalman.steps{i}.C;
                     kalman.steps{i}.C = C_i.weigh(kalman.steps{i}.G);
                     kalman.steps{i}.o = C_i.weigh(kalman.steps{i}.o);
+                else
+                    kalman.steps{i}.C = [];
+                    kalman.steps{i}.o = [];                    
                 end
 
                 n_i = kalman.steps{i}.dimension;
