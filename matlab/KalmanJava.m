@@ -97,7 +97,11 @@ classdef KalmanJava < handle
                 kalman.handle.observe();
                 return;
             end
-            kalman.handle.observe(kalman.jmat(G_i),kalman.jvec(o_i),kalman.jcov(C_i));
+            if (isempty(G_i))
+                kalman.handle.observe();
+            else
+                kalman.handle.observe(kalman.jmat(G_i),kalman.jvec(o_i),kalman.jcov(C_i));
+            end
         end
 
         %function [estimate,cov] = filtered(kalman)
@@ -146,11 +150,10 @@ classdef KalmanJava < handle
                   W = kalman.java2mat(W);
                   cov = CovarianceMatrix(W,'W');
                 else
-                  cov = [];
+                  cov = CovarianceMatrix(NaN*ones(length(estimate),length(estimate)),'C');
                 end
             else
-                estimate = [];
-                cov = [];
+                cov = CovarianceMatrix([],'C');
             end
         end
 
@@ -288,6 +291,7 @@ classdef KalmanJava < handle
 
         function jA = jmat(A)
             % jA = org.apache.commons.math3.linear.MatrixUtils.createRealMatrix(A);
+            size(A)
             jA = javaMethod('createRealMatrix','org.apache.commons.math3.linear.MatrixUtils',size(A,1),size(A,2));
             for i=1:size(A,1)
               for j=1:size(A,2)
