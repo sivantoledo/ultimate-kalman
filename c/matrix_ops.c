@@ -492,11 +492,12 @@ void matrix_mutate_trisolve(char* triangle, matrix_t* U, matrix_t* b) {
 
 matrix_t* matrix_create_trisolve(char* triangle, matrix_t* U, matrix_t* b) {
     matrix_t* x = matrix_create_copy(b);
-    matrix_mutate_trisolve("U",U,x);
+    matrix_mutate_trisolve(triangle,U,x);
     return x;
 }
 
 void matrix_mutate_chol(matrix_t* L) {
+    int i,j;
     assert(L != NULL);
     assert(matrix_rows(L) == matrix_cols(L));
 
@@ -526,10 +527,18 @@ void matrix_mutate_chol(matrix_t* L) {
 #ifdef BUILD_DEBUG_PRINTOUTS
     printf("dpotrf done\n");
 #endif
+    printf("DPOTRF INFO=%d\n",INFO);
+
+    for (j=1; j<N; j++) {
+      for (i=0; i<j; i++) {
+          matrix_set(L,i,j,0.0);
+      }
+    }
 }
 
 matrix_t* matrix_create_chol(matrix_t* A) {
 	matrix_t* L = matrix_create_copy(A);
+	//printf("going to mutate\n");
 	matrix_mutate_chol(L);
 	return L;
 }
