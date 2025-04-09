@@ -59,7 +59,7 @@ classdef KalmanPython < handle
             cov     = double(rep{1});
             covType = rep{2};
             if ~isempty(jestimate)
-                estimate = double(jestimate{1})';
+                estimate = double(jestimate{1});
                 cov = CovarianceMatrix(cov,covType);
             else
                 estimate = [];
