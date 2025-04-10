@@ -194,19 +194,21 @@ of each programming language.
 
 The MATLAB implementation does not rely on any MATLAB toolbox, only
 on functionality that is part of the core product. The implementation
-also works under GNU Octave. The C implementation relies on basic
-matrix and vector operations from the BLAS~\cite{BLAS,BLAS3ALG}
-and on the QR and Cholesky factorizations from LAPACK~\cite{LAPACK-UG}.
-The C implementation of the parallel-in-time smoothers used the Threading
-Building Blocks (TBB) library to express shared-memory parallelism.
-TBB is a C++ library and the code uses a single C++ source file
-to expose the parallel primitives. The code can also be compiled without
-TBB, but this generates a sequential algorithm, not a multi-threaded
-(multi-core) one. The Java implementation uses the Apache Commons
-Math library for both basic matrix-vector operations and for the QR
-and Cholesky factorizations. The Cholesky factorization is used only
-to factor covariance matrices that are specified explicitly, as opposed
-to being specified by inverse factors or triangular factors.
+also works under GNU Octave (version 2.x seems not to work under
+Octave due to the use of abstract classes; version 1.x does). The
+C implementation relies on basic matrix and vector operations from
+the BLAS~\cite{BLAS,BLAS3ALG} and on the QR and Cholesky factorizations
+from LAPACK~\cite{LAPACK-UG}. The C implementation of the parallel-in-time
+smoothers used the Threading Building Blocks (TBB) library to express
+shared-memory parallelism. TBB is a C++ library and the code uses
+a single C++ source file to expose the parallel primitives. The code
+can also be compiled without TBB, but this generates a sequential
+algorithm, not a multi-threaded (multi-core) one. The Java implementation
+uses the Apache Commons Math library for both basic matrix-vector
+operations and for the QR and Cholesky factorizations. The Cholesky
+factorization is used only to factor covariance matrices that are
+specified explicitly, as opposed to being specified by inverse factors
+or triangular factors.
 
 We first describe how the different implementations represent matrices,
 vectors, and covariance matrices. Then we describe in detail the MATLAB

@@ -1,3 +1,5 @@
+function kalmanTest()
+
 rng(1)
 
 % k = KalmanUltimate();
@@ -31,11 +33,12 @@ mconv   = { 'mconv',   kalmanFactory('KalmanConventional'),                     
 nconv   = { 'nconv',   kalmanFactory('KalmanNative',struct('algorithm','Conventional')),             0 };
 pconv   = { 'pconv',   kalmanFactory('KalmanPython',struct('algorithm','KalmanConventional')),       0 };
 multps  = { 'multps',  kalmanFactory('KalmanUltimate',struct('estimateCovariance','PaigeSaunders')), bitor( UNOBSERVABALE, RECT_H) };
-pultps  = { 'pultps',  kalmanFactory('KalmanPython',struct('algorithm','KalmanUltimate')),   bitor( UNOBSERVABALE, RECT_H) };
+pultps  = { 'pultps',  kalmanFactory('KalmanPython',struct('algorithm','KalmanUltimate')),           bitor( UNOBSERVABALE, RECT_H) };
 multsi  = { 'multsi',  kalmanFactory('KalmanUltimate',struct('estimateCovariance','SelInv')),        bitor( UNOBSERVABALE, RECT_H) };
 nultps  = { 'nultps',  kalmanFactory('KalmanNative',struct('algorithm','Ultimate')),                 bitor( UNOBSERVABALE, RECT_H) };
 jultps  = { 'jultps',  kalmanFactory('KalmanJava'),                                                  bitor( UNOBSERVABALE, RECT_H) };
 moddevn = { 'moddevn', kalmanFactory('KalmanOddevenSmoother'),                                       bitor(bitor( UNOBSERVABALE, RECT_H), LIMITATION_PLURAL) };
+noddevn = { 'moddevn', kalmanFactory('KalmanNative',struct('algorithm','Oddeven')),                  bitor(bitor( UNOBSERVABALE, RECT_H), LIMITATION_PLURAL) };
 massoc  = { 'massoc',  kalmanFactory('KalmanAssociativeSmoother'),                                   LIMITATION_PLURAL  };
 
 variants = { msparse
@@ -56,7 +59,14 @@ variants = { msparse
              pconv
              nconv
              moddevn
+             noddevn
              massoc
+           };
+
+variants = { multps
+             nultps
+             moddevn
+             noddevn
            };
 
 tests = { uniform(1,1,1,1)
@@ -78,6 +88,16 @@ tests = { uniform(1,1,1,1)
 
 
 %          uniform(2,1,1,9)
+
+[v,FS,FC,SS,SC,covTypes] = testCovarianceTypes(uniform(9,9,9,17),{ 'W', 'C', 'w' })
+covTypes
+v
+FS
+FC
+SS
+SC
+
+function [v,FS,FC,SS,SC] = testDimensions()
 
 n = length(variants)-1;
 m = size(tests,1);
@@ -124,17 +144,12 @@ for i=1:n
     
 end
 
-v
-FS
-FC
-SS
-SC
+end
 
+function [v,FS,FC,SS,SC,covTypes] = testCovarianceTypes(test,covTypes)
 %%% test covariance matrix types
 
-test = uniform(9,9,11,17);
-test = uniform(1,1,1,17);
-covTypes = { 'W', 'C', 'w' }
+%test = uniform(1,1,1,17);
 
 n = length(variants);
 m = length(covTypes);
@@ -169,12 +184,7 @@ for i=1:n
     
 end
 
-covTypes
-v
-FS
-FC
-SS
-SC
+end
 
 function prop = rect_h(t)
     if sum(t(:,1) > t(:,2)) > 0 % n > l for some row
@@ -210,3 +220,4 @@ t = ones(k,1) * [ n l 0 nan nan];
 t(1,:) = [ n 0 m nan nan ];
 end
 
+end

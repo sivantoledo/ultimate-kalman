@@ -45,6 +45,9 @@ static void mex_assert(int c, int line) {
 #include "parallel.h"
 #include "memory.h"
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
 /******************************************************************************/
 /* KALMAN STEPS                                                               */
 /******************************************************************************/
@@ -343,7 +346,8 @@ static void G_F_to_R_tilde(void* steps_v, kalman_step_index_t length, kalman_ste
 		step_t* step_i = steps[j];
 		matrix_t* G_i = step_i->G;
 
-		if (j == length - 1){
+		if (j == length - 1) {
+		  // Sivan April 2025 I did not check this case
 			matrix_t* o_i = step_i->o;
 
 			matrix_t* R_tilde = matrix_create_copy(G_i);
@@ -354,7 +358,7 @@ static void G_F_to_R_tilde(void* steps_v, kalman_step_index_t length, kalman_ste
 			step_i->R_tilde = R_tilde;
 			matrix_mutate_triu(step_i->R_tilde);
 			matrix_free(TAU);
-		}else{
+		} else {
 
 			step_t* step_ipo = steps[j + 1];
 			matrix_t* o_i = step_i->o;
@@ -371,9 +375,17 @@ static void G_F_to_R_tilde(void* steps_v, kalman_step_index_t length, kalman_ste
 			R_tilde = concat;
 			Q = matrix_create_mutate_qr(R_tilde);
 
-			step_i->R_tilde = matrix_create_sub(R_tilde,0,matrix_cols(R_tilde), 0, matrix_cols(R_tilde));
+			int nn,mm,ll;
+
+			mm = matrix_rows(G_i);
+			nn = matrix_rows(F_ipo);
+			ll = MIN(nn,matrix_rows(R_tilde));
+
+            //step_i->R_tilde = matrix_create_sub(R_tilde,0,matrix_cols(R_tilde), 0, matrix_cols(R_tilde));
+            step_i->R_tilde = matrix_create_sub(R_tilde,0,ll, 0, nn);
 			matrix_mutate_triu(step_i->R_tilde);
-			step_i->X = matrix_create_constant(matrix_rows(G_i), matrix_cols(H_ipo), 0);
+            //step_i->X = matrix_create_constant(matrix_rows(G_i), matrix_cols(H_ipo), 0);
+            step_i->X = matrix_create_constant(ll, matrix_cols(H_ipo), 0);
 
 			free_and_assign(&(step_ipo->H_tilde), matrix_create_copy(H_ipo));
 
