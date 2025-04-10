@@ -201,15 +201,31 @@ void matrix_mutate_scale                (kalman_matrix_t* A, double s);
 void matrix_mutate_triu                 (kalman_matrix_t* A);
 void matrix_mutate_chop                 (kalman_matrix_t* A, int32_t rows, int32_t cols);
 void matrix_mutate_copy                 (kalman_matrix_t* C, kalman_matrix_t* A);
-void matrix_mutate_apply_qt             (kalman_matrix_t* QR, kalman_matrix_t* TAU, kalman_matrix_t* C);
 void matrix_mutate_trisolve             (char* triangle, kalman_matrix_t* U, kalman_matrix_t* b);
 void matrix_mutate_chol                 (kalman_matrix_t* L);
+
+/*
+ * LAPACK-type QR factorization.
+ *
+ * Mutates A so that it contains both R (upper triangle) and
+ * the reflectors whose product is Q. Returns TAU, the scalar
+ * factors of the reflectors (a vector). See documentation of
+ * DGEQRF for more details.
+ */
+kalman_matrix_t* matrix_create_mutate_qr(kalman_matrix_t* A);
+/*
+ * Apply Q^T, computed by matrix_create_mutate_qr, to a matrix C.
+ * The first argument QR contains both R and most of the representation
+ * of Q. TAU is another part of the representation. See documentation of
+ * DORMQR for more details.
+ */
+void matrix_mutate_apply_qt             (kalman_matrix_t* QR, kalman_matrix_t* TAU, kalman_matrix_t* C);
+
 
 kalman_matrix_t* matrix_create_trisolve (char* triangle, kalman_matrix_t* U, kalman_matrix_t* b);
 kalman_matrix_t* matrix_create_chol     (kalman_matrix_t* L);
 kalman_matrix_t* matrix_create_vconcat  (kalman_matrix_t* A, kalman_matrix_t* B);
 
-kalman_matrix_t* matrix_create_mutate_qr(kalman_matrix_t* A);
 kalman_matrix_t* matrix_create_inverse  (kalman_matrix_t* A);
 kalman_matrix_t* matrix_create_transpose(kalman_matrix_t* A);
 kalman_matrix_t* matrix_create_copy     (kalman_matrix_t* A);
