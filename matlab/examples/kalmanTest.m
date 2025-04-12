@@ -38,7 +38,7 @@ multsi  = { 'multsi',  kalmanFactory('KalmanUltimate',struct('estimateCovariance
 nultps  = { 'nultps',  kalmanFactory('KalmanNative',struct('algorithm','Ultimate')),                 bitor( UNOBSERVABALE, RECT_H) };
 jultps  = { 'jultps',  kalmanFactory('KalmanJava'),                                                  bitor( UNOBSERVABALE, RECT_H) };
 moddevn = { 'moddevn', kalmanFactory('KalmanOddevenSmoother'),                                       bitor(bitor( UNOBSERVABALE, RECT_H), LIMITATION_PLURAL) };
-noddevn = { 'moddevn', kalmanFactory('KalmanNative',struct('algorithm','Oddeven')),                  bitor(bitor( UNOBSERVABALE, RECT_H), LIMITATION_PLURAL) };
+noddevn = { 'moddevn', kalmanFactory('KalmanNative',struct('algorithm','Oddeven','estimateCovariance',false)),                  bitor(bitor( UNOBSERVABALE, RECT_H), LIMITATION_PLURAL) };
 massoc  = { 'massoc',  kalmanFactory('KalmanAssociativeSmoother'),                                   LIMITATION_PLURAL  };
 
 variants = { msparse
@@ -69,7 +69,7 @@ variants = { multps
              noddevn
            };
 
-tests = { uniform(1,1,1,1)
+dimensions = { uniform(1,1,1,1)
           uniform(1,1,1,7)
           uniform(2,2,2,1)
           uniform(2,2,2,7)
@@ -89,6 +89,15 @@ tests = { uniform(1,1,1,1)
 
 %          uniform(2,1,1,9)
 
+[v,FS,FC,SS,SC] = testDimensions(dimensions)
+v
+FS
+FC
+SS
+SC
+
+return
+
 [v,FS,FC,SS,SC,covTypes] = testCovarianceTypes(uniform(9,9,9,17),{ 'W', 'C', 'w' })
 covTypes
 v
@@ -97,7 +106,7 @@ FC
 SS
 SC
 
-function [v,FS,FC,SS,SC] = testDimensions()
+function [v,FS,FC,SS,SC] = testDimensions(tests)
 
 n = length(variants)-1;
 m = size(tests,1);
