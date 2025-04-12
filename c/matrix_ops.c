@@ -107,20 +107,26 @@ matrix_t* matrix_create(int32_t rows, int32_t cols) {
 	A->row_dim = rows;
 	A->col_dim = cols;
 	A->ld      = rows;
-	A->elements = malloc(rows*cols*sizeof(double));
-	assert( A->elements != NULL );
+	if (rows>0 && cols>0) {
+	  A->elements = malloc(rows*cols*sizeof(double));
+	  assert( A->elements != NULL );
+	} else {
+	  A->elements = NULL;
+	}
 	return A;
 }
 
 void matrix_free(matrix_t* A) {
 	if (A==NULL) return;
-	free( A->elements );
+    if (A->elements != NULL) {
+      free( A->elements );
+    }
 	free( A );
 }
 
-int32_t matrix_rows(matrix_t* A) { return A->row_dim; }
-int32_t matrix_cols(matrix_t* A) { return A->col_dim; }
-int32_t matrix_ld  (matrix_t* A) { return A->ld;      }
+int32_t matrix_rows(matrix_t* A) { return A==NULL ? 0 : A->row_dim; }
+int32_t matrix_cols(matrix_t* A) { return A==NULL ? 0 : A->col_dim; }
+int32_t matrix_ld  (matrix_t* A) { return A==NULL ? 0 : A->ld;      }
 
 /*
  * Creates an identity matrix (can be rectangular; main diagonal is 1, rest 0).
@@ -236,7 +242,9 @@ matrix_t* matrix_create_sub(matrix_t* A, int32_t first_row, int32_t rows, int32_
 
 	assert(first_row >= 0);
 	assert(first_col >= 0);
+    if (first_row+rows > A->row_dim) printf("create_sub first_row=%d rows=%d rows(A)=%d\n",first_row,rows,A->row_dim);
 	assert(first_row+rows <= A->row_dim);
+	if (first_col+cols > A->col_dim) printf("create_sub first_col=%d cols=%d cols(A)=%d\n",first_col,cols,A->col_dim);
 	assert(first_col+cols <= A->col_dim);
 
 	matrix_t* C = matrix_create(rows,cols);
@@ -272,6 +280,8 @@ void matrix_mutate_copy_sub(matrix_t* C, int32_t first_row, int32_t first_col, m
 matrix_t* matrix_create_vconcat(matrix_t* A, matrix_t* B) {
 	int i,j;
 
+    if (A==NULL && B==NULL) return NULL;
+
 	int32_t Arows = (A == NULL ? 0 : A->row_dim);
 	int32_t Acols = (A == NULL ? 0 : A->col_dim);
 	int32_t Brows = (B == NULL ? 0 : B->row_dim);
@@ -280,6 +290,9 @@ matrix_t* matrix_create_vconcat(matrix_t* A, matrix_t* B) {
 	//if (debug) printf("vconcat %d %d %d %d\n",Arows,Acols,Brows,Bcols);
 
 	if (Arows + Brows == 0) return NULL;
+
+    if (Arows==0) return matrix_create_copy(B);
+    if (Brows==0) return matrix_create_copy(A);
 
 	int32_t rows = Arows+Brows;
 	int32_t cols = MAX(Acols,Bcols); // one could be zero
@@ -351,7 +364,7 @@ matrix_t* matrix_create_mutate_qr(matrix_t* A) {
 	int32_t rows = matrix_rows(A);
 	int32_t cols = matrix_cols(A);
 
-	assert(rows >= cols);
+	//assert(rows >= cols); // turns out we have cases with rows < cols
 
 	blas_int_t M,N,LDA,LWORK,INFO;
 	double     WORK_SCALAR;
@@ -362,7 +375,11 @@ matrix_t* matrix_create_mutate_qr(matrix_t* A) {
 
 	matrix_t* TAU = matrix_create(N,1);
 
-	LWORK = -1; // tell lapack to compute the size of the work area required
+    if (rows < cols) {
+      printf("create_mutate_qr: %d-by-%d M=%d N=%d LDA=%d\n",rows,cols,M,N,LDA);
+    }
+
+    LWORK = -1; // tell lapack to compute the size of the work area required
 	//if (debug) printf("dgeqrf: M=%d N=%d LDA=%d LWORK=%d\n",M,N,LDA,LWORK);
 
 #ifdef BUILD_BLAS_UNDERSCORE
@@ -404,10 +421,10 @@ void matrix_mutate_apply_qt(matrix_t* QR, matrix_t* TAU, matrix_t* C) {
 
 	M = matrix_rows(C);
 	N = matrix_cols(C);
-	K = matrix_cols(QR); // number of reflectors
+	K = MIN(matrix_cols(QR),matrix_rows(QR)); // number of reflectors, R can have more columns than rows
 	LDA = matrix_ld(QR);
 	LDC = matrix_ld(C);
-	//printf("dormqr M=%d N=%d K=%d LDA=%d LDC=%d\n",M,N,K,LDA,LDC);
+	printf("dormqr M=%d N=%d K=%d LDA=%d LDC=%d\n",M,N,K,LDA,LDC);
 
 #ifdef BUILD_BLAS_UNDERSCORE
   dormqr_
