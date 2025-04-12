@@ -292,7 +292,7 @@ static void observe(kalman_t* kalman, matrix_t* G_i, matrix_t* o_i, matrix_t* C_
 /******************************************************************************/
 
 static void apply_Q_on_block_matrix (matrix_t* R, matrix_t* Q, matrix_t** upper, matrix_t** lower) {
-  printf(">>> %d\n",__LINE__);
+  //printf(">>> %d\n",__LINE__);
 	matrix_t* concat = matrix_create_vconcat(*upper, *lower);
 	matrix_mutate_apply_qt(R, Q, concat);
 	matrix_t *new_upper = matrix_create_sub(concat,0,matrix_rows(*upper), 0, matrix_cols(concat));
@@ -311,10 +311,10 @@ static void apply_Q_on_block_matrix (matrix_t* R, matrix_t* Q, matrix_t** upper,
  * concatenation at rows_top.
  */
 static void apply_QT_to_block_matrix (matrix_t* QR, matrix_t* TAU, int32_t rows_top, matrix_t** upper, matrix_t** lower) {
-  printf(">>> %d\n",__LINE__);
+  //printf(">>> %d\n",__LINE__);
     matrix_t* concat = matrix_create_vconcat(*upper, *lower);
     matrix_mutate_apply_qt(QR, TAU, concat);
-    printf("rows_top=%d rest=%d total=%d\n",rows_top,matrix_rows(concat)-rows_top,matrix_rows(concat));
+    //printf("rows_top=%d rest=%d total=%d\n",rows_top,matrix_rows(concat)-rows_top,matrix_rows(concat));
     matrix_t *new_upper = matrix_create_sub(concat,0,rows_top, 0, matrix_cols(concat));
     matrix_t *new_lower = matrix_create_sub(concat,rows_top,matrix_rows(concat)-rows_top, 0, matrix_cols(concat));
 
@@ -370,18 +370,17 @@ static void G_F_to_R_tilde(void* steps_v, kalman_step_index_t length, kalman_ste
 		if (j == length - 1) {
 			matrix_t* o_i = step_i->o;
 
-            printf(">>> %d\n",__LINE__);
-            fflush(stdout);
+            //printf(">>> %d\n",__LINE__);
 			matrix_t* QR = matrix_create_copy(G_i);
 
-	          printf(">>> %d\n",__LINE__);
+	          //printf(">>> %d\n",__LINE__);
 			matrix_t* TAU = matrix_create_mutate_qr(QR);
-			  printf(">>> %d\n",__LINE__);
+			  //printf(">>> %d\n",__LINE__);
 			matrix_mutate_apply_qt(QR,TAU,o_i);
 
 			step_i->R_tilde = QR;
 			matrix_mutate_triu(step_i->R_tilde);
-            printf("~~~ A set R_tilde step %d dim %d R_tilde %d-by-%d\n",step_i->step,step_i->dimension,matrix_rows(step_i->R_tilde),matrix_cols(step_i->R_tilde));
+            //printf("~~~ A set R_tilde step %d dim %d R_tilde %d-by-%d\n",step_i->step,step_i->dimension,matrix_rows(step_i->R_tilde),matrix_cols(step_i->R_tilde));
 
 			matrix_free(TAU);
 		} else {
@@ -394,30 +393,27 @@ static void G_F_to_R_tilde(void* steps_v, kalman_step_index_t length, kalman_ste
 			matrix_t* F_ipo = step_ipo->F;
 			matrix_t* H_ipo = step_ipo->H;
 
-            printf(">>> %d\n",__LINE__);
-            printf("~~~ D set R_tilde step %d dim %d Gi? %d Fipo? %d Hipo? %d\n",step_i->step,step_i->dimension,G_i!=NULL,F_ipo!=NULL,H_ipo!=NULL);
-
-            fflush(stdout);
+            //printf(">>> %d\n",__LINE__);
+            //printf("~~~ D set R_tilde step %d dim %d Gi? %d Fipo? %d Hipo? %d\n",step_i->step,step_i->dimension,G_i!=NULL,F_ipo!=NULL,H_ipo!=NULL);
 			matrix_t* QR = matrix_create_vconcat(G_i, F_ipo);
-            printf(">>> %d\n",__LINE__);
-            fflush(stdout);
+            //printf(">>> %d\n",__LINE__);
 
             int nn,mm,ll;
 
             mm = matrix_rows(G_i);
             nn = matrix_cols(F_ipo);
-            printf(">>> %d\n",__LINE__);
+            //printf(">>> %d\n",__LINE__);
 
 			matrix_t* TAU;
 			TAU = matrix_create_mutate_qr(QR);
 
             ll = MIN(nn,matrix_rows(QR));
-            printf("~~~ C set R_tilde step %d dim %d rows(QR)=%d rows(G_i)=%d rows(H_ipo)=%d\n",step_i->step,step_i->dimension,matrix_rows(QR),matrix_rows(G_i),matrix_rows(H_ipo));
+            //printf("~~~ C set R_tilde step %d dim %d rows(QR)=%d rows(G_i)=%d rows(H_ipo)=%d\n",step_i->step,step_i->dimension,matrix_rows(QR),matrix_rows(G_i),matrix_rows(H_ipo));
 
             //step_i->R_tilde = matrix_create_sub(R_tilde,0,matrix_cols(R_tilde), 0, matrix_cols(R_tilde));
             step_i->R_tilde = matrix_create_sub(QR,0,ll, 0, nn);
 			matrix_mutate_triu(step_i->R_tilde);
-            printf("~~~ B set R_tilde step %d dim %d R_tilde %d-by-%d\n",step_i->step,step_i->dimension,matrix_rows(step_i->R_tilde),matrix_cols(step_i->R_tilde));
+            //printf("~~~ B set R_tilde step %d dim %d R_tilde %d-by-%d\n",step_i->step,step_i->dimension,matrix_rows(step_i->R_tilde),matrix_cols(step_i->R_tilde));
 
             //step_i->X = matrix_create_constant(matrix_rows(G_i), matrix_cols(H_ipo), 0);
             // seems to cause a segmentation fault!!!
@@ -425,17 +421,16 @@ static void G_F_to_R_tilde(void* steps_v, kalman_step_index_t length, kalman_ste
             //step_i->X = matrix_create_constant(matrix_rows(QR)-ll, matrix_cols(H_ipo), 0); // number of rows is for the current split, above H_ipo
 
 			free_and_assign(&(step_ipo->H_tilde), matrix_create_copy(H_ipo));
-            printf(",,, step %d rows(H_tilde)=%d rows(X)=%d rows(c)=%d (added %d zero rows, should be %d)\n",
-                   step_ipo->step,matrix_rows(step_ipo->H_tilde),matrix_rows(step_i->X),matrix_rows(step_ipo->c),matrix_rows(QR)-ll,matrix_rows(QR)-matrix_rows(H_ipo));
+            //printf(",,, step %d rows(H_tilde)=%d rows(X)=%d rows(c)=%d (added %d zero rows, should be %d)\n",step_ipo->step,matrix_rows(step_ipo->H_tilde),matrix_rows(step_i->X),matrix_rows(step_ipo->c),matrix_rows(QR)-ll,matrix_rows(QR)-matrix_rows(H_ipo));
 
-			  printf(">>> %d\n",__LINE__);
+			  //printf(">>> %d\n",__LINE__);
 			  //printf("size(G_i)=%d,%d size(F_ipo)=%d,%d step=%d\n",matrix_rows(G_i),matrix_cols(G_i),matrix_rows(F_ipo),matrix_cols(F_ipo),step_ipo->step);
               //printf("mm=%d nn=%d rows(QR)=%d, cols(QR)=%d\n",mm,nn,matrix_rows(QR),matrix_cols(QR));
               //printf("ll=%d len(o)=%d len(c)=%d, rows(X)=%d rows(Htilde)=%d rows(QR)=%d\n",ll,matrix_rows(step_i->o),matrix_rows(step_ipo->c),matrix_rows(step_i->X),matrix_rows(step_ipo->H_tilde),matrix_rows(QR));
 			apply_QT_to_block_matrix(QR, TAU, ll, &(step_i->o), &(step_ipo->c));
-			  printf(">>> %d setting X, o for step %d\n",__LINE__,step_i->step);
+			  //printf(">>> %d setting X, o for step %d\n",__LINE__,step_i->step);
 			apply_QT_to_block_matrix(QR, TAU, ll, &(step_i->X), &(step_ipo->H_tilde));
-			printf("... step %d rows(H_tilde)=%d rows(X)=%d rows(c)=%d\n",step_ipo->step,matrix_rows(step_ipo->H_tilde),matrix_rows(step_i->X),matrix_rows(step_ipo->c));
+			//printf("... step %d rows(H_tilde)=%d rows(X)=%d rows(c)=%d\n",step_ipo->step,matrix_rows(step_ipo->H_tilde),matrix_rows(step_i->X),matrix_rows(step_ipo->c));
 			matrix_free(QR);
 			matrix_free(TAU);
 		}
@@ -453,7 +448,7 @@ static void H_R_tilde_to_R(void* steps_v, kalman_step_index_t length, kalman_ste
 		step_t* step_i = steps[j];
 		if (j == 0){ //First index
 			step_i->R = matrix_create_copy(step_i->R_tilde);
-	        printf("--- A set R step %d dim %d R %d-by-%d\n",step_i->step,step_i->dimension,matrix_rows(step_i->R),matrix_cols(step_i->R));
+	        //printf("--- A set R step %d dim %d R %d-by-%d\n",step_i->step,step_i->dimension,matrix_rows(step_i->R),matrix_cols(step_i->R));
 
 			continue;
 		}
@@ -465,7 +460,7 @@ static void H_R_tilde_to_R(void* steps_v, kalman_step_index_t length, kalman_ste
 		int32_t nn,ll;
         ll = matrix_rows(H_i);
 		nn = matrix_cols(H_i);
-        printf(">>> %d\n",__LINE__);
+        //printf(">>> %d\n",__LINE__);
 
 		matrix_t* QR  = matrix_create_vconcat(H_i, R_tilde);
 		matrix_t* TAU = matrix_create_mutate_qr(QR);
@@ -473,8 +468,8 @@ static void H_R_tilde_to_R(void* steps_v, kalman_step_index_t length, kalman_ste
 		matrix_t* R   = matrix_create_sub(QR,0,nn, 0, nn);
 		matrix_mutate_triu(R);
 		step_i->R = R;
-        printf("--- B set R step %d dim %d R %d-by-%d\n",step_i->step,step_i->dimension,matrix_rows(step_i->R),matrix_cols(step_i->R));
-        printf("--- nn=%d QR %d-by=%d\n",nn,matrix_rows(QR),matrix_cols(QR));
+        //printf("--- B set R step %d dim %d R %d-by-%d\n",step_i->step,step_i->dimension,matrix_rows(step_i->R),matrix_cols(step_i->R));
+        //printf("--- nn=%d QR %d-by=%d\n",nn,matrix_rows(QR),matrix_cols(QR));
 
 
 		step_i->Z = matrix_create_constant(matrix_rows(R_tilde), matrix_cols(F_i), 0);
@@ -482,13 +477,13 @@ static void H_R_tilde_to_R(void* steps_v, kalman_step_index_t length, kalman_ste
 
 		// the split should be after MIN(nn,matrix_rows(QR)), in case R is rectangular; in Matlab this is still nn!
 		int32_t mm = MIN(nn, matrix_rows(QR));
-		  printf(">>> %d\n",__LINE__);
-          printf("   top=%d bottom=%d cols=%d split=%d oldtop=%d zerofill=%d\n",nn,matrix_rows(R_tilde),ll,mm,matrix_rows(step_i->F_tilde),matrix_rows(step_i->Z));
-          printf("   top v=%d bottom v=%d\n",matrix_rows(step_i->c),matrix_rows(step_i->o));
+		  //printf(">>> %d\n",__LINE__);
+          //printf("   top=%d bottom=%d cols=%d split=%d oldtop=%d zerofill=%d\n",nn,matrix_rows(R_tilde),ll,mm,matrix_rows(step_i->F_tilde),matrix_rows(step_i->Z));
+          //printf("   top v=%d bottom v=%d\n",matrix_rows(step_i->c),matrix_rows(step_i->o));
 		apply_QT_to_block_matrix(QR, TAU, mm, &(step_i->F_tilde), &(step_i->Z));
-		  printf(">>> %d\n",__LINE__);
+		  //printf(">>> %d\n",__LINE__);
 		apply_QT_to_block_matrix(QR, TAU, mm, &(step_i->c), &(step_i->o));
-        printf(">>> %d\n",__LINE__);
+        //printf(">>> %d\n",__LINE__);
 
 		if(j + 1 != length){
 			matrix_t *X = step_i->X;
@@ -497,8 +492,8 @@ static void H_R_tilde_to_R(void* steps_v, kalman_step_index_t length, kalman_ste
 
 			step_i->X_tilde = matrix_create_copy(X);
 
-			  printf(">>> %d setting X for step %d (but not o)\n",__LINE__,step_i->step);
-	          printf("   top=%d bottom=%d split=%d\n",matrix_rows(step_i->Y),matrix_rows(step_i->X_tilde),mm);
+			  //printf(">>> %d setting X for step %d (but not o)\n",__LINE__,step_i->step);
+	          //printf("   top=%d bottom=%d split=%d\n",matrix_rows(step_i->Y),matrix_rows(step_i->X_tilde),mm);
 			apply_QT_to_block_matrix(QR, TAU, mm, &(step_i->Y), &(step_i->X_tilde));
 
 		}
@@ -522,9 +517,9 @@ static void H_tilde_G_to_G_tilde(void* steps_v, kalman_step_index_t length, kalm
 		matrix_t* H_tilde = step_ipo->H_tilde;
 		matrix_t* G_ipo = step_ipo->G;
 
-        printf(">>> %d step %d rows(H_tilde)=%d rows(c)=%d\n",__LINE__,step_ipo->step,matrix_rows(H_tilde),matrix_rows(step_ipo->c));
+        //printf(">>> %d step %d rows(H_tilde)=%d rows(c)=%d\n",__LINE__,step_ipo->step,matrix_rows(H_tilde),matrix_rows(step_ipo->c));
 
-        printf("   top=%d bottom=%d cols=%d\n",matrix_rows(H_tilde),matrix_rows(G_ipo),matrix_cols(H_tilde));
+        //printf("   top=%d bottom=%d cols=%d\n",matrix_rows(H_tilde),matrix_rows(G_ipo),matrix_cols(H_tilde));
 		matrix_t* QR  = matrix_create_vconcat(H_tilde, G_ipo);
 		matrix_t* TAU = matrix_create_mutate_qr(QR);
 
@@ -535,10 +530,10 @@ static void H_tilde_G_to_G_tilde(void* steps_v, kalman_step_index_t length, kalm
 		free_and_assign(&(step_ipo->G_tilde), R); 
 
         //int32_t nn = MIN(ll,matrix_cols(H_tilde));
-		  printf(">>> %d\n",__LINE__);
-	      printf("   top=%d bottom=%d split=%d QR %d-by-%d\n",matrix_rows(step_ipo->c),matrix_rows(step_ipo->o),ll,matrix_rows(QR),matrix_cols(QR));
+		  //printf(">>> %d\n",__LINE__);
+	      //printf("   top=%d bottom=%d split=%d QR %d-by-%d\n",matrix_rows(step_ipo->c),matrix_rows(step_ipo->o),ll,matrix_rows(QR),matrix_cols(QR));
 		apply_QT_to_block_matrix(QR, TAU, ll, &(step_ipo->c), &(step_ipo->o));
-        printf(">>> %d\n",__LINE__);
+        //printf(">>> %d\n",__LINE__);
 		matrix_free(QR);
 		matrix_free(TAU);
 
@@ -611,16 +606,16 @@ static void Solve_Estimates(void* steps_v, kalman_step_index_t length, kalman_st
 			matrix_t* X = step_i->X;
 			matrix_t* o_i = step_i->o;
 			matrix_t* mul = matrix_create_constant(matrix_rows(X), 1, 0);
-			  printf(">>> %d R0 X0\n",__LINE__);
-			  printf("   step=%d\n",step_i->step);
-              printf("   gemm X_i %d-by-%d x_ipo(%d) %d-by-%d -> %d-by=%d\n",matrix_rows(X),matrix_cols(X),step_ipo->step,matrix_rows(x_ipo),matrix_cols(x_ipo),matrix_rows(mul),matrix_cols(mul));
-              printf("   subtract from o_i %d-by-%d solve with R %d-by-%d\n",matrix_rows(o_i),matrix_cols(o_i),matrix_rows(R),matrix_cols(R));
+			  //printf(">>> %d R0 X0\n",__LINE__);
+			  //printf("   step=%d\n",step_i->step);
+              //printf("   gemm X_i %d-by-%d x_ipo(%d) %d-by-%d -> %d-by=%d\n",matrix_rows(X),matrix_cols(X),step_ipo->step,matrix_rows(x_ipo),matrix_cols(x_ipo),matrix_rows(mul),matrix_cols(mul));
+              //printf("   subtract from o_i %d-by-%d solve with R %d-by-%d\n",matrix_rows(o_i),matrix_cols(o_i),matrix_rows(R),matrix_cols(R));
 			matrix_mutate_gemm(1, X, x_ipo, 0, mul);
 			matrix_t* new_b = matrix_create_subtract(o_i, mul);
 
 			matrix_mutate_triu(R);
 			step_i->state = matrix_create_trisolve("U",R,new_b);
-			printf("   1 set state %d actual %d dim %d\n",step_i->step,matrix_rows(step_i->state),step_i->dimension);
+			//printf("   1 set state %d actual %d dim %d\n",step_i->step,matrix_rows(step_i->state),step_i->dimension);
 
 			matrix_free(mul);
 			matrix_free(new_b);
@@ -637,17 +632,17 @@ static void Solve_Estimates(void* steps_v, kalman_step_index_t length, kalman_st
 			matrix_t* c = step_i->c;
 
 			matrix_t* mul1 = matrix_create_constant(matrix_rows(F_tilde), 1, 0);
-			  printf(">>> %d\n",__LINE__);
+			  //printf(">>> %d\n",__LINE__);
 			matrix_mutate_gemm(1, F_tilde, x_imo, 0, mul1);
 			matrix_t* mul2 = matrix_create_constant(matrix_rows(Y), 1, 0);
-			  printf(">>> %d\n",__LINE__);
+			  //printf(">>> %d\n",__LINE__);
 			matrix_mutate_gemm(1, Y, x_ipo, 0, mul2);
 			matrix_t* new_b_mid = matrix_create_subtract(c, mul1);
 			matrix_t* new_b = matrix_create_subtract(new_b_mid, mul2);
 
 			matrix_mutate_triu(R);
 			step_i->state = matrix_create_trisolve("U",R,new_b);
-            printf("   2 set state %d actual %d dim %d\n",step_i->step,matrix_rows(step_i->state),step_i->dimension);
+            //printf("   2 set state %d actual %d dim %d\n",step_i->step,matrix_rows(step_i->state),step_i->dimension);
 
 			matrix_free(mul1);
 			matrix_free(mul2);
@@ -663,14 +658,14 @@ static void Solve_Estimates(void* steps_v, kalman_step_index_t length, kalman_st
 			matrix_t* c = step_i->c;
 
 			matrix_t* mul = matrix_create_constant(matrix_rows(F_tilde), 1, 0);
-			  printf(">>> %d\n",__LINE__);
+			  //printf(">>> %d\n",__LINE__);
 			matrix_mutate_gemm(1, F_tilde, x_imo, 0, mul);
 			matrix_t* new_b = matrix_create_subtract(c, mul);
 
 			matrix_mutate_triu(R);
 
 			step_i->state = matrix_create_trisolve("U",R,new_b);
-            printf("   3 set state %d actual %d dim %d\n",step_i->step,matrix_rows(step_i->state),step_i->dimension);
+            //printf("   3 set state %d actual %d dim %d\n",step_i->step,matrix_rows(step_i->state),step_i->dimension);
 
 			matrix_free(mul);
 			matrix_free(new_b);
@@ -749,19 +744,19 @@ static void SelInv(void* steps_v, void* converters_v, kalman_step_index_t length
 			matrix_t* Ainv_inz_inz = physical_step->R;
 
 			matrix_t* Ainv_j_inz = matrix_create(matrix_rows(L_j_inz), matrix_cols(Ainv_inz_inz));
-			  printf(">>> %d\n",__LINE__);
+			  //printf(">>> %d\n",__LINE__);
 			matrix_mutate_gemm(-1, L_j_inz, Ainv_inz_inz, 0, Ainv_j_inz);
 			
 			matrix_t* Dinv = step->R;
 
 			matrix_t* Dinv_Dinv_t = matrix_create(matrix_rows(Dinv), matrix_rows(Dinv));
 			matrix_t * Dinv_t = matrix_create_transpose(Dinv);
-			  printf(">>> %d\n",__LINE__);
+			  //printf(">>> %d\n",__LINE__);
 			matrix_mutate_gemm(1, Dinv, Dinv_t, 0, Dinv_Dinv_t);
 			matrix_free(Dinv_t);
 			matrix_t* L_j_inz_t = matrix_create_transpose(L_j_inz);
 			matrix_t* tmp = matrix_create(matrix_rows(Ainv_j_inz), matrix_rows(L_j_inz));
-			  printf(">>> %d\n",__LINE__);
+			  //printf(">>> %d\n",__LINE__);
 			matrix_mutate_gemm(1, Ainv_j_inz, L_j_inz_t, 0, tmp);
 
 			matrix_t* Ainv_j_j = matrix_create_subtract(Dinv_Dinv_t, tmp);
@@ -877,7 +872,7 @@ static void SelInv(void* steps_v, void* converters_v, kalman_step_index_t length
 
 	// 		Ainv_j_inz = -L_j_inz * Ainv_inz_inz;
 			matrix_t* Ainv_j_inz = matrix_create(matrix_rows(L_j_inz), matrix_cols(Ainv_inz_inz));
-			  printf(">>> %d\n",__LINE__);
+			  //printf(">>> %d\n",__LINE__);
 			matrix_mutate_gemm(-1, L_j_inz, Ainv_inz_inz, 0, Ainv_j_inz);
 			
 	// 		Dinv = kalman.steps{i}.R;
@@ -886,12 +881,12 @@ static void SelInv(void* steps_v, void* converters_v, kalman_step_index_t length
 	// 		Ainv_j_j = Dinv * Dinv' - Ainv_j_inz * L_j_inz';
 			matrix_t* Dinv_Dinv_t = matrix_create(matrix_rows(Dinv), matrix_rows(Dinv));
 			matrix_t * Dinv_t = matrix_create_transpose(Dinv);
-			  printf(">>> %d\n",__LINE__);
+			  //printf(">>> %d\n",__LINE__);
 			matrix_mutate_gemm(1, Dinv, Dinv_t, 0, Dinv_Dinv_t);
 			matrix_free(Dinv_t);
 			matrix_t* L_j_inz_t = matrix_create_transpose(L_j_inz);
 			matrix_t* tmp = matrix_create(matrix_rows(Ainv_j_inz), matrix_rows(L_j_inz));
-			  printf(">>> %d\n",__LINE__);
+			  //printf(">>> %d\n",__LINE__);
 			matrix_mutate_gemm(1, Ainv_j_inz, L_j_inz_t, 0, tmp);
 
 			matrix_t* Ainv_j_j = matrix_create_subtract(Dinv_Dinv_t, tmp);
@@ -936,7 +931,7 @@ static void SelInv(void* steps_v, void* converters_v, kalman_step_index_t length
 
 	// 		Ainv_j_inz = -L_j_inz * Ainv_inz_inz;
 			matrix_t* Ainv_j_inz = matrix_create(matrix_rows(L_j_inz), matrix_cols(Ainv_inz_inz));
-			  printf(">>> %d\n",__LINE__);
+			  //printf(">>> %d\n",__LINE__);
 			matrix_mutate_gemm(-1, L_j_inz, Ainv_inz_inz, 0, Ainv_j_inz);
 			
 	// 		Dinv = kalman.steps{i}.R;
@@ -945,12 +940,12 @@ static void SelInv(void* steps_v, void* converters_v, kalman_step_index_t length
 	// 		Ainv_j_j = Dinv * Dinv' - Ainv_j_inz * L_j_inz';
 			matrix_t* Dinv_Dinv_t = matrix_create(matrix_rows(Dinv), matrix_rows(Dinv));
 			matrix_t * Dinv_t = matrix_create_transpose(Dinv);
-			  printf(">>> %d\n",__LINE__);
+			  //printf(">>> %d\n",__LINE__);
 			matrix_mutate_gemm(1, Dinv, Dinv_t, 0, Dinv_Dinv_t);
 			matrix_free(Dinv_t);
 			matrix_t* L_j_inz_t = matrix_create_transpose(L_j_inz);
 			matrix_t* tmp = matrix_create(matrix_rows(Ainv_j_inz), matrix_rows(L_j_inz));
-			  printf(">>> %d\n",__LINE__);
+			  //printf(">>> %d\n",__LINE__);
 			matrix_mutate_gemm(1, Ainv_j_inz, L_j_inz_t, 0, tmp);
 
 			matrix_t* Ainv_j_j = matrix_create_subtract(Dinv_Dinv_t, tmp);
@@ -1063,10 +1058,10 @@ static void smooth_recursive(kalman_options_t options, step_t** steps, kalman_st
 
 		matrix_t* G = matrix_create_copy(singleStep->G);
 		matrix_t* o = matrix_create_copy(singleStep->o);
-        printf(">>> %d\n",__LINE__);
+        //printf(">>> %d\n",__LINE__);
 
 		matrix_t* TAU = matrix_create_mutate_qr(G);
-		  printf(">>> %d\n",__LINE__);
+		  //printf(">>> %d\n",__LINE__);
 		matrix_mutate_apply_qt(G,TAU,o);
 
 		matrix_mutate_triu(G);
@@ -1078,7 +1073,7 @@ static void smooth_recursive(kalman_options_t options, step_t** steps, kalman_st
 		matrix_t* RT = matrix_create_transpose(G);
 
 		matrix_t* RT_R = matrix_create_constant(matrix_cols(G), matrix_cols(G), 0);
-		  printf(">>> %d\n",__LINE__);
+		  //printf(">>> %d\n",__LINE__);
 		matrix_mutate_gemm(1, RT, G, 0, RT_R);
 
 		singleStep->R = matrix_create_inverse(RT_R);
@@ -1138,7 +1133,7 @@ static void smooth_recursive(kalman_options_t options, step_t** steps, kalman_st
 		matrix_t* c_i     = step_last->o;
 
 		matrix_t* QR = matrix_create_vconcat(G_tilde, Z);
-        printf(">>> %d\n",__LINE__);
+        //printf(">>> %d\n",__LINE__);
 
 		matrix_t* TAU = matrix_create_mutate_qr(QR);
 		matrix_t* R   = matrix_create_sub(QR,0,matrix_cols(QR), 0, matrix_cols(QR));
@@ -1147,7 +1142,7 @@ static void smooth_recursive(kalman_options_t options, step_t** steps, kalman_st
 		free_and_assign(&(step_lmo->G_tilde), R); //step_lmo->G_tilde = R;
 
 		int32_t ll = MAX(matrix_rows(G_tilde), matrix_cols(G_tilde)); // weird but see Matlab code
-		  printf(">>> %d\n",__LINE__);
+		  //printf(">>> %d\n",__LINE__);
 		apply_QT_to_block_matrix(QR, TAU, ll, &(step_lmo->c), &(step_last->o));
 		matrix_free(QR);
 		matrix_free(TAU);

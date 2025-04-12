@@ -242,9 +242,9 @@ matrix_t* matrix_create_sub(matrix_t* A, int32_t first_row, int32_t rows, int32_
 
 	assert(first_row >= 0);
 	assert(first_col >= 0);
-    if (first_row+rows > A->row_dim) printf("create_sub first_row=%d rows=%d rows(A)=%d\n",first_row,rows,A->row_dim);
+    //if (first_row+rows > A->row_dim) printf("create_sub first_row=%d rows=%d rows(A)=%d\n",first_row,rows,A->row_dim);
 	assert(first_row+rows <= A->row_dim);
-	if (first_col+cols > A->col_dim) printf("create_sub first_col=%d cols=%d cols(A)=%d\n",first_col,cols,A->col_dim);
+	//if (first_col+cols > A->col_dim) printf("create_sub first_col=%d cols=%d cols(A)=%d\n",first_col,cols,A->col_dim);
 	assert(first_col+cols <= A->col_dim);
 
 	matrix_t* C = matrix_create(rows,cols);
@@ -375,9 +375,9 @@ matrix_t* matrix_create_mutate_qr(matrix_t* A) {
 
 	matrix_t* TAU = matrix_create(N,1);
 
-    if (rows < cols) {
-      printf("create_mutate_qr: %d-by-%d M=%d N=%d LDA=%d\n",rows,cols,M,N,LDA);
-    }
+    //if (rows < cols) {
+    //  printf("create_mutate_qr: %d-by-%d M=%d N=%d LDA=%d\n",rows,cols,M,N,LDA);
+    //}
 
     LWORK = -1; // tell lapack to compute the size of the work area required
 	//if (debug) printf("dgeqrf: M=%d N=%d LDA=%d LWORK=%d\n",M,N,LDA,LWORK);
@@ -424,7 +424,7 @@ void matrix_mutate_apply_qt(matrix_t* QR, matrix_t* TAU, matrix_t* C) {
 	K = MIN(matrix_cols(QR),matrix_rows(QR)); // number of reflectors, R can have more columns than rows
 	LDA = matrix_ld(QR);
 	LDC = matrix_ld(C);
-	printf("dormqr M=%d N=%d K=%d LDA=%d LDC=%d\n",M,N,K,LDA,LDC);
+	//printf("dormqr M=%d N=%d K=%d LDA=%d LDC=%d\n",M,N,K,LDA,LDC);
 
 #ifdef BUILD_BLAS_UNDERSCORE
   dormqr_
