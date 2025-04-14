@@ -543,8 +543,8 @@ void matrix_mutate_chol(matrix_t* L) {
     assert(INFO==0);
 #ifdef BUILD_DEBUG_PRINTOUTS
     printf("dpotrf done\n");
-#endif
     printf("DPOTRF INFO=%d\n",INFO);
+#endif
 
     for (j=1; j<N; j++) {
       for (i=0; i<j; i++) {
