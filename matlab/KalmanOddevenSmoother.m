@@ -38,6 +38,7 @@ classdef KalmanOddevenSmoother < KalmanExplicitRepresentation
                 % singleStep.C should be upper-triangular at this point
                 R = singleStep.C;
                 singleStep.estimatedState = R \ singleStep.o;
+                %fprintf('Xs   set covariance for step %d;\n',indices(1));
                 singleStep.S = R \ ( eye(singleStep.dimension) / (R'));
                 singleStep.estimatedCovariance = CovarianceMatrix(singleStep.S,'C');
                 %fprintf('.   set covariance for step %d\n',indices(1));
@@ -236,11 +237,11 @@ classdef KalmanOddevenSmoother < KalmanExplicitRepresentation
                     o_i = kalman.steps{i}.o;
                     kalman.steps{i}.estimatedState = R \ (o_i - X * x_i_p_1);
 
-                    %fprintf('X   set covariance for step %d: %d\n',i,i_p_1);
+                    %fprintf('X0   set covariance for step %d; use %d\n',i,i_p_1);
                     S = eye(kalman.steps{i}.dimension) + X * kalman.steps{i_p_1}.S * X';
                     S = R \ ( S / (R') );
                     kalman.steps{i}.S = S;
-                    kalman.steps{i}.S_off = - R \ X * kalman.steps{i_p_1}.S;
+                    kalman.steps{i}.S_off = - R \ ( X * kalman.steps{i_p_1}.S );
                     kalman.steps{i}.i_off = i_p_1;
                     kalman.steps{i}.estimatedCovariance = CovarianceMatrix(S,'C');
                 elseif (j ~= l - 1)
@@ -256,25 +257,27 @@ classdef KalmanOddevenSmoother < KalmanExplicitRepresentation
 
                     kalman.steps{i}.estimatedState = R \ (c - B_tilde * x_i_m_1 - Y * x_i_p_1);
 
-                    %off_use = NaN;
+                    %fprintf('X    set covariance for step %d; use %d, %d\n',i,i_p_1,i_m_1);
+                    off_use = NaN;
                     Smm = kalman.steps{i_m_1}.S;
                     Spp = kalman.steps{i_p_1}.S;
                     if isfield(kalman.steps{i_p_1},'i_off') && kalman.steps{i_p_1}.i_off == i_m_1
-                        %off_use = i_p_1;
+                        off_use = i_p_1;
                         Smp = (kalman.steps{i_p_1}.S_off)';
                     end
                     if isfield(kalman.steps{i_p_1},'i1_off') && kalman.steps{i_p_1}.i1_off == i_m_1
-                        %off_use = -i_p_1; 
+                        off_use = -i_p_1; 
                         Smp = (kalman.steps{i_p_1}.S1_off)';
                     end
                     if isfield(kalman.steps{i_m_1},'i_off') && kalman.steps{i_m_1}.i_off == i_p_1 
-                        %off_use = i_m_1; 
+                        off_use = i_m_1; 
                         Smp = (kalman.steps{i_m_1}.S_off);
                     end
                     if isfield(kalman.steps{i_m_1},'i1_off') && kalman.steps{i_m_1}.i1_off == i_p_1 
-                        %off_use = -i_m_1; 
+                        off_use = -i_m_1; 
                         Smp = (kalman.steps{i_m_1}.S1_off);
                     end
+                    %fprintf('X    set covariance for step %d; use off %d\n',i,off_use);
                     %fprintf('B Y set covariance for step %d: %d %d (%d) \n',i, i_m_1, i_p_1,off_use);
                     S = eye(kalman.steps{i}.dimension) + (B_tilde * Smm * (B_tilde')) + (Y * Spp * (Y') + B_tilde * Smp * (Y') + Y * Smp' * (B_tilde'));
                     S = R \ ( S / (R') );
@@ -296,6 +299,7 @@ classdef KalmanOddevenSmoother < KalmanExplicitRepresentation
 
                     kalman.steps{i}.estimatedState = R \ (c - B_tilde * x_i_m_1);
 
+                    %fprintf('Xl   set covariance for step %d; use %d\n',i,i_m_1);
                     S = eye(kalman.steps{i}.dimension) + B_tilde * kalman.steps{i_m_1}.S * B_tilde' ;
                     S = R \ ( S / (R') );
                     kalman.steps{i}.S = S;
