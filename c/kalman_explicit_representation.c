@@ -244,7 +244,8 @@ static void observe(kalman_t *kalman, matrix_t *G_i, matrix_t *o_i, matrix_t *C_
 }
 
 static void smooth(kalman_t *kalman) {
-  fprintf(stderr,"explicit rep smooth\n");
+  //fprintf(stderr,"explicit rep smooth\n");
+  //printf("explicit rep smooth no-covariance? %d\n",kalman->options & KALMAN_NO_COVARIANCE);
 
   if (kalman->options & KALMAN_ALGORITHM_ODDEVEN)     kalman_smooth_oddeven    (kalman->options, (kalman_step_equations_t**) kalman->steps->elements, farray_size(kalman->steps));
   if (kalman->options & KALMAN_ALGORITHM_ASSOCIATIVE) kalman_smooth_associative(kalman->options, (kalman_step_equations_t**) kalman->steps->elements, farray_size(kalman->steps));
