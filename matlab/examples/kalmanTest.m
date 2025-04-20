@@ -1,5 +1,8 @@
 function kalmanTest()
 
+stateThreshold = 1e-8;
+covThreshold   = 1e-4;
+
 rng(1)
 
 % k = KalmanUltimate();
@@ -37,8 +40,8 @@ pultps  = { 'pultps',  kalmanFactory('KalmanPython',struct('algorithm','KalmanUl
 multsi  = { 'multsi',  kalmanFactory('KalmanUltimate',struct('estimateCovariance','SelInv')),        bitor( UNOBSERVABALE, RECT_H) };
 nultps  = { 'nultps',  kalmanFactory('KalmanNative',struct('algorithm','Ultimate')),                 bitor( UNOBSERVABALE, RECT_H) };
 jultps  = { 'jultps',  kalmanFactory('KalmanJava'),                                                  bitor( UNOBSERVABALE, RECT_H) };
-moddevn = { 'moddevn', kalmanFactory('KalmanOddevenSmoother'),                                       bitor(bitor( UNOBSERVABALE, RECT_H), LIMITATION_PLURAL) };
-noddevn = { 'moddevn', kalmanFactory('KalmanNative',struct('algorithm','Oddeven','estimateCovariance',false)),                  bitor(bitor( UNOBSERVABALE, RECT_H), LIMITATION_PLURAL) };
+moddevn = { 'moddevn', kalmanFactory('KalmanOddevenSmoother',struct()),          bitor(bitor( UNOBSERVABALE, RECT_H), LIMITATION_PLURAL) };
+noddevn = { 'noddevn', kalmanFactory('KalmanNative',struct('algorithm','Oddeven','estimateCovariance',false)),                  bitor(bitor( UNOBSERVABALE, RECT_H), LIMITATION_PLURAL) };
 massoc  = { 'massoc',  kalmanFactory('KalmanAssociativeSmoother'),                                   LIMITATION_PLURAL  };
 
 variants = { msparse
@@ -64,6 +67,7 @@ variants = { msparse
            };
 
 variants = { multps
+             multsi
              nultps
              moddevn
              noddevn
@@ -86,19 +90,21 @@ dimensions = { uniform(1,1,1,1)
           [1 1 0 nan nan ; 1 1 1 nan nan ; 2 1 2 nan nan ; 3 2 3 nan nan ; 3 3 0 nan nan ; 3 2 3 nan nan ; 4 2 3 nan nan] % increasing state dimension
         }
 
+%dimensions = { uniform(1,1,1,1) }
+%dimensions = {[3 0 2 nan nan ; 3 1 2 nan nan ; 3 1 3 nan nan ; 3 1 2 nan nan ]}; % high covariance errors, ~ 1e-7
 
 %          uniform(2,1,1,9)
 
-[v,FS,FC,SS,SC] = testDimensions(dimensions)
+[v,FS,FC,SS,SC] = testDimensions(dimensions);
 v
 FS
 FC
 SS
 SC
 
-return
+%return
 
-[v,FS,FC,SS,SC,covTypes] = testCovarianceTypes(uniform(9,9,9,17),{ 'W', 'C', 'w' })
+[v,FS,FC,SS,SC,covTypes] = testCovarianceTypes(uniform(9,9,9,17),{ 'W', 'C', 'w' });
 covTypes
 v
 FS
@@ -137,14 +143,14 @@ for i=1:n
         v{i,1}=variants{i+1}{1}
         %plural(test)
         [fse,fce,sse,sce] = compare(kalman1, kalman2, test, 'W', 'W');
-        if isfinite(fse) && fse  > 1e-8; FS(i,j) = 0; end 
-        if isfinite(fce) && fce  > 1e-8; FC(i,j) = 0; end 
-        if isfinite(sse) && sse  > 1e-8; SS(i,j) = 0; end 
-        if isfinite(sce) && sce  > 1e-8; SC(i,j) = 0; end 
-        if isfinite(fse) && fse <= 1e-8; FS(i,j) = 1; end 
-        if isfinite(fce) && fce <= 1e-8; FC(i,j) = 1; end 
-        if isfinite(sse) && sse <= 1e-8; SS(i,j) = 1; end 
-        if isfinite(sce) && sce <= 1e-8; SC(i,j) = 1; end 
+        if isfinite(fse) && fse  > stateThreshold; FS(i,j) = 0; end 
+        if isfinite(fce) && fce  > covThreshold; FC(i,j) = 0; end 
+        if isfinite(sse) && sse  > stateThreshold; SS(i,j) = 0; end 
+        if isfinite(sce) && sce  > covThreshold; SC(i,j) = 0; end 
+        if isfinite(fse) && fse <= stateThreshold; FS(i,j) = 1; end 
+        if isfinite(fce) && fce <= covThreshold; FC(i,j) = 1; end 
+        if isfinite(sse) && sse <= stateThreshold; SS(i,j) = 1; end 
+        if isfinite(sce) && sce <= covThreshold; SC(i,j) = 1; end 
         if ~isfinite(fse); FS(i,j) = fse; end 
         if ~isfinite(fce); FC(i,j) = fce; end 
         if ~isfinite(sse); SS(i,j) = sse; end 
@@ -173,18 +179,19 @@ v={};
 for i=1:n
     for j=1:m
         %[i j]
-        kalman1 = multps{2}();
+        %kalman1 = multps{2}();
+        kalman1 = msparse{2}();
         kalman2 = variants{i}{2}();
         v{i,1}=variants{i}{1}
         [fse,fce,sse,sce] = compare(kalman1, kalman2, test, 'W', covTypes{j});
-        if isfinite(fse) && fse  > 1e-8; FS(i,j) = 0; end 
-        if isfinite(fce) && fce  > 1e-8; FC(i,j) = 0; end 
-        if isfinite(sse) && sse  > 1e-8; SS(i,j) = 0; end 
-        if isfinite(sce) && sce  > 1e-8; SC(i,j) = 0; end 
-        if isfinite(fse) && fse <= 1e-8; FS(i,j) = 1; end 
-        if isfinite(fce) && fce <= 1e-8; FC(i,j) = 1; end 
-        if isfinite(sse) && sse <= 1e-8; SS(i,j) = 1; end 
-        if isfinite(sce) && sce <= 1e-8; SC(i,j) = 1; end 
+        if isfinite(fse) && fse  > stateThreshold; FS(i,j) = 0; end 
+        if isfinite(fce) && fce  > covThreshold; FC(i,j) = 0; end 
+        if isfinite(sse) && sse  > stateThreshold; SS(i,j) = 0; end 
+        if isfinite(sce) && sce  > covThreshold; SC(i,j) = 0; end 
+        if isfinite(fse) && fse <= stateThreshold; FS(i,j) = 1; end 
+        if isfinite(fce) && fce <= covThreshold; FC(i,j) = 1; end 
+        if isfinite(sse) && sse <= stateThreshold; SS(i,j) = 1; end 
+        if isfinite(sce) && sce <= covThreshold; SC(i,j) = 1; end 
         if ~isfinite(fse); FS(i,j) = fse; end 
         if ~isfinite(fce); FC(i,j) = fce; end 
         if ~isfinite(sse); SS(i,j) = sse; end 

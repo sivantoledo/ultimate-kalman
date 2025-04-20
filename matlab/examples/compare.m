@@ -14,6 +14,8 @@ function [fse,fce,sse,sce] = compare(kalman1, kalman2, seed, n, m, count, filter
 %
 % copyright 2024 Sivan Toledo
 
+rng(1)
+
 if ~isscalar(seed)
     test = seed;
     cov1type = n;
@@ -73,15 +75,23 @@ if ~isscalar(seed)
         [u1,Z1] = kalman1.estimate();
         [u2,Z2] = kalman2.estimate();
 
+        Z1 = Z1.explicit();
+        Z2 = Z2.explicit();
+        sz1 = sum(sum(Z1));
+        sz2 = sum(sum(Z2));
+
         filteredStateErr(i) = max(abs((u1-u2)./u1));
         %filteredCovErr(1)   = max(max(abs((Z1.explicit()-Z2.explicit())./Z1.explicit())));
-        filteredCovNorm       = max(max(abs(Z1.explicit())));
-        filteredCovEltErr(i)   = max(max(abs((Z1.explicit()-Z2.explicit())./Z1.explicit())));
-        filteredCovNrmErr(i)   = max(max(abs((Z1.explicit()-Z2.explicit())/filteredCovNorm)));
+        filteredCovNorm       = max(max(abs(Z1)));
+        filteredCovEltErr(i)   = max(max(abs((Z1-Z2)./Z1)));
+        filteredCovNrmErr(i)   = max(max(abs((Z1-Z2)/filteredCovNorm)));
 
-        if  isnan(sum(u1)) &&  isnan(sum(u2)); filteredStateErr(i)=0; filteredCovNrmErr(i)=0; end
-        if  isnan(sum(u1)) && ~isnan(sum(u2)); filteredStateErr(i)=inf; filteredCovNrmErr(i)=inf; end
-        if ~isnan(sum(u1)) &&  isnan(sum(u2)); filteredStateErr(i)=inf; filteredCovNrmErr(i)=inf; end
+        if  isnan(sum(u1)) &&  isnan(sum(u2)); filteredStateErr(i)=   0; end
+        if  isnan(sum(u1)) && ~isnan(sum(u2)); filteredStateErr(i)= inf; end
+        if ~isnan(sum(u1)) &&  isnan(sum(u2)); filteredStateErr(i)= inf; end
+        if  isnan(sz1) &&  isnan(sz2); filterCovNrmErr(i)=   0; end
+        if  isnan(sz1) && ~isnan(sz2); filteredCovNrmErr(i)= inf; end
+        if ~isnan(sz1) &&  isnan(sz2); filteredCovNrmErr(i)= inf; end
 
         %if filteredStateErr(i) > 1e-8
         %    i-1
@@ -104,20 +114,33 @@ if ~isscalar(seed)
         [u1,Z1] = kalman1.estimate(i-1);
         [u2,Z2] = kalman2.estimate(i-1);
 
+        Z1 = Z1.explicit();
+        Z2 = Z2.explicit();
+        sz1 = sum(sum(Z1));
+        sz2 = sum(sum(Z2));
+
+        %i
+        %[Z1 Z2 Z1-Z2]
+
         smoothedStateErr(i) = max(abs((u1-u2)./u1));
         %filteredCovErr(1)   = max(max(abs((Z1.explicit()-Z2.explicit())./Z1.explicit())));
-        smoothedCovNorm       = max(max(abs(Z1.explicit())));
-        smoothedCovEltErr(i)   = max(max(abs((Z1.explicit()-Z2.explicit())./Z1.explicit())));
-        smoothedCovNrmErr(i)   = max(max(abs((Z1.explicit()-Z2.explicit())/filteredCovNorm)));
+        smoothedCovNorm       = max(max(abs(Z1)));
+        smoothedCovEltErr(i)   = max(max(abs((Z1-Z2)./Z1)));
+        smoothedCovNrmErr(i)   = max(max(abs((Z1-Z2)/filteredCovNorm)));
 
-        if  isnan(sum(u1)) &&  isnan(sum(u2)); smoothedStateErr(i)=   0; smoothedCovNrmErr(i)=   0; end
-        if  isnan(sum(u1)) && ~isnan(sum(u2)); smoothedStateErr(i)= inf; smoothedCovNrmErr(i)= inf; end
-        if ~isnan(sum(u1)) &&  isnan(sum(u2)); smoothedStateErr(i)= inf; smoothedCovNrmErr(i)= inf; end
+        if  isnan(sum(u1)) &&  isnan(sum(u2)); smoothedStateErr(i)=   0; end
+        if  isnan(sum(u1)) && ~isnan(sum(u2)); smoothedStateErr(i)= inf; end
+        if ~isnan(sum(u1)) &&  isnan(sum(u2)); smoothedStateErr(i)= inf; end
+        if  isnan(sz1) &&  isnan(sz2); smoothedCovNrmErr(i)=   0; end
+        if  isnan(sz1) && ~isnan(sz2); smoothedCovNrmErr(i)= inf; end
+        if ~isnan(sz1) &&  isnan(sz2); smoothedCovNrmErr(i)= inf; end
     end
+
+    %smoothedCovNrmErr
 
     sse = max(smoothedStateErr);
     sce = max(smoothedCovNrmErr);
-    fprintf('max smoothed relative error %.2e (elementwise) max smoothed covariance error %.2e (normwise)\n', fse, fce);
+    fprintf('max smoothed relative error %.2e (elementwise) max smoothed covariance error %.2e (normwise)\n', sse, sce);
 
     return
 end
