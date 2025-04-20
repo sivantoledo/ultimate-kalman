@@ -611,9 +611,10 @@ static void SelInvHelper() {
 }
 
 //void Solve_Estimates(void* kalman_v, void* steps_v, int length, int** helper, kalman_step_index_t start, kalman_step_index_t end){
-static void Solve_Estimates(void* steps_v, kalman_step_index_t length, kalman_step_index_t start, kalman_step_index_t end){
+static void Solve_Estimates(void* steps_v, void* compute_covariance_matrices_v, kalman_step_index_t length, kalman_step_index_t start, kalman_step_index_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
 	step_t** steps = (step_t**) steps_v;
+	int compute_covariance_matrices = (int) ( compute_covariance_matrices_v != NULL );
 
 	for (kalman_step_index_t j_ = start; j_ < end; ++j_){
 		kalman_step_index_t j = j_ * 2;
@@ -643,6 +644,7 @@ static void Solve_Estimates(void* steps_v, kalman_step_index_t length, kalman_st
 			matrix_free(mul);
 			matrix_free(new_b);
 
+            if (compute_covariance_matrices) {
 			// now compute covariance, if needed
 
             // R = kalman.steps{i}.R;
@@ -651,7 +653,6 @@ static void Solve_Estimates(void* steps_v, kalman_step_index_t length, kalman_st
             // kalman.steps{i}.S_off = - R \ X * kalman.steps{i_p_1}.S;
             // kalman.steps{i}.i_off = i_p_1;
             // kalman.steps{i}.estimatedCovariance = CovarianceMatrix(S,'C');
-
             // X = kalman.steps{i}.X;
             // S = eye(kalman.steps{i}.dimension) + X * kalman.steps{i_p_1}.S * X';
             //printf("21 j=%d step=%d step_ipo=%d step_ipo->S=%08x\n",j,step_i->step,step_ipo->step,step_ipo->S); fflush(stdout);
@@ -699,6 +700,7 @@ static void Solve_Estimates(void* steps_v, kalman_step_index_t length, kalman_st
             // kalman.steps{i}.estimatedCovariance = CovarianceMatrix(S,'C');
 			step_i->covariance = matrix_create_copy(step_i->S);
             //printf("29\n"); fflush(stdout);
+			} // compute_covariance_matrices
 
 		}else if (j != length - 1){
 			
@@ -729,6 +731,7 @@ static void Solve_Estimates(void* steps_v, kalman_step_index_t length, kalman_st
 			matrix_free(new_b_mid);
 			matrix_free(new_b);
 
+			if (compute_covariance_matrices) {
             // now compute covariance using SelInv; B_tilde in the Matlab code is F_tilde in the native code
 
             //B_tilde = kalman.steps{i}.B_tilde;
@@ -895,6 +898,7 @@ static void Solve_Estimates(void* steps_v, kalman_step_index_t length, kalman_st
             // kalman.steps{i}.estimatedCovariance = CovarianceMatrix(S,'C');
             step_i->covariance = matrix_create_copy(step_i->S);
             //printf("6\n"); fflush(stdout);
+			} // if compute_covariance_matrices
 
 		}else{
 
@@ -918,6 +922,7 @@ static void Solve_Estimates(void* steps_v, kalman_step_index_t length, kalman_st
 			matrix_free(mul);
 			matrix_free(new_b);
 
+			if (compute_covariance_matrices) {
 			// now compute covariance using SelInv; B_tilde in the Matlab code is F_tilde in the native code
 
             // B_tilde = kalman.steps{i}.B_tilde;
@@ -964,9 +969,12 @@ static void Solve_Estimates(void* steps_v, kalman_step_index_t length, kalman_st
             // kalman.steps{i}.estimatedCovariance = CovarianceMatrix(S,'C');
             step_i->covariance = matrix_create_copy(step_i->S);
             //printf("19\n"); fflush(stdout);
+			} // compute_covariance_matrices
 		}
 	}
 }
+
+#ifdef SHAHAF_S_SELINV_IMPLEMENTATION
 // ==========================================
 // Cov Change 4
 // ==========================================
@@ -1340,6 +1348,8 @@ static kalman_step_index_t** virtual_physical(kalman_step_index_t n) {
 	free(variables);
 	return result;
 }
+#endif // SHAHAF_S_SELINV_IMPLEMENTATION
+
 // ==========================================
 // End Cov Change 2
 // ==========================================
@@ -1400,10 +1410,14 @@ static void smooth_recursive(kalman_options_t options, step_t** steps, kalman_st
         matrix_free(eye);
         matrix_mutate_trisolve("U", QR, temp); // (R\S) / R', but transposed
         matrix_free(QR);
+
+        if ((options & KALMAN_NO_COVARIANCE) == 0) {
+
         //printf(">8> set step[%d]->S\n",singleStep->step); fflush(stdout);
         singleStep->S = matrix_create_transpose(temp); // transpose the result
         matrix_free(temp);
         singleStep->covariance = matrix_create_copy(singleStep->S);
+        } // if (compute_covariance_matrices)
 
 		return;
     }
@@ -1491,11 +1505,13 @@ static void smooth_recursive(kalman_options_t options, step_t** steps, kalman_st
 	//#else
 	//Solve_Estimates(NULL, steps, length, NULL, 0, (length + 1)/2);
 	//#endif
-	foreach_in_range(Solve_Estimates, steps, length, (length + 1)/2);
+	foreach_in_range_two(Solve_Estimates, steps, (void*) ((options & KALMAN_NO_COVARIANCE) == 0), length, (length + 1)/2);
 
 	// ==========================================
 	// Change 1
 	// ==========================================
+
+#ifdef SHAHAF_S_SELINV_IMPLEMENTATION
 
 	if ((options & KALMAN_NO_COVARIANCE) == 0) {
 	  printf("oddeven: computing covariance\n");
@@ -1528,6 +1544,7 @@ static void smooth_recursive(kalman_options_t options, step_t** steps, kalman_st
 	  printf("oddeven: NOT computing covariance\n");
 
 	}
+#endif
 	// % ==========================================
 	// % End Change 1
 	// % ==========================================

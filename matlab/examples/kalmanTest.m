@@ -41,7 +41,9 @@ multsi  = { 'multsi',  kalmanFactory('KalmanUltimate',struct('estimateCovariance
 nultps  = { 'nultps',  kalmanFactory('KalmanNative',struct('algorithm','Ultimate')),                 bitor( UNOBSERVABALE, RECT_H) };
 jultps  = { 'jultps',  kalmanFactory('KalmanJava'),                                                  bitor( UNOBSERVABALE, RECT_H) };
 moddevn = { 'moddevn', kalmanFactory('KalmanOddevenSmoother',struct()),          bitor(bitor( UNOBSERVABALE, RECT_H), LIMITATION_PLURAL) };
-noddevn = { 'noddevn', kalmanFactory('KalmanNative',struct('algorithm','Oddeven','estimateCovariance',false)),                  bitor(bitor( UNOBSERVABALE, RECT_H), LIMITATION_PLURAL) };
+modd_nc = { 'moddevn', kalmanFactory('KalmanOddevenSmoother',struct('estimateCovariance',false)),          bitor(bitor( UNOBSERVABALE, RECT_H), LIMITATION_PLURAL) };
+noddevn = { 'noddevn', kalmanFactory('KalmanNative',struct('algorithm','Oddeven')),                             bitor(bitor( UNOBSERVABALE, RECT_H), LIMITATION_PLURAL) };
+nodd_nc = { 'noddevn', kalmanFactory('KalmanNative',struct('algorithm','Oddeven','estimateCovariance',false)),                  bitor(bitor( UNOBSERVABALE, RECT_H), LIMITATION_PLURAL) };
 massoc  = { 'massoc',  kalmanFactory('KalmanAssociativeSmoother'),                                   LIMITATION_PLURAL  };
 
 variants = { msparse
@@ -70,7 +72,9 @@ variants = { multps
              multsi
              nultps
              moddevn
+             modd_nc
              noddevn
+             nodd_nc
            };
 
 dimensions = { uniform(1,1,1,1)
