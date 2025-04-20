@@ -40,6 +40,9 @@ static void mex_assert(int c, int line) {
 #include <assert.h>
 #endif
 
+#include <assert.h>
+
+
 #define KALMAN_MATRIX_SHORT_TYPE
 #include "kalman.h"
 #include "parallel.h"
@@ -75,6 +78,12 @@ typedef struct step_st {
 	kalman_matrix_t* R_tilde;
 	kalman_matrix_t* G_tilde;
 
+    kalman_matrix_t* S;
+    kalman_matrix_t* S_off;
+    kalman_matrix_t* S1_off;
+    kalman_step_index_t i_off;
+    kalman_step_index_t i1_off;
+
 	kalman_matrix_t* state;
 	kalman_matrix_t* covariance;
 } step_t;
@@ -104,6 +113,12 @@ static void* step_create() {
 	s->R_tilde = NULL;
 	s->G_tilde = NULL;
 
+    s->S = NULL;
+    s->S_off = NULL;
+    s->S1_off = NULL;
+    s->i_off  = -1;
+    s->i1_off = -1;
+
 	s->state = NULL;
 	s->covariance = NULL;
 
@@ -132,6 +147,10 @@ static void step_free(void* v) {
 	matrix_free(s->H_tilde);
 	matrix_free(s->R_tilde);
 	matrix_free(s->G_tilde);
+
+    matrix_free(s->S);
+    matrix_free(s->S_off);
+    matrix_free(s->S1_off);
 
 	matrix_free(s->state);
 	matrix_free(s->covariance);
@@ -587,6 +606,10 @@ static void extract_recursion_steps(void* new_steps_v, void* steps_v, kalman_ste
 	}
 }
 
+static void SelInvHelper() {
+
+}
+
 //void Solve_Estimates(void* kalman_v, void* steps_v, int length, int** helper, kalman_step_index_t start, kalman_step_index_t end){
 static void Solve_Estimates(void* steps_v, kalman_step_index_t length, kalman_step_index_t start, kalman_step_index_t end){
 	//kalman_t* kalman = (kalman_t*) kalman_v;
@@ -620,6 +643,63 @@ static void Solve_Estimates(void* steps_v, kalman_step_index_t length, kalman_st
 			matrix_free(mul);
 			matrix_free(new_b);
 
+			// now compute covariance, if needed
+
+            // R = kalman.steps{i}.R;
+            // S = R \ ( S / (R') );
+            // kalman.steps{i}.S = S;
+            // kalman.steps{i}.S_off = - R \ X * kalman.steps{i_p_1}.S;
+            // kalman.steps{i}.i_off = i_p_1;
+            // kalman.steps{i}.estimatedCovariance = CovarianceMatrix(S,'C');
+
+            // X = kalman.steps{i}.X;
+            // S = eye(kalman.steps{i}.dimension) + X * kalman.steps{i_p_1}.S * X';
+            //printf("21 j=%d step=%d step_ipo=%d step_ipo->S=%08x\n",j,step_i->step,step_ipo->step,step_ipo->S); fflush(stdout);
+			assert( step_ipo->S != NULL );
+            //printf(">>> use step[%d]->S\n",step_ipo->step); fflush(stdout);
+            //printf("21.1\n"); fflush(stdout);
+			matrix_t* XS   = matrix_create_multiply( X, step_ipo->S );
+            //printf("21.2\n"); fflush(stdout);
+			matrix_t* Xt   = matrix_create_transpose( X );
+            //printf("21.3\n"); fflush(stdout);
+			matrix_t* XSXt = matrix_create_multiply( XS, Xt );
+            //printf("21.4\n"); fflush(stdout);
+            matrix_free(Xt);
+            matrix_free(XS);
+            //printf("21.5\n"); fflush(stdout);
+            assert(matrix_rows(XSXt)==step_i->dimension);
+            assert(matrix_cols(XSXt)==step_i->dimension);
+            //printf("21.6\n"); fflush(stdout);
+			for (int32_t i=0; i<step_i->dimension; i++) {
+			  matrix_set( XSXt, i, i, 1.0 + matrix_get(XSXt,i,i) ); // add I
+			}
+            // S = R \ ( S / (R') );
+			// kalman.steps{i}.S = S;
+            //printf("22\n"); fflush(stdout);
+            matrix_mutate_trisolve("U", R, XSXt); // start with R\S
+            matrix_t* temp = matrix_create_transpose(XSXt);
+            matrix_free(XSXt);
+            matrix_mutate_trisolve("U", R, temp); // (R\S) / R', but transposed
+			step_i->S = matrix_create_transpose(temp); // transpose the result
+			matrix_free(temp);
+            // kalman.steps{i}.S_off = - R \ X * kalman.steps{i_p_1}.S;
+            //printf(">1> set step[%d]->S\n",step_i->step); fflush(stdout);
+			step_i->S_off = matrix_create_multiply(X,step_ipo->S);
+			matrix_mutate_trisolve("U", R, step_i->S_off);
+            matrix_mutate_scale( step_i->S_off, -1.0 );
+            //printf("S = ");
+            //matrix_print(step_i->S,"%.4f");
+            //printf("X = ");
+            //matrix_print(X,"%.4f");
+            //printf("S_off = ");
+            //matrix_print(step_i->S_off,"%.4f");
+            // kalman.steps{i}.i_off = i_p_1;
+            //printf(">2> set step[%d]->i_off=%d (%d)\n",step_i->step,j+1,step_ipo->step); fflush(stdout);
+			step_i->i_off = step_ipo->step;
+            // kalman.steps{i}.estimatedCovariance = CovarianceMatrix(S,'C');
+			step_i->covariance = matrix_create_copy(step_i->S);
+            //printf("29\n"); fflush(stdout);
+
 		}else if (j != length - 1){
 			
 			step_t* step_ipo = steps[j + 1];
@@ -648,6 +728,174 @@ static void Solve_Estimates(void* steps_v, kalman_step_index_t length, kalman_st
 			matrix_free(mul2);
 			matrix_free(new_b_mid);
 			matrix_free(new_b);
+
+            // now compute covariance using SelInv; B_tilde in the Matlab code is F_tilde in the native code
+
+            //B_tilde = kalman.steps{i}.B_tilde;
+            //Y = kalman.steps{i}.Y;
+            //Smm = kalman.steps{i_m_1}.S;
+            //Spp = kalman.steps{i_p_1}.S;
+            //if isfield(kalman.steps{i_p_1},'i_off') && kalman.steps{i_p_1}.i_off == i_m_1
+            //    Smp = (kalman.steps{i_p_1}.S_off)';
+            //end
+            //if isfield(kalman.steps{i_p_1},'i1_off') && kalman.steps{i_p_1}.i1_off == i_m_1
+            //    Smp = (kalman.steps{i_p_1}.S1_off)';
+            //end
+            //if isfield(kalman.steps{i_m_1},'i_off') && kalman.steps{i_m_1}.i_off == i_p_1
+            //    Smp = (kalman.steps{i_m_1}.S_off);
+            //end
+            //if isfield(kalman.steps{i_m_1},'i1_off') && kalman.steps{i_m_1}.i1_off == i_p_1
+            //    Smp = (kalman.steps{i_m_1}.S1_off);
+            //end
+            //S = eye(kalman.steps{i}.dimension) + (B_tilde * Smm * (B_tilde')) + (Y * Spp * (Y') + B_tilde * Smp * (Y') + Y * Smp' * (B_tilde'));
+            //S = R \ ( S / (R') );
+            //kalman.steps{i}.S = S;
+            //kalman.steps{i}.i_off  = i_m_1;
+            //kalman.steps{i}.S_off  = -R \ (B_tilde * Smm + Y * Smp' );
+            //kalman.steps{i}.i1_off = i_p_1;
+            //kalman.steps{i}.S1_off = -R \ (Y * Spp + B_tilde * Smp );
+            //kalman.steps{i}.estimatedCovariance = CovarianceMatrix(S,'C');
+
+            //Smm = kalman.steps{i_m_1}.S;
+            //Spp = kalman.steps{i_p_1}.S;
+			//printf("1\n"); fflush(stdout);
+            //printf(">>> use step[%d]->S\n",step_ipo->step); fflush(stdout);
+            //printf(">>> use step[%d]->S\n",step_imo->step); fflush(stdout);
+            //printf(">>> off diagonal cols (for %d): %d %d %d %d\n",step_i->step,step_ipo->i_off,step_ipo->i1_off,step_imo->i_off,step_imo->i1_off); fflush(stdout);
+			assert( step_ipo->S );
+			assert( step_imo->S );
+			matrix_t* Smm = step_imo->S;
+            matrix_t* Spp = step_ipo->S;
+            matrix_t* Smp   = NULL;
+            matrix_t* Smp_t = NULL;
+            //if isfield(kalman.steps{i_p_1},'i_off') && kalman.steps{i_p_1}.i_off == i_m_1
+            //    Smp = (kalman.steps{i_p_1}.S_off)';
+            //end
+            if (step_ipo->i_off  == step_imo->step) {
+              Smp_t = matrix_create_copy(step_ipo->S_off);
+              Smp = matrix_create_transpose(Smp_t);
+            }
+            //if isfield(kalman.steps{i_p_1},'i1_off') && kalman.steps{i_p_1}.i1_off == i_m_1
+            //    Smp = (kalman.steps{i_p_1}.S1_off)';
+            //end
+            if (step_ipo->i1_off == step_imo->step) {
+              Smp_t = matrix_create_copy(Smp = step_ipo->S1_off);
+              Smp = matrix_create_transpose(Smp_t);
+            }
+            //if isfield(kalman.steps{i_m_1},'i_off') && kalman.steps{i_m_1}.i_off == i_p_1
+            //    Smp = (kalman.steps{i_m_1}.S_off);
+            //end
+            if (step_imo->i_off  == step_ipo->step) {
+              Smp = matrix_create_copy(step_imo->S_off);
+              Smp_t = matrix_create_transpose(Smp);
+            }
+            //if isfield(kalman.steps{i_m_1},'i1_off') && kalman.steps{i_m_1}.i1_off == i_p_1
+            //    Smp = (kalman.steps{i_m_1}.S1_off);
+            //end
+            if (step_imo->i1_off == step_ipo->step) {
+              Smp = matrix_create_copy(step_imo->S1_off);
+              Smp_t = matrix_create_transpose(Smp);
+            }
+            assert( Smp != NULL );
+            //S = eye(kalman.steps{i}.dimension) + (B_tilde * Smm * (B_tilde')) + (Y * Spp * (Y') + B_tilde * Smp * (Y') + Y * Smp' * (B_tilde'));
+            //printf("2 %08x\n",Smp); fflush(stdout);
+            matrix_t* XS   = matrix_create_multiply( F_tilde, Smm );
+            //printf("2.1\n"); fflush(stdout);
+            matrix_t* Xt   = matrix_create_transpose( F_tilde );
+            //printf("2.2\n"); fflush(stdout);
+            matrix_t* XSXt = matrix_create_multiply( XS, Xt );
+            //printf("2.3\n"); fflush(stdout);
+            matrix_free(XS);
+            matrix_free(Xt);
+
+            //printf("2.4\n"); fflush(stdout);
+            matrix_t* YS   = matrix_create_multiply( Y, Spp );
+            //printf("2.5\n"); fflush(stdout);
+            matrix_t* Yt   = matrix_create_transpose( Y );
+            //printf("2.6\n"); fflush(stdout);
+            matrix_t* YSYt = matrix_create_multiply( YS, Yt );
+            matrix_free(YS);
+
+            //printf("2.7\n"); fflush(stdout);
+            //printf("2.7 %08x %08x\n",F_tilde,Smp); fflush(stdout);
+
+            matrix_t* XSoff   = matrix_create_multiply( F_tilde, Smp );
+            //printf("2.8\n"); fflush(stdout);
+            matrix_t* XSoffYt = matrix_create_multiply( XSoff, Yt );
+            matrix_free(XSoff);
+            matrix_free(Yt);
+
+            matrix_t* XSoffYt_t = matrix_create_transpose( XSoffYt );
+
+            //printf("3\n"); fflush(stdout);
+            matrix_t* Acc1 = matrix_create_add(XSXt, YSYt);
+            matrix_free(XSXt);
+            matrix_free(YSYt);
+            matrix_t* Acc2 = matrix_create_add(Acc1, XSoffYt);
+            matrix_free(Acc1);
+            matrix_free(XSoffYt);
+            matrix_t* Acc3 = matrix_create_add(Acc2, XSoffYt_t);
+            matrix_free(Acc2);
+            matrix_free(XSoffYt_t);
+
+            for (int32_t i=0; i<step_i->dimension; i++) {
+              matrix_set( Acc3, i, i, 1.0 + matrix_get(Acc3,i,i) ); // add I
+            }
+            //printf("F_tilde = ");
+            //matrix_print(F_tilde,"%.4f");
+            //printf("Y = ");
+            //matrix_print(Y,"%.4f");
+            //printf("Spp = ");
+            //matrix_print(Spp,"%.4f");
+            //printf("Smm = ");
+            //matrix_print(Smm,"%.4f");
+            //printf("Smp = ");
+            //matrix_print(Smp,"%.4f");
+            //printf("Acc3 = ");
+            //matrix_print(Acc3,"%.4f");
+            //S = R \ ( S / (R') );
+            //kalman.steps{i}.S = S;
+            //printf("4\n"); fflush(stdout);
+            matrix_mutate_trisolve("U", R, Acc3); // start with R\S
+            matrix_t* temp = matrix_create_transpose(Acc3);
+            matrix_free(Acc3);
+            matrix_mutate_trisolve("U", R, temp); // (R\S) / R', but transposed
+            //printf(">3> set step[%d]->S\n",step_i->step); fflush(stdout);
+            step_i->S = matrix_create_transpose(temp); // transpose the result
+            matrix_free(temp);
+            //printf("S[%d] = ",step_i->step);
+            //matrix_print(step_i->S,"%.4f");
+
+            //kalman.steps{i}.i_off  = i_m_1;
+            //kalman.steps{i}.S_off  = -R \ (B_tilde * Smm + Y * Smp' );
+            //kalman.steps{i}.i1_off = i_p_1;
+            //kalman.steps{i}.S1_off = -R \ (Y * Spp + B_tilde * Smp );
+            //printf("5\n"); fflush(stdout);
+            matrix_t* t1 = matrix_create_multiply(F_tilde,Smm);
+            matrix_t* t2 = matrix_create_multiply(Y,Smp_t);
+            matrix_free(Smp_t);
+            step_i->S_off = matrix_create_add(t1,t2);
+            matrix_free(t1);
+            matrix_free(t2);
+            matrix_mutate_trisolve("U", R, step_i->S_off);
+            matrix_mutate_scale( step_i->S_off, -1.0 );
+
+            matrix_t* t3 = matrix_create_multiply(Y,Spp);
+            matrix_t* t4 = matrix_create_multiply(F_tilde,Smp);
+            matrix_free(Smp);
+            step_i->S1_off = matrix_create_add(t3,t4);
+            matrix_free(t3);
+            matrix_free(t4);
+            matrix_mutate_trisolve("U", R, step_i->S1_off);
+            matrix_mutate_scale( step_i->S1_off, -1.0 );
+            step_i->i_off  = step_imo->step;
+            step_i->i1_off = step_ipo->step;
+            //printf(">4> set step[%d]->i_off =%d (%d)\n",step_i->step,j-1,step_imo->step); fflush(stdout);
+            //printf(">5> set step[%d]->i1_off=%d (%d)\n",step_i->step,j+1,step_ipo->step); fflush(stdout);
+            // kalman.steps{i}.estimatedCovariance = CovarianceMatrix(S,'C');
+            step_i->covariance = matrix_create_copy(step_i->S);
+            //printf("6\n"); fflush(stdout);
+
 		}else{
 
 			
@@ -669,6 +917,53 @@ static void Solve_Estimates(void* steps_v, kalman_step_index_t length, kalman_st
 
 			matrix_free(mul);
 			matrix_free(new_b);
+
+			// now compute covariance using SelInv; B_tilde in the Matlab code is F_tilde in the native code
+
+            // B_tilde = kalman.steps{i}.B_tilde;
+            // S = eye(kalman.steps{i}.dimension) + B_tilde * kalman.steps{i_m_1}.S * B_tilde' ;
+            // S = R \ ( S / (R') );
+            // kalman.steps{i}.S = S;
+            // kalman.steps{i}.S_off = - R \ B_tilde * kalman.steps{i_m_1}.S;
+            // kalman.steps{i}.i_off = i_m_1;
+            // kalman.steps{i}.estimatedCovariance = CovarianceMatrix(S,'C');
+
+            // S = eye(kalman.steps{i}.dimension) + B_tilde * kalman.steps{i_m_1}.S * B_tilde' ;
+            //printf("11\n"); fflush(stdout);
+            //printf(">>> use step[%d]->S\n",step_imo->step); fflush(stdout);
+			assert( step_imo->S );
+			matrix_t* XS   = matrix_create_multiply( F_tilde, step_imo->S );
+            matrix_t* Xt   = matrix_create_transpose( F_tilde );
+            matrix_t* XSXt = matrix_create_multiply( XS, Xt );
+            for (int32_t i=0; i<step_i->dimension; i++) {
+              matrix_set( XSXt, i, i, 1.0 + matrix_get(XSXt,i,i) ); // add I
+            }
+            matrix_free(Xt);
+            matrix_free(XS);
+            // S = R \ ( S / (R') );
+            // kalman.steps{i}.S = S;
+            //printf("12\n"); fflush(stdout);
+            matrix_mutate_trisolve("U", R, XSXt); // start with R\S
+            matrix_t* temp = matrix_create_transpose(XSXt);
+            matrix_free(XSXt);
+            matrix_mutate_trisolve("U", R, temp); // (R\S) / R', but transposed
+            //printf(">6> set step[%d]->S\n",step_i->step); fflush(stdout);
+            step_i->S = matrix_create_transpose(temp); // transpose the result
+            matrix_free(temp);
+            // kalman.steps{i}.S_off = - R \ B_tilde * kalman.steps{i_m_1}.S;
+            step_i->S_off = matrix_create_multiply(F_tilde,step_imo->S);
+            matrix_mutate_trisolve("U", R, step_i->S_off);
+            matrix_mutate_scale( step_i->S_off, -1.0 );
+            // kalman.steps{i}.i_off = i_m_1;
+            step_i->i_off = step_imo->step;
+            //printf(">7> set step[%d]->i_off=%d (%d)\n",step_i->step,j-1,step_imo->step); fflush(stdout);
+
+            //printf("S_off[%d] = ",step_i->step);
+            //matrix_print(step_i->S_off,"%.4f");
+
+            // kalman.steps{i}.estimatedCovariance = CovarianceMatrix(S,'C');
+            step_i->covariance = matrix_create_copy(step_i->S);
+            //printf("19\n"); fflush(stdout);
 		}
 	}
 }
@@ -1056,25 +1351,31 @@ static void smooth_recursive(kalman_options_t options, step_t** steps, kalman_st
 
 		step_t* singleStep = steps[0];
 
-		matrix_t* G = matrix_create_copy(singleStep->G);
+		matrix_t* QR = matrix_create_copy(singleStep->G);
 		matrix_t* o = matrix_create_copy(singleStep->o);
         //printf(">>> %d\n",__LINE__);
 
-		matrix_t* TAU = matrix_create_mutate_qr(G);
+		matrix_t* TAU = matrix_create_mutate_qr(QR);
 		  //printf(">>> %d\n",__LINE__);
-		matrix_mutate_apply_qt(G,TAU,o);
+		matrix_mutate_apply_qt(QR,TAU,o);
 
-		matrix_mutate_triu(G);
+		matrix_mutate_triu(QR);
+
+        singleStep->state = matrix_create_trisolve("U",QR,o); // TODO change o to singleStep->o, no mutation
+
+        matrix_free(TAU);
+        //matrix_free(QR);
+        matrix_free(o);
 
 		// ==========================================
 		// Cov Change 3
 		// ==========================================
+#ifdef OBSOLETE
+		matrix_t* RT = matrix_create_transpose(QR);
 
-		matrix_t* RT = matrix_create_transpose(G);
-
-		matrix_t* RT_R = matrix_create_constant(matrix_cols(G), matrix_cols(G), 0);
+		matrix_t* RT_R = matrix_create_constant(matrix_cols(QR), matrix_cols(QR), 0);
 		  //printf(">>> %d\n",__LINE__);
-		matrix_mutate_gemm(1, RT, G, 0, RT_R);
+		matrix_mutate_gemm(1, RT, QR, 0, RT_R);
 
 		singleStep->R = matrix_create_inverse(RT_R);
 
@@ -1082,16 +1383,28 @@ static void smooth_recursive(kalman_options_t options, step_t** steps, kalman_st
 
 		matrix_free(RT);
 		matrix_free(RT_R);
-		
+#endif
 		// ==========================================
 		// End Cov Change 3
 		// ==========================================
-		singleStep->state = matrix_create_trisolve("U",G,o);
 		
-		matrix_free(TAU);
-		matrix_free(G);
-		matrix_free(o);
-		
+		// now compute covariance; C in Matlab is G here
+
+        //R = singleStep.C;
+        //singleStep.estimatedState = R \ singleStep.o;
+         //singleStep.S = R \ ( eye(singleStep.dimension) / (R'));
+        //printf("01\n"); fflush(stdout);
+		matrix_t* eye = matrix_create_identity(singleStep->dimension,singleStep->dimension);
+        matrix_mutate_trisolve("U", QR, eye); // start with R\eye
+        matrix_t* temp = matrix_create_transpose(eye);
+        matrix_free(eye);
+        matrix_mutate_trisolve("U", QR, temp); // (R\S) / R', but transposed
+        matrix_free(QR);
+        //printf(">8> set step[%d]->S\n",singleStep->step); fflush(stdout);
+        singleStep->S = matrix_create_transpose(temp); // transpose the result
+        matrix_free(temp);
+        singleStep->covariance = matrix_create_copy(singleStep->S);
+
 		return;
     }
 	// First part of the algorithm
@@ -1185,6 +1498,7 @@ static void smooth_recursive(kalman_options_t options, step_t** steps, kalman_st
 	// ==========================================
 
 	if ((options & KALMAN_NO_COVARIANCE) == 0) {
+	  printf("oddeven: computing covariance\n");
 	// Since the selinv algorithm works with LDL^T matrices, we
 	// start with converting our RR^T to LDL^T
 
@@ -1210,6 +1524,9 @@ static void smooth_recursive(kalman_options_t options, step_t** steps, kalman_st
 	free(result[1]);
 	free(result);
 	
+	} else {
+	  printf("oddeven: NOT computing covariance\n");
+
 	}
 	// % ==========================================
 	// % End Change 1
@@ -1271,6 +1588,12 @@ static void steps_init(void* steps_v, void* steps_array_v, kalman_step_index_t l
     s->H_tilde = NULL;
     s->R_tilde = NULL;
     s->G_tilde = NULL;
+
+    s->S = NULL;
+    s->S_off = NULL;
+    s->S1_off = NULL;
+    s->i_off  = -1;
+    s->i1_off = -1;
 
     s->state = NULL;
     s->covariance = NULL;
