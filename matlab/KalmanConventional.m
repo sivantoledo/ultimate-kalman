@@ -18,6 +18,7 @@ classdef KalmanConventional < KalmanBase
     % Copyright 2024 Sivan Toledo, Tel Aviv University.
 
     properties (Access = protected)
+        nu;
     end
 
     methods (Access = protected)
@@ -65,7 +66,6 @@ classdef KalmanConventional < KalmanBase
                 kalman.current.step = 0;
                 return
             end
-
                 
             ptr_imo = length(kalman.steps);                                % pointer to row i-1 in the cell array
             kalman.current.step  = kalman.steps{ptr_imo}.step + 1;
@@ -85,15 +85,32 @@ classdef KalmanConventional < KalmanBase
             kalman.current.F                   = F_i;
             kalman.current.H                   = H_i;
 
-            % predictions
+            %predictions
             if isa(F_i,'function_handle')
                 [predictedState,jacobian] = F_i( kalman.steps{ptr_imo}.assimilatedState );
             else
                 predictedState = F_i * kalman.steps{ptr_imo}.assimilatedState;
                 jacobian       = F_i;
             end
-            
 
+            kalman.current.step
+            if kalman.nu > 0
+                nu = kalman.nu;
+                n_imo = kalman.steps{ptr_imo}.dimension - nu;
+                kalman.current.dimension = n_i + nu;
+                predictedState = [ predictedState 
+                                   kalman.steps{ptr_imo}.assimilatedState(n_imo+1:n_imo+nu,1) ];
+                jacobian       = [ jacobian
+                                   zeros(nu,n_imo) eye(nu) ];
+                H_i = [ H_i             zeros(n_i,nu)
+                        zeros(nu,n_imo) eye(nu) ];
+                c_i = [ c_i
+                        zeros(nu,1) ];
+                K = [ K_i.explicit  zeros(n_i,nu) 
+                      zeros(nu,n_i) zeros(nu,nu) ];
+                K_i = CovarianceMatrix(K,'C');
+            end
+            
 
             %kalman.current.predictedState      = predictedState + c_i;
             %kalman.current.predictedCovariance = jacobian * kalman.steps{ptr_imo}.assimilatedCovariance * jacobian' + K_i.explicit(); 
@@ -103,6 +120,15 @@ classdef KalmanConventional < KalmanBase
 
             kalman.current.estimatedState      = kalman.current.predictedState;
             kalman.current.estimatedCovariance = CovarianceMatrix( kalman.current.predictedCovariance, 'C');
+
+            % Hinv
+            % jacobian
+            % K_i.explicit
+            % condKi=cond(K_i.explicit)
+            % condAssimConv = cond(kalman.steps{ptr_imo}.assimilatedCovariance)
+            % kalman.steps{ptr_imo}.assimilatedCovariance
+            % kalman.current.predictedCovariance
+            % condPredictedConv = cond(kalman.current.predictedCovariance)
         end
 
         function observe(kalman,G_i,o_i,C_i)
@@ -119,7 +145,7 @@ classdef KalmanConventional < KalmanBase
             %   observations are availble of the state of this step.
             % 
             %   This method must be called after advance and evolve.
-            n_i = kalman.current.dimension;
+            %n_i = kalman.current.dimension;
 
             if kalman.current.step == 0
                 
@@ -127,9 +153,21 @@ classdef KalmanConventional < KalmanBase
                     error('in an extended Kalman filter, state 0 must be observed linearly')
                 end
 
+                if size(G_i,2) > kalman.current.dimension % an extended filter with time-invariant parameters
+                    kalman.nu = size(G_i,2) - kalman.current.dimension;
+                    kalman.current.dimension = size(G_i,2);
+                else
+                    kalman.nu = 0;
+                end
+
                 W_i_G_i = C_i.weigh(G_i);
                 W_i_o_i = C_i.weigh(o_i);
-                [Q,R] = qr(W_i_G_i,0); 
+                [Q,R] = qr(W_i_G_i,0);
+                % condCi = cond(C_i.explicit())
+                % W_i_G_i
+                % R
+                % condR = cond(R)
+                % condWiGi = cond(W_i_G_i)
                 kalman.current.assimilatedState      = R \ ( Q' * W_i_o_i );
                 kalman.current.assimilatedCovariance = inv(R'*R); 
 
@@ -152,6 +190,12 @@ classdef KalmanConventional < KalmanBase
                     jacobian = G_i;
                 end
                 S          = jacobian * kalman.current.predictedCovariance * jacobian' + C_i.explicit;
+                % condP = cond(kalman.current.predictedCovariance)
+                % condS = cond(S)
+                % S
+                % jacobian
+                % pred = kalman.current.predictedCovariance
+                % condPred = cond(kalman.current.predictedCovariance)
                 gain       = kalman.current.predictedCovariance * jacobian' / S;
                 innovation = o_i - predictedObservations;
 
@@ -202,6 +246,20 @@ classdef KalmanConventional < KalmanBase
                     nextEvolutionMatrix     = F_ipo;
                 end
                 H_ipo = kalman.steps{i+1}.H;
+
+                if kalman.nu > 0
+                    nu = kalman.nu;
+                    n_ipo = kalman.steps{i+1}.dimension - nu;
+                    n_i   = kalman.steps{i  }.dimension - nu;
+                    nu
+                    n_ipo
+                    n_i
+                    nextEvolutionMatrix = [ nextEvolutionMatrix
+                                            zeros(nu,n_i) eye(nu) ];
+                    H_ipo = [ H_ipo           zeros(n_ipo,nu)
+                              zeros(nu,n_ipo) eye(nu) ];
+                end
+
                 nextEvolutionMatrix = H_ipo \ nextEvolutionMatrix ;
 
                 assimilatedCovariance = kalman.steps{i}.assimilatedCovariance;

@@ -64,17 +64,19 @@ variants = { msparse
              pconv
              nconv
              moddevn
+             modd_nc
              noddevn
+             modd_nc
              massoc
            };
 
-variants = { multps
+variants_short = { multps
              multsi
              nultps
              moddevn
              modd_nc
              noddevn
-             nodd_nc
+             modd_nc
            };
 
 dimensions = { uniform(1,1,1,1)
@@ -106,7 +108,7 @@ FC
 SS
 SC
 
-%return
+return
 
 [v,FS,FC,SS,SC,covTypes] = testCovarianceTypes(uniform(9,9,9,17),{ 'W', 'C', 'w' });
 covTypes
